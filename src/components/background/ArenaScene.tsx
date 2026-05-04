@@ -33,7 +33,7 @@ export default function ArenaScene() {
     }
 
     if (glowRef.current) {
-      glowRef.current.intensity = 0.7 + Math.sin(elapsed * 0.8) * 0.18;
+      glowRef.current.intensity = 0.58 + Math.sin(elapsed * 0.8) * 0.16;
     }
   });
 
@@ -41,13 +41,13 @@ export default function ArenaScene() {
     <>
       <gridHelper
         ref={floorGridRef}
-        args={[64, 64, "#5d7f68", "#102018"]}
+        args={[64, 64, "#1a3a1a", "#0d2110"]}
         position={[0, -2.5, -5]}
       />
 
       <gridHelper
         ref={ceilingGridRef}
-        args={[64, 64, "#4c6f5b", "#0e1b15"]}
+        args={[64, 64, "#183418", "#0a1a0d"]}
         position={[0, 2.5, -5]}
         rotation={[Math.PI, 0, 0]}
       />
@@ -55,23 +55,23 @@ export default function ArenaScene() {
       <pointLight
         ref={glowRef}
         position={[0, 0, -3]}
-        intensity={0.7}
-        color="#6f9a74"
+        intensity={0.58}
+        color="#4eb44e"
         distance={12}
       />
       <pointLight
         position={[-4, 0, -2]}
-        intensity={0.16}
-        color="#70907c"
+        intensity={0.12}
+        color="#2f7a35"
         distance={8}
       />
       <pointLight
         position={[4, 0, -2]}
-        intensity={0.16}
-        color="#70907c"
+        intensity={0.12}
+        color="#2f7a35"
         distance={8}
       />
-      <ambientLight intensity={0.035} color="#07120c" />
+      <ambientLight intensity={0.03} color="#071807" />
 
       <mesh position={[0, 0, -10]}>
         <planeGeometry args={[52, 52]} />

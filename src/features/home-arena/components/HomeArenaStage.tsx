@@ -1,4 +1,5 @@
 import { arenaCards } from "../data/arenaCards";
+import ArenaBetSelector from "./ArenaBetSelector";
 import ArenaVersusMark from "./ArenaVersusMark";
 import BattleStartButton from "./BattleStartButton";
 import CardDockSlot from "./CardDockSlot";
@@ -24,7 +25,8 @@ export default function HomeArenaStage() {
           </div>
         </div>
 
-        <div className="mt-4 sm:mt-8 md:mt-10">
+        <div className="flex w-full flex-col items-center gap-5 sm:gap-6">
+          <ArenaBetSelector leftCard={leftCard} rightCard={rightCard} />
           <BattleStartButton />
         </div>
       </div>
