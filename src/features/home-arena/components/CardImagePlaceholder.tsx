@@ -23,8 +23,14 @@ export default function CardImagePlaceholder({
         boxShadow: "inset 0 0 30px var(--card-accent-soft)",
       }}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,var(--card-accent-soft),transparent_29%),linear-gradient(135deg,rgba(217,255,63,0.1),transparent_41%,var(--card-accent-soft))]" />
-      <div className="absolute inset-3 border border-white/14 [clip-path:polygon(0.34rem_0,calc(100%-0.34rem)_0,100%_0.34rem,100%_calc(100%-0.34rem),calc(100%-0.34rem)_100%,0.34rem_100%,0_calc(100%-0.34rem),0_0.34rem)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,var(--card-accent-soft),transparent_29%),linear-gradient(135deg,var(--card-accent-soft),transparent_41%,var(--card-accent-soft))]" />
+      <div
+        className="absolute inset-3 border [clip-path:polygon(0.34rem_0,calc(100%-0.34rem)_0,100%_0.34rem,100%_calc(100%-0.34rem),calc(100%-0.34rem)_100%,0.34rem_100%,0_calc(100%-0.34rem),0_0.34rem)]"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--card-accent) 34%, transparent)",
+        }}
+      />
       <div
         className="absolute left-1/2 top-[17%] h-14 w-14 -translate-x-1/2 rounded-full border bg-white/5"
         style={{
@@ -39,7 +45,14 @@ export default function CardImagePlaceholder({
             "color-mix(in srgb, var(--card-accent) 24%, transparent)",
         }}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:17px_17px] opacity-48" />
+      <div
+        className="absolute inset-0 opacity-48"
+        style={{
+          backgroundImage:
+            "linear-gradient(color-mix(in srgb, var(--card-accent) 18%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--card-accent) 14%, transparent) 1px, transparent 1px)",
+          backgroundSize: "17px 17px",
+        }}
+      />
       <div
         className="absolute bottom-4 left-4 right-4 h-px"
         style={{

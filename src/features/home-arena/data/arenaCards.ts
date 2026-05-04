@@ -1,17 +1,17 @@
 import type { ArenaCard, ArenaCardTheme } from "../types";
 
 const greenTheme: ArenaCardTheme = {
-  accent: "#b7ff3c",
-  accentSoft: "rgba(183, 255, 60, 0.24)",
-  accentGlow: "rgba(183, 255, 60, 0.68)",
-  accentText: "#e9ffb7",
-  secondary: "#d9ff3f",
+  accent: "#245c24",
+  accentSoft: "rgba(52, 125, 52, 0.36)",
+  accentGlow: "rgba(88, 210, 88, 0.72)",
+  accentText: "#d6ffd2",
+  secondary: "#78d478",
 };
 
 const amberTheme: ArenaCardTheme = {
   accent: "#c8a84b",
-  accentSoft: "rgba(200, 168, 75, 0.27)",
-  accentGlow: "rgba(200, 168, 75, 0.66)",
+  accentSoft: "rgba(200, 168, 75, 0.22)",
+  accentGlow: "rgba(200, 168, 75, 0.56)",
   accentText: "#ffe8a3",
   secondary: "#f5d76e",
 };

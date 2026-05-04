@@ -14,7 +14,7 @@ export default function CRTBackground({ children }: CRTBackgroundProps) {
   const [ready, setReady] = useState(false);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020403]">
+    <div className="relative min-h-screen overflow-hidden bg-[#010201]">
       <div className="fixed inset-0 z-0">
         <Canvas
           camera={{ position: [0, 0, 5], fov: 60 }}
@@ -26,12 +26,12 @@ export default function CRTBackground({ children }: CRTBackgroundProps) {
 
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle,rgba(0,0,0,0.05)_42%,rgba(0,0,0,0.9)_100%)] shadow-[inset_0_0_130px_rgba(0,0,0,0.94)]"
+        className="fixed inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle,rgba(14,28,12,0.04)_36%,rgba(0,0,0,0.92)_100%)] shadow-[inset_0_0_130px_rgba(0,0,0,0.95)]"
       />
 
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-[2] pointer-events-none opacity-[0.09] mix-blend-screen [background-image:linear-gradient(rgba(120,160,128,0.22)_1px,transparent_1px)] [background-size:100%_5px]"
+        className="fixed inset-0 z-[2] pointer-events-none opacity-[0.11] mix-blend-screen [background-image:linear-gradient(rgba(78,180,78,0.18)_1px,transparent_1px)] [background-size:100%_5px]"
       />
 
       {children ? (

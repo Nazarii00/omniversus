@@ -17,11 +17,14 @@ export default function CardDockSlot({ side, theme }: CardDockSlotProps) {
   return (
     <div
       aria-hidden="true"
-      className="absolute -inset-x-6 -inset-y-5 z-0 translate-y-6 border border-cyan-200/14 bg-black/38 shadow-[inset_0_0_34px_rgba(0,0,0,0.96),0_18px_58px_rgba(0,0,0,0.68)] [clip-path:polygon(1rem_0,calc(100%-1rem)_0,100%_1rem,100%_calc(100%-1rem),calc(100%-1rem)_100%,1rem_100%,0_calc(100%-1rem),0_1rem)]"
-      style={themeStyle}
+      className="absolute -inset-x-6 -inset-y-5 z-0 translate-y-6 border bg-black/54 shadow-[inset_0_0_34px_rgba(0,0,0,0.96),0_18px_58px_rgba(0,0,0,0.68)] [clip-path:polygon(1rem_0,calc(100%-1rem)_0,100%_1rem,100%_calc(100%-1rem),calc(100%-1rem)_100%,1rem_100%,0_calc(100%-1rem),0_1rem)]"
+      style={{
+        ...themeStyle,
+        borderColor: "color-mix(in srgb, var(--card-accent) 45%, #010201)",
+      }}
     >
       <div
-        className="absolute inset-3 border bg-[linear-gradient(145deg,rgba(4,12,10,0.9),rgba(0,0,0,0.32)_48%,rgba(8,34,20,0.82))] [clip-path:polygon(0.8rem_0,calc(100%-0.8rem)_0,100%_0.8rem,100%_calc(100%-0.8rem),calc(100%-0.8rem)_100%,0.8rem_100%,0_calc(100%-0.8rem),0_0.8rem)]"
+        className="absolute inset-3 border bg-[linear-gradient(145deg,rgba(0,12,10,0.86),rgba(0,0,0,0.32)_48%,rgba(0,37,31,0.62))] [clip-path:polygon(0.8rem_0,calc(100%-0.8rem)_0,100%_0.8rem,100%_calc(100%-0.8rem),calc(100%-0.8rem)_100%,0.8rem_100%,0_calc(100%-0.8rem),0_0.8rem)]"
         style={{
           borderColor:
             "color-mix(in srgb, var(--card-accent) 20%, transparent)",
