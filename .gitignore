@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# next
+.next/
+out/
+
+# production
+build/
+
+# env
+.env
+.env*.local
+!.env.example
+
+# vercel
+.vercel/
+
+# generated
+src/generated/prisma/
+
+# test artifacts
+test-results/
+playwright-report/
+
+# misc
+*.log
+*.tsbuildinfo
+.DS_Store

@@ -1,0 +1,7 @@
+node_modules/
+.next/
+out/
+build/
+.vercel/
+src/generated/prisma/
+package-lock.json
