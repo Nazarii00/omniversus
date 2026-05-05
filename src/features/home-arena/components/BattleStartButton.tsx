@@ -4,8 +4,19 @@ import { useEffect, useRef, useState } from "react";
 
 type ButtonState = "idle" | "loading" | "armed";
 
+// TEMP_BATTLE_API_TEST: delete this object and the fetch block in startBattle
+// when the real combatant picker is wired.
+const TEMP_BATTLE_API_TEST = {
+  fighterA: "Jesus",
+  fighterB: "Allah",
+  options: {
+    outputLanguage: "en",
+  },
+} as const;
+
 export default function BattleStartButton() {
   const [state, setState] = useState<ButtonState>("idle");
+  const [isRequestPending, setIsRequestPending] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
   function clearPendingTimeout() {
@@ -19,13 +30,14 @@ export default function BattleStartButton() {
     return clearPendingTimeout;
   }, []);
 
-  function startBattle() {
-    if (state === "loading") {
+  async function startBattle() {
+    if (state === "loading" || isRequestPending) {
       return;
     }
 
     clearPendingTimeout();
     setState("loading");
+    setIsRequestPending(true);
 
     timeoutRef.current = window.setTimeout(() => {
       setState("armed");
@@ -35,9 +47,31 @@ export default function BattleStartButton() {
         timeoutRef.current = null;
       }, 650);
     }, 720);
+
+    // TEMP_BATTLE_API_TEST: browser-console-only test request.
+    try {
+      console.info("[TEMP_BATTLE_API_TEST] request", TEMP_BATTLE_API_TEST);
+
+      const response = await fetch("/api/battle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(TEMP_BATTLE_API_TEST),
+      });
+
+      const data: unknown = await response.json();
+
+      console.info("[TEMP_BATTLE_API_TEST] response status", response.status);
+      console.log("[TEMP_BATTLE_API_TEST] response body", data);
+    } catch (error) {
+      console.error("[TEMP_BATTLE_API_TEST] request failed", error);
+    } finally {
+      setIsRequestPending(false);
+    }
   }
 
-  const isLoading = state === "loading";
+  const isLoading = state === "loading" || isRequestPending;
   const label =
     state === "armed" ? "EXECUTED" : isLoading ? "EXECUTING" : "EXECUTE_BATTLE";
 

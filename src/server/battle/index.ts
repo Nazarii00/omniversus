@@ -1,0 +1,316 @@
+import {
+  type BattleCompletionResult,
+  buildBattleResponseFormat,
+  createBattleCompletion,
+  getClient,
+  resolveBattleModel,
+} from "./client";
+import { coerceBattleDraft } from "./coerce";
+import {
+  DEFAULT_MAX_COMPLETION_TOKENS,
+  DEFAULT_TEMPERATURE,
+  DEFAULT_THINKING_LEVEL,
+  DEFAULT_TOP_P,
+} from "./modelConfig";
+import { normalizeBattleResult } from "./normalize";
+import { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompt";
+import {
+  OmniversusBattleSchema,
+  type BattleGenerationMetadata,
+  type OmniversusBattle,
+  type RunBattleAnalysisOptions,
+  type ThinkingLevel,
+} from "./schema";
+
+export type {
+  BattleGenerationMetadata,
+  OmniversusBattle,
+  RunBattleAnalysisOptions,
+} from "./schema";
+export { OmniversusBattleSchema } from "./schema";
+export {
+  buildGeminiResponseFormat,
+  createBattleCompletion,
+  getClient,
+} from "./client";
+export { coerceBattleDraft } from "./coerce";
+export { mapGeminiBattleOutput } from "./mapGeminiBattleOutput";
+export { enforceBusinessCaps, normalizeBattleResult } from "./normalize";
+export { BATTLE_MODEL_CONFIG } from "./modelConfig";
+export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompt";
+
+type RunBattleAnalysisWithMetadataResult = {
+  result: OmniversusBattle;
+  generation: BattleGenerationMetadata;
+};
+
+type BattleAnalysisErrorOptions = {
+  status?: number;
+  generation?: BattleGenerationMetadata;
+  validationIssues?: unknown[];
+};
+
+export class BattleAnalysisError extends Error {
+  readonly status: number;
+  readonly generation: BattleGenerationMetadata | null;
+  readonly validationIssues: unknown[] | null;
+
+  constructor(message: string, options: BattleAnalysisErrorOptions = {}) {
+    super(message);
+    this.name = "BattleAnalysisError";
+    this.status = options.status ?? 500;
+    this.generation = options.generation ?? null;
+    this.validationIssues = options.validationIssues ?? null;
+  }
+}
+
+function hasRefusal(message: unknown): message is { refusal: string } {
+  return (
+    typeof message === "object" &&
+    message !== null &&
+    "refusal" in message &&
+    typeof (message as { refusal?: unknown }).refusal === "string"
+  );
+}
+
+function parseJsonObject(content: string): unknown {
+  const trimmed = content.trim();
+
+  if (trimmed.startsWith("```")) {
+    const withoutFence = trimmed
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/, "")
+      .trim();
+
+    return JSON.parse(withoutFence);
+  }
+
+  return JSON.parse(trimmed);
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeTemperature(value: unknown): number {
+  const parsed = readNumber(value);
+  return parsed === null ? DEFAULT_TEMPERATURE : clampNumber(parsed, 0, 2);
+}
+
+function normalizeTopP(value: unknown): number | null {
+  const parsed = readNumber(value);
+  return parsed === null ? DEFAULT_TOP_P : clampNumber(parsed, 0, 1);
+}
+
+function normalizeMaxCompletionTokens(value: unknown): number | null {
+  const parsed = readNumber(value);
+  if (parsed === null) return DEFAULT_MAX_COMPLETION_TOKENS;
+  return Math.round(clampNumber(parsed, 1, DEFAULT_MAX_COMPLETION_TOKENS));
+}
+
+function safeNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function buildGenerationMetadata(
+  completionResult: BattleCompletionResult,
+  request: {
+    model: string;
+    reasoningEffort: ThinkingLevel;
+    temperature: number | null;
+    topP: number | null;
+    maxCompletionTokens: number | null;
+    startedAtMs: number;
+  },
+  content: string | null,
+): BattleGenerationMetadata {
+  const completedAtMs = Date.now();
+  const completion = completionResult.completion;
+  const choice = completion.choices[0];
+  const usage = completion.usage;
+  const promptDetails = usage?.prompt_tokens_details as
+    | { cached_tokens?: unknown }
+    | undefined;
+  const completionDetails = usage?.completion_tokens_details as
+    | { reasoning_tokens?: unknown }
+    | undefined;
+  const requestId = (completion as { _request_id?: unknown })._request_id;
+
+  return {
+    provider: "gemini",
+    api: "openai-compatible-chat-completions",
+    requested_model: request.model,
+    model: completion.model ?? null,
+    thinking_level: request.reasoningEffort,
+    temperature: request.temperature,
+    top_p: request.topP,
+    max_completion_tokens: request.maxCompletionTokens,
+    response_format: completionResult.responseFormat,
+    response_format_fallback_used: completionResult.responseFormatFallbackUsed,
+    id: completion.id ?? null,
+    request_id: typeof requestId === "string" ? requestId : null,
+    created: safeNumber(completion.created),
+    finish_reason: choice?.finish_reason ?? null,
+    service_tier: completion.service_tier ?? null,
+    system_fingerprint: completion.system_fingerprint ?? null,
+    usage: usage
+      ? {
+          prompt_tokens: safeNumber(usage.prompt_tokens),
+          completion_tokens: safeNumber(usage.completion_tokens),
+          total_tokens: safeNumber(usage.total_tokens),
+          cached_tokens: safeNumber(promptDetails?.cached_tokens),
+          reasoning_tokens: safeNumber(completionDetails?.reasoning_tokens),
+          prompt_tokens_details: usage.prompt_tokens_details ?? null,
+          completion_tokens_details: usage.completion_tokens_details ?? null,
+        }
+      : null,
+    content_length: content === null ? null : content.length,
+    timings: {
+      started_at: new Date(request.startedAtMs).toISOString(),
+      completed_at: new Date(completedAtMs).toISOString(),
+      duration_ms: completedAtMs - request.startedAtMs,
+    },
+  };
+}
+
+export async function runBattleAnalysisWithMetadata(
+  fighterA: string,
+  fighterB: string,
+  options: RunBattleAnalysisOptions = {},
+): Promise<RunBattleAnalysisWithMetadataResult> {
+  const client = getClient();
+  const model = resolveBattleModel(options.model);
+  const reasoningEffort = options.thinkingLevel ?? DEFAULT_THINKING_LEVEL;
+  const temperature = normalizeTemperature(options.temperature);
+  const topP = normalizeTopP(options.topP);
+  const maxCompletionTokens = normalizeMaxCompletionTokens(
+    options.maxCompletionTokens,
+  );
+  const startedAtMs = Date.now();
+
+  const completionRequest: Parameters<typeof createBattleCompletion>[1] = {
+    model,
+    reasoning_effort: reasoningEffort,
+    temperature,
+    ...(topP !== null ? { top_p: topP } : {}),
+    ...(maxCompletionTokens !== null
+      ? { max_completion_tokens: maxCompletionTokens }
+      : {}),
+    messages: [
+      { role: "system", content: OMNIVERSUS_MASTER_PROMPT },
+      { role: "user", content: buildUserPrompt(fighterA, fighterB, options) },
+    ],
+    response_format: buildBattleResponseFormat(),
+  };
+
+  const completionResult = await createBattleCompletion(
+    client,
+    completionRequest,
+  );
+  const completion = completionResult.completion;
+  const requestMetadata = {
+    model,
+    reasoningEffort,
+    temperature,
+    topP,
+    maxCompletionTokens,
+    startedAtMs,
+  };
+
+  const message = completion.choices[0]?.message;
+  if (!message) {
+    throw new BattleAnalysisError("Empty response from AI", {
+      status: 502,
+      generation: buildGenerationMetadata(
+        completionResult,
+        requestMetadata,
+        null,
+      ),
+    });
+  }
+
+  if (hasRefusal(message)) {
+    throw new BattleAnalysisError(`AI refused to answer: ${message.refusal}`, {
+      status: 502,
+      generation: buildGenerationMetadata(
+        completionResult,
+        requestMetadata,
+        null,
+      ),
+    });
+  }
+
+  const content = message.content;
+  const textContent = typeof content === "string" ? content : "";
+  const parsedContent = message.parsed;
+  const generation = buildGenerationMetadata(
+    completionResult,
+    requestMetadata,
+    textContent || null,
+  );
+
+  if (parsedContent === null && !textContent.trim()) {
+    throw new BattleAnalysisError("AI returned empty or non-text content", {
+      status: 502,
+      generation,
+    });
+  }
+
+  let raw: unknown;
+  if (parsedContent !== null) {
+    raw = parsedContent;
+  } else {
+    try {
+      raw = parseJsonObject(textContent);
+    } catch {
+      throw new BattleAnalysisError("AI returned invalid JSON", {
+        status: 502,
+        generation,
+      });
+    }
+  }
+
+  const coerced = coerceBattleDraft(raw, {
+    fighterA,
+    fighterB,
+    characterAVersion: options.characterAVersion,
+    characterBVersion: options.characterBVersion,
+  });
+  const parsed = OmniversusBattleSchema.safeParse(coerced);
+
+  if (!parsed.success) {
+    throw new BattleAnalysisError(
+      `Battle JSON validation failed: ${parsed.error.message}`,
+      {
+        status: 502,
+        generation,
+        validationIssues: parsed.error.issues,
+      },
+    );
+  }
+
+  return {
+    result: normalizeBattleResult(parsed.data),
+    generation,
+  };
+}
+
+export async function runBattleAnalysis(
+  fighterA: string,
+  fighterB: string,
+  options: RunBattleAnalysisOptions = {},
+): Promise<OmniversusBattle> {
+  const { result } = await runBattleAnalysisWithMetadata(
+    fighterA,
+    fighterB,
+    options,
+  );
+
+  return result;
+}
+
+export default runBattleAnalysis;
