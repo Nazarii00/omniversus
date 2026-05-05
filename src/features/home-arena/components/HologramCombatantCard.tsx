@@ -7,16 +7,25 @@ import HologramCardFace from "./HologramCardFace";
 
 type HologramCombatantCardProps = {
   card: ArenaCard;
+  className?: string;
+  disableLevitation?: boolean;
+  onActivate?: () => void;
+  activateLabel?: string;
 };
 
 export default function HologramCombatantCard({
   card,
+  className = "",
+  disableLevitation = false,
+  onActivate,
+  activateLabel,
 }: HologramCombatantCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const levitationClass =
     card.side === "left"
       ? "home-card-levitate-left"
       : "home-card-levitate-right";
+  const motionClass = disableLevitation ? "" : levitationClass;
   const themeStyle = {
     "--card-accent": card.theme.accent,
     "--card-accent-soft": card.theme.accentSoft,
@@ -32,19 +41,28 @@ export default function HologramCombatantCard({
     }
   }
 
+  function activateCard() {
+    if (onActivate) {
+      onActivate();
+      return;
+    }
+
+    setIsFlipped((current) => !current);
+  }
+
   return (
     <button
       type="button"
-      aria-label={`${card.name} dossier`}
-      aria-pressed={isFlipped}
-      onClick={() => setIsFlipped((current) => !current)}
+      aria-label={activateLabel ?? `${card.name} dossier`}
+      aria-pressed={onActivate ? undefined : isFlipped}
+      onClick={activateCard}
       onKeyDown={blockSpaceAndShift}
       onKeyUp={blockSpaceAndShift}
-      className="group relative block aspect-[5/7] w-full min-w-0 cursor-pointer text-left outline-none [perspective:1500px]"
+      className={`group relative block aspect-[5/7] w-full min-w-0 cursor-pointer text-left outline-none [perspective:1500px] ${className}`}
       style={themeStyle}
     >
       <div
-        className={`${levitationClass} absolute inset-0 [transform-style:preserve-3d]`}
+        className={`${motionClass} absolute inset-0 [transform-style:preserve-3d]`}
       >
         <div
           className="relative h-full w-full transition-transform duration-700 ease-out [transform-style:preserve-3d]"
