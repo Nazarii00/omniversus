@@ -223,24 +223,31 @@ select {
 }
 
 .home-bet-choice[data-selected="false"] {
-  opacity: 0.54;
-  filter: saturate(0.48);
+  opacity: 0.48;
+  filter: saturate(0.42);
 }
 
 .home-bet-choice[data-selected="false"]:hover,
 .home-bet-choice[data-selected="false"]:focus-visible {
-  opacity: 0.78;
-  filter: saturate(0.76);
+  opacity: 0.72;
+  filter: saturate(0.7);
   border-color: color-mix(in srgb, var(--bet-accent) 48%, #010201);
 }
 
 .home-bet-choice[data-selected="true"] {
   border-color: color-mix(in srgb, var(--bet-accent) 78%, var(--bet-accent-text));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bet-accent) 11%, rgba(2, 8, 5, 0.96)),
+      rgba(1, 2, 1, 0.97)
+    ),
+    #010201;
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--bet-accent) 58%, #010201),
-    inset 0 0 28px var(--bet-accent-soft),
-    0 0 26px var(--bet-accent-glow),
-    0 0 42px color-mix(in srgb, var(--bet-accent) 22%, transparent),
+    inset 0 0 30px var(--bet-accent-soft),
+    0 0 28px var(--bet-accent-glow),
+    0 0 48px color-mix(in srgb, var(--bet-accent) 24%, transparent),
     0 12px 30px rgba(0, 0, 0, 0.52);
 }
 
