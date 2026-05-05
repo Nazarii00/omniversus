@@ -1,4 +1,4 @@
-import type { OmniversusBattle } from "./schema";
+import type { OmniversusBattle } from "../domain/schema";
 import {
   asString,
   clampConfidenceBand,

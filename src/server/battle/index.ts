@@ -4,40 +4,43 @@ import {
   createBattleCompletion,
   getClient,
   resolveBattleModel,
-} from "./client";
-import { coerceBattleDraft } from "./coerce";
+} from "./providers/gemini/client";
+import { coerceBattleDraft } from "./pipeline/coerce";
 import {
   DEFAULT_MAX_COMPLETION_TOKENS,
   DEFAULT_TEMPERATURE,
   DEFAULT_THINKING_LEVEL,
   DEFAULT_TOP_P,
-} from "./modelConfig";
-import { normalizeBattleResult } from "./normalize";
-import { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompt";
+} from "./config/model";
+import { normalizeBattleResult } from "./pipeline/normalize";
+import {
+  buildUserPrompt,
+  OMNIVERSUS_MASTER_PROMPT,
+} from "./prompts/battlePrompt";
 import {
   OmniversusBattleSchema,
   type BattleGenerationMetadata,
   type OmniversusBattle,
   type RunBattleAnalysisOptions,
   type ThinkingLevel,
-} from "./schema";
+} from "./domain/schema";
 
 export type {
   BattleGenerationMetadata,
   OmniversusBattle,
   RunBattleAnalysisOptions,
-} from "./schema";
-export { OmniversusBattleSchema } from "./schema";
+} from "./domain/schema";
+export { OmniversusBattleSchema } from "./domain/schema";
 export {
   buildGeminiResponseFormat,
   createBattleCompletion,
   getClient,
-} from "./client";
-export { coerceBattleDraft } from "./coerce";
-export { mapGeminiBattleOutput } from "./mapGeminiBattleOutput";
-export { enforceBusinessCaps, normalizeBattleResult } from "./normalize";
-export { BATTLE_MODEL_CONFIG } from "./modelConfig";
-export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompt";
+} from "./providers/gemini/client";
+export { coerceBattleDraft } from "./pipeline/coerce";
+export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
+export { enforceBusinessCaps, normalizeBattleResult } from "./pipeline/normalize";
+export { BATTLE_MODEL_CONFIG } from "./config/model";
+export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompts/battlePrompt";
 
 type RunBattleAnalysisWithMetadataResult = {
   result: OmniversusBattle;

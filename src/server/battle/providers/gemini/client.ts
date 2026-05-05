@@ -4,10 +4,10 @@ import type { ParsedChatCompletion } from "openai/resources/chat/completions";
 import {
   GeminiBattleOutputJsonSchema,
   type GeminiBattleOutput,
-} from "./geminiSchema";
-import { DEFAULT_MODEL } from "./modelConfig";
+} from "./outputSchema";
+import { DEFAULT_MODEL } from "../../config/model";
 
-export { DEFAULT_MODEL } from "./modelConfig";
+export { DEFAULT_MODEL } from "../../config/model";
 
 declare const process: {
   env: Record<string, string | undefined>;

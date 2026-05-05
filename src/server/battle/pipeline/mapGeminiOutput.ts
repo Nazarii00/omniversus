@@ -1,6 +1,6 @@
 import { coerceBattleDraft } from "./coerce";
-import type { GeminiBattleOutput } from "./geminiSchema";
-import { OmniversusBattleSchema, type OmniversusBattle } from "./schema";
+import type { GeminiBattleOutput } from "../providers/gemini/outputSchema";
+import { OmniversusBattleSchema, type OmniversusBattle } from "../domain/schema";
 
 export function mapGeminiBattleOutput(
   raw: GeminiBattleOutput,

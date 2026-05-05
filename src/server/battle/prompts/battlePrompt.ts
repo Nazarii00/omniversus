@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, type RunBattleAnalysisOptions } from "./schema";
+import { SCHEMA_VERSION, type RunBattleAnalysisOptions } from "../domain/schema";
 
 export const OMNIVERSUS_MASTER_PROMPT = `You are OMNIVERSUS_VERDICT_ENGINE. Return only schema-valid JSON. First character: { Last character: }. No markdown, no preamble, no closing text.
 

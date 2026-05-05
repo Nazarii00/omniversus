@@ -1,4 +1,4 @@
-import type { ThinkingLevel } from "./schema";
+import type { ThinkingLevel } from "../domain/schema";
 
 export const BATTLE_MODEL_CONFIG = {
   model: "gemini-3-flash-preview",

@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, type OmniversusBattle } from "./schema";
+import { SCHEMA_VERSION, type OmniversusBattle } from "../domain/schema";
 
 type CoerceBattleDraftContext = {
   fighterA?: string;
