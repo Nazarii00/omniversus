@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { ArenaCardTheme } from "../types";
+import type { ArenaCardTheme } from "../../types";
 
 const beveledClipPath =
   "polygon(0.82rem 0, calc(100% - 0.82rem) 0, 100% 0.82rem, 100% calc(100% - 0.82rem), calc(100% - 0.82rem) 100%, 0.82rem 100%, 0 calc(100% - 0.82rem), 0 0.82rem)";

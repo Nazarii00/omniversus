@@ -1,7 +1,7 @@
 import type { ThinkingLevel } from "../domain/schema";
 
 export const BATTLE_MODEL_CONFIG = {
-  model: "gemini-3-flash-preview",
+  model: "gemini-3.1-flash-lite-preview",
   thinkingLevel: "high" satisfies ThinkingLevel,
   temperature: 1,
   topP: null,

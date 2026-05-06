@@ -1,4 +1,4 @@
-import type { BattleReportJson } from "../battle-report/BattleResultPanel";
+import type { BattleReportJson } from "../types";
 
 export const MOCK_BATTLE_REPORT = {
   id: "mock-battle-report",

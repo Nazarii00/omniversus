@@ -1,0 +1,243 @@
+export const SIDE_VALUES = ["A", "B"] as const;
+export const SIDE_RESULT_VALUES = ["A", "B", "DRAW", "INCONCLUSIVE"] as const;
+export const SIDE_OR_TIE_VALUES = ["A", "B", "TIE", "INCONCLUSIVE"] as const;
+
+export const DATA_PROVENANCE_VALUES = [
+  "MANUAL",
+  "EXTRACTED_FANDOM",
+  "EXTRACTED_VSBW",
+  "MIXED",
+  "MODEL_INFERRED",
+  "UNKNOWN",
+] as const;
+
+export const CLAIM_KIND_VALUES = [
+  "DIRECT_FEAT",
+  "SCALING",
+  "CALC",
+  "STATEMENT",
+  "INTERPRETATION",
+  "ANTI_FEAT",
+  "ABILITY",
+  "RESISTANCE",
+  "WEAKNESS",
+  "SUBJECTIVE_REASON",
+  "DATA_QUALITY",
+] as const;
+
+export const CLAIM_TAG_VALUES = [
+  "DIRECT",
+  "SCALING",
+  "CALC",
+  "STATEMENT",
+  "INTERPRETATION",
+  "ANTI_FEAT",
+] as const;
+
+export const CATEGORY_VALUES = [
+  "AP",
+  "DURABILITY",
+  "SPEED",
+  "RANGE",
+  "STAMINA",
+  "SKILL",
+  "INTELLIGENCE",
+  "ABILITY",
+  "RESISTANCE",
+  "WEAKNESS",
+  "WIN_CONDITION",
+  "CONSENSUS",
+  "CULTURAL_WEIGHT",
+  "DESIGN",
+  "POPULARITY",
+  "DATA_QUALITY",
+] as const;
+
+export const COMPARISON_CATEGORY_VALUES = [
+  "AP",
+  "DURABILITY",
+  "SPEED",
+  "RANGE",
+  "STAMINA",
+  "SKILL",
+  "INTELLIGENCE",
+  "ABILITY",
+  "RESISTANCE",
+  "WIN_CONDITION",
+  "CONSENSUS",
+  "CULTURAL_WEIGHT",
+  "DESIGN",
+  "POPULARITY",
+] as const;
+
+export const SOURCE_TYPE_VALUES = [
+  "CANON",
+  "VSBW",
+  "CALC",
+  "CONSENSUS",
+  "WIKI",
+  "FANDOM",
+  "UNKNOWN",
+  "N_A",
+] as const;
+
+export const SOURCE_STATUS_VALUES = [
+  "VERIFIED",
+  "ACCEPTED",
+  "REQUIRES_VERIFICATION",
+  "CONTESTED",
+  "REJECTED",
+  "NOT_REQUIRED",
+] as const;
+
+export const SOURCE_RELIABILITY_VALUES = [
+  "PRIMARY",
+  "SECONDARY",
+  "COMMUNITY",
+  "EXTRACTED_PAGE",
+  "UNKNOWN",
+  "N_A",
+] as const;
+
+export const EVIDENCE_LEVEL_VALUES = [
+  "DIRECT",
+  "STRONG_SCALING",
+  "WEAK_SCALING",
+  "CALC_BASED",
+  "STATEMENT_BASED",
+  "INTERPRETATION",
+  "CONSENSUS_ONLY",
+  "UNKNOWN",
+] as const;
+
+export const IMPORTANCE_VALUES = [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "DECISIVE",
+] as const;
+
+export const REVIEW_FLAG_VALUES = [
+  "OK",
+  "NEEDS_SOURCE",
+  "POSSIBLE_OUTLIER",
+  "BAD_SCALING_RISK",
+  "CALC_DISPUTE",
+  "MECHANICS_MISMATCH",
+  "DATA_INPUT_RISK",
+  "SUBJECTIVE_ONLY",
+] as const;
+
+export const RULE_IMPACT_VALUES = [
+  "NONE",
+  "MINOR",
+  "IMPORTANT",
+  "MATCH_DECIDING",
+] as const;
+
+export const NUMERICAL_STATS_ROLE_VALUES = [
+  "NONE",
+  "SECONDARY",
+  "PRIMARY",
+] as const;
+
+export const CHAIN_TYPE_VALUES = [
+  "STAT_ADVANTAGE",
+  "ABILITY_INTERACTION",
+  "RESISTANCE_CHECK",
+  "WIN_CONDITION",
+  "ANTI_ARGUMENT",
+  "DATA_QUALITY",
+  "SUBJECTIVE_REASONING",
+] as const;
+
+export const PREMISE_ROLE_VALUES = [
+  "FACT",
+  "SCALING_LINK",
+  "RULE",
+  "ASSUMPTION",
+  "ABILITY_MECHANIC",
+  "RESISTANCE_CHECK",
+  "COUNTERPOINT",
+] as const;
+
+export const ABILITY_TYPE_VALUES = [
+  "DAMAGE",
+  "DEFENSE",
+  "BFR",
+  "SEALING",
+  "MIND",
+  "SOUL",
+  "DOMAIN",
+  "CONTRACT",
+  "CONCEPTUAL",
+  "CAUSALITY",
+  "TIME",
+  "SPACE",
+  "PASSIVE",
+  "UTILITY",
+  "OTHER",
+] as const;
+
+export const IMPACT_VALUES = ["NONE", "MINOR", "MAJOR", "WIN_CONDITION"] as const;
+
+export const WIN_TYPE_VALUES = [
+  "STAT_CHECK",
+  "ABILITY",
+  "BFR",
+  "INCAP",
+  "KO",
+  "DEATH",
+  "STAMINA",
+  "SKILL",
+  "SUBJECTIVE_EDGE",
+] as const;
+
+export const PROBABILITY_VALUES = [
+  "VERY_LOW",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "VERY_HIGH",
+] as const;
+
+export const DIFFICULTY_VALUES = [
+  "NO_DIFF",
+  "LOW_DIFF",
+  "MID_DIFF",
+  "HIGH_DIFF",
+  "EXTREME_DIFF",
+  "STOMP",
+  "INCONCLUSIVE",
+] as const;
+
+export const CONFIDENCE_BAND_VALUES = [
+  "DOMINANT_80_100",
+  "CONFIDENT_65_79",
+  "CONTESTED_50_64",
+  "INDETERMINATE_1_49",
+] as const;
+
+export const CARD_VARIANT_VALUES = [
+  "STOMP",
+  "CLOSE_MATCH",
+  "CONTROVERSIAL",
+  "SUBJECTIVE",
+  "INCONCLUSIVE",
+] as const;
+
+export const APPEAL_REASON_VALUES = [
+  "WRONG_SOURCE",
+  "WRONG_CANON_SCOPE",
+  "OUTLIER",
+  "BAD_SCALING",
+  "CALC_DISPUTE",
+  "MISTRANSLATION",
+  "MECHANICS_MISMATCH",
+  "MISSING_RESISTANCE",
+  "DATA_INPUT_ERROR",
+  "CHAIN_GAP",
+  "SUBJECTIVE_CONSENSUS_DISPUTE",
+  "CULTURAL_WEIGHT_DISPUTE",
+  "OTHER",
+] as const;

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { BattleReportJson } from "../battle-report/BattleResultPanel";
+import { requestBattleReport } from "../../api/battleReportClient";
+import type { BattleReportJson } from "../../types";
 import BattleStartButton, {
   type BattleStartButtonState,
 } from "./BattleStartButton";
-import { requestBattleReport } from "./battleReportClient";
+import { getBattleLoadingSequenceMs } from "./BattleLoadingConsole";
 
-const EXECUTE_FILL_MS = 720;
 const EXECUTED_HOLD_MS = 650;
 
 type BattleControlsProps = {
@@ -75,15 +75,21 @@ export default function BattleControls({
     setButtonState("loading");
     const abortController = new AbortController();
     abortRef.current = abortController;
+    const trimmedFighterA = fighterA.trim();
+    const trimmedFighterB = fighterB.trim();
+    const minimumConsoleMs = getBattleLoadingSequenceMs(
+      trimmedFighterA,
+      trimmedFighterB,
+    );
 
     try {
       const [report] = await Promise.all([
         requestBattleReport({
-          fighterA: fighterA.trim(),
-          fighterB: fighterB.trim(),
+          fighterA: trimmedFighterA,
+          fighterB: trimmedFighterB,
           signal: abortController.signal,
         }),
-        delay(EXECUTE_FILL_MS),
+        delay(minimumConsoleMs),
       ]);
 
       abortRef.current = null;

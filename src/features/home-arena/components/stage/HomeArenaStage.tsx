@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 
-import type { BattleReportJson } from "./battle-report/BattleResultPanel";
-import { arenaCards } from "../data/arenaCards";
-import type { ArenaCard } from "../types";
-import ArenaBetSelector from "./ArenaBetSelector";
-import ArenaVersusMark from "./ArenaVersusMark";
-import BattleResultPanel from "./battle-report/BattleResultPanel";
-import CombatantDeck from "./battle-report/CombatantDeck";
-import BattleControls from "./battle-controls/BattleControls";
-import BattleReportButton from "./battle-controls/BattleReportButton";
-import { MOCK_BATTLE_REPORT } from "./battle-controls/mockBattleReport";
-import CombatantEntrySlot from "./CombatantEntrySlot";
+import { arenaCards } from "../../data/arenaCards";
+import { combatantAutocompleteOptions } from "../../data/combatantAutocompleteOptions";
+import { MOCK_BATTLE_REPORT } from "../../data/mockBattleReport";
+import type { ArenaCard, ArenaCardSide, BattleReportJson } from "../../types";
+import ArenaVersusMark from "../arena/ArenaVersusMark";
+import BattleControls from "../battle-controls/BattleControls";
+import BattleLoadingConsole from "../battle-controls/BattleLoadingConsole";
+import BattleReportButton from "../battle-controls/BattleReportButton";
+import BattleResultPanel from "../battle-report/BattleResultPanel";
+import CombatantDeck from "../battle-report/CombatantDeck";
+import ArenaBetSelector from "../betting/ArenaBetSelector";
+import CombatantLoadoutConsole from "../combatant-entry/CombatantLoadoutConsole";
+import CombatantEntrySlot from "../combatant-entry/CombatantEntrySlot";
 
 function makeCombatantCard(template: ArenaCard, name: string): ArenaCard {
   const trimmedName = name.trim();
@@ -42,10 +44,47 @@ export default function HomeArenaStage() {
   );
   const [battleError, setBattleError] = useState<string | null>(null);
   const [reportSerial, setReportSerial] = useState(0);
+  const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
+  const [isBattleLoading, setIsBattleLoading] = useState(false);
+  const [loadoutFocusSide, setLoadoutFocusSide] =
+    useState<ArenaCardSide>("left");
 
   function openReport() {
     console.log("[BATTLE_UI] full report", battleReport ?? MOCK_BATTLE_REPORT);
     setIsReportOpen(true);
+  }
+
+  function openLoadoutConsole(side: ArenaCardSide) {
+    setLoadoutFocusSide(side);
+    setIsLoadoutConsoleOpen(true);
+  }
+
+  function resetBattleState() {
+    setIsReportOpen(false);
+    setIsReportReady(false);
+    setBattleReport(null);
+    setBattleError(null);
+  }
+
+  function handleBattleStart() {
+    resetBattleState();
+    setIsBattleLoading(true);
+  }
+
+  function resetSelection() {
+    setLeftCard(null);
+    setRightCard(null);
+    setIsLoadoutConsoleOpen(false);
+    setIsBattleLoading(false);
+    resetBattleState();
+  }
+
+  function loadCombatants({ left, right }: Record<ArenaCardSide, string>) {
+    setLeftCard(makeCombatantCard(leftTemplate, left));
+    setRightCard(makeCombatantCard(rightTemplate, right));
+    setIsLoadoutConsoleOpen(false);
+    setIsBattleLoading(false);
+    resetBattleState();
   }
 
   return (
@@ -53,8 +92,26 @@ export default function HomeArenaStage() {
       className="home-arena-stage h-screen overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
       data-view={isReportOpen ? "report" : "setup"}
     >
-      {isReportReady && !isReportOpen ? (
-        <BattleReportButton key={reportSerial} onViewReport={openReport} />
+      {(isReportReady || leftCard || rightCard) && !isReportOpen ? (
+        <div className="home-arena-top-actions" aria-label="Arena quick actions">
+          {isReportReady ? (
+            <BattleReportButton key={reportSerial} onViewReport={openReport} />
+          ) : null}
+          {leftCard || rightCard ? (
+            <BattleReportButton
+              ariaLabel="Reset selected combatants"
+              label="RESET_SELECTION"
+              onViewReport={resetSelection}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {isBattleLoading && !isReportOpen ? (
+        <BattleLoadingConsole
+          fighterA={leftCard?.name}
+          fighterB={rightCard?.name}
+        />
       ) : null}
 
       <div className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center">
@@ -65,9 +122,7 @@ export default function HomeArenaStage() {
                 card={leftCard}
                 template={leftTemplate}
                 label="ALPHA_SLOT"
-                onCommitName={(name) =>
-                  setLeftCard(makeCombatantCard(leftTemplate, name))
-                }
+                onOpenConsole={() => openLoadoutConsole("left")}
               />
             </div>
 
@@ -78,12 +133,21 @@ export default function HomeArenaStage() {
                 card={rightCard}
                 template={rightTemplate}
                 label="OMEGA_SLOT"
-                onCommitName={(name) =>
-                  setRightCard(makeCombatantCard(rightTemplate, name))
-                }
+                onOpenConsole={() => openLoadoutConsole("right")}
               />
             </div>
           </div>
+
+          {isLoadoutConsoleOpen && !isReportOpen ? (
+            <CombatantLoadoutConsole
+              initialFocusSide={loadoutFocusSide}
+              initialLeftName={leftCard?.name}
+              initialRightName={rightCard?.name}
+              options={combatantAutocompleteOptions}
+              onClose={() => setIsLoadoutConsoleOpen(false)}
+              onSubmit={loadCombatants}
+            />
+          ) : null}
 
           {isReportOpen && leftCard && rightCard ? (
             <div className="home-arena-report-layout">
@@ -110,18 +174,15 @@ export default function HomeArenaStage() {
           <BattleControls
             fighterA={leftCard?.name ?? null}
             fighterB={rightCard?.name ?? null}
-            onBattleStart={() => {
-              setIsReportOpen(false);
-              setIsReportReady(false);
-              setBattleReport(null);
-              setBattleError(null);
-            }}
+            onBattleStart={handleBattleStart}
             onReportReady={(report) => {
+              setIsBattleLoading(false);
               setBattleReport(report);
               setReportSerial((current) => current + 1);
               setIsReportReady(true);
             }}
             onBattleError={(message) => {
+              setIsBattleLoading(false);
               setBattleError(message);
             }}
           />

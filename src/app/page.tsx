@@ -1,5 +1,5 @@
 import CRTBackgroundWrapper from "@/components/background/CRTBackgroundWrapper";
-import HomeArenaStage from "@/features/home-arena/components/HomeArenaStage";
+import { HomeArenaStage } from "@/features/home-arena";
 
 export default function HomePage() {
   return (

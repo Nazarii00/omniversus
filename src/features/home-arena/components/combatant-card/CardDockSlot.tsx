@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { ArenaCardSide, ArenaCardTheme } from "../types";
+import type { ArenaCardSide, ArenaCardTheme } from "../../types";
 
 type CardDockSlotProps = {
   side: ArenaCardSide;
@@ -12,12 +12,13 @@ export default function CardDockSlot({ side, theme }: CardDockSlotProps) {
     "--card-accent": theme.accent,
     "--card-accent-soft": theme.accentSoft,
     "--card-accent-glow": theme.accentGlow,
+    "--card-accent-text": theme.accentText,
   } as CSSProperties;
 
   return (
     <div
       aria-hidden="true"
-      className="absolute -inset-x-6 -inset-y-5 z-0 translate-y-6 border bg-black/54 shadow-[inset_0_0_34px_rgba(0,0,0,0.96),0_18px_58px_rgba(0,0,0,0.68)] [clip-path:polygon(1rem_0,calc(100%-1rem)_0,100%_1rem,100%_calc(100%-1rem),calc(100%-1rem)_100%,1rem_100%,0_calc(100%-1rem),0_1rem)]"
+      className="home-card-dock absolute -inset-x-6 -inset-y-5 z-0 translate-y-6 border bg-black/54 shadow-[inset_0_0_34px_rgba(0,0,0,0.96),0_18px_58px_rgba(0,0,0,0.68)] [clip-path:polygon(1rem_0,calc(100%-1rem)_0,100%_1rem,100%_calc(100%-1rem),calc(100%-1rem)_100%,1rem_100%,0_calc(100%-1rem),0_1rem)]"
       style={{
         ...themeStyle,
         borderColor: "color-mix(in srgb, var(--card-accent) 45%, #010201)",

@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { ArenaCardTheme } from "../types";
+import type { ArenaCardTheme } from "../../types";
 
 type CardImagePlaceholderProps = {
   theme: ArenaCardTheme;
