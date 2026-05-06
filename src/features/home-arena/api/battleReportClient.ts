@@ -79,6 +79,7 @@ export async function requestBattleReportFromApi({
   return payload as BattleReportJson;
 }
 
+/*
 function buildPlaceholderBattleReport(
   fighterA: string,
   fighterB: string,
@@ -116,3 +117,5 @@ function buildPlaceholderBattleReport(
     },
   };
 }
+
+*/
