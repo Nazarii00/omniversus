@@ -8,6 +8,7 @@ import {
   boolText,
   comparisonPreview,
   formatSide,
+  LATEST_BATTLE_REPORT_STORAGE_EVENT,
   normalizeReport,
   parseLatestBattleReport,
   qualityWarnings,
@@ -168,8 +169,13 @@ function subscribeToReportStorage(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
 
   window.addEventListener("storage", onStoreChange);
+  window.addEventListener(LATEST_BATTLE_REPORT_STORAGE_EVENT, onStoreChange);
 
   return () => {
     window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(
+      LATEST_BATTLE_REPORT_STORAGE_EVENT,
+      onStoreChange,
+    );
   };
 }

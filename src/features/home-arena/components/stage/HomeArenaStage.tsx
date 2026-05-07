@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import {
   BattleResultPanel,
+  clearLatestBattleReport,
   MOCK_BATTLE_REPORT,
+  writeLatestBattleReport,
   type BattleReportJson,
 } from "@/features/battle-report";
 
@@ -40,21 +48,196 @@ function makeCombatantCard(template: ArenaCard, name: string): ArenaCard {
   };
 }
 
+const HOME_ARENA_STORAGE_KEY = "omniversus.homeArenaState";
+const HOME_ARENA_STORAGE_EVENT = "omniversus.homeArenaStateChanged";
+
+type StoredHomeArenaState = {
+  leftName?: string;
+  rightName?: string;
+  battleReport?: BattleReportJson | null;
+  isReportReady?: boolean;
+  reportSerial?: number;
+};
+
+function homeArenaStorage() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function emitHomeArenaStorageChange() {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new Event(HOME_ARENA_STORAGE_EVENT));
+}
+
+function readStoredHomeArenaStateText() {
+  let storedState: string | null = null;
+
+  try {
+    storedState = homeArenaStorage()?.getItem(HOME_ARENA_STORAGE_KEY) ?? null;
+  } catch {
+    return null;
+  }
+
+  if (!storedState) return null;
+
+  return storedState;
+}
+
+function parseStoredHomeArenaState(storedState: string | null) {
+  if (!storedState) return null;
+
+  try {
+    return JSON.parse(storedState) as StoredHomeArenaState;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredHomeArenaState(state: StoredHomeArenaState) {
+  const storage = homeArenaStorage();
+  if (!storage) return;
+
+  const hasArenaState =
+    Boolean(state.leftName || state.rightName || state.battleReport) ||
+    Boolean(state.isReportReady);
+
+  if (!hasArenaState) {
+    try {
+      storage.removeItem(HOME_ARENA_STORAGE_KEY);
+      emitHomeArenaStorageChange();
+    } catch {
+      // Ignore blocked storage; the current React state remains usable.
+    }
+    return;
+  }
+
+  try {
+    storage.setItem(HOME_ARENA_STORAGE_KEY, JSON.stringify(state));
+    emitHomeArenaStorageChange();
+  } catch {
+    // Ignore blocked storage; the current React state remains usable.
+  }
+}
+
+function clearStoredHomeArenaState() {
+  try {
+    homeArenaStorage()?.removeItem(HOME_ARENA_STORAGE_KEY);
+    emitHomeArenaStorageChange();
+  } catch {
+    // Ignore blocked storage during reset.
+  }
+}
+
+function subscribeToHomeArenaStorage(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(HOME_ARENA_STORAGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(HOME_ARENA_STORAGE_EVENT, onStoreChange);
+  };
+}
+
 export default function HomeArenaStage() {
   const [leftTemplate, rightTemplate] = arenaCards;
-  const [leftCard, setLeftCard] = useState<ArenaCard | null>(null);
-  const [rightCard, setRightCard] = useState<ArenaCard | null>(null);
-  const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isReportReady, setIsReportReady] = useState(false);
-  const [battleReport, setBattleReport] = useState<BattleReportJson | null>(
-    null,
+  const storedArenaStateText = useSyncExternalStore(
+    subscribeToHomeArenaStorage,
+    readStoredHomeArenaStateText,
+    () => null,
   );
+  const storedArenaState = useMemo(
+    () => parseStoredHomeArenaState(storedArenaStateText),
+    [storedArenaStateText],
+  );
+  const storedLeftName =
+    typeof storedArenaState?.leftName === "string"
+      ? storedArenaState.leftName
+      : null;
+  const storedRightName =
+    typeof storedArenaState?.rightName === "string"
+      ? storedArenaState.rightName
+      : null;
+  const storedBattleReport = storedArenaState?.battleReport ?? null;
+  const restoredLeftCard = useMemo(
+    () =>
+      storedLeftName ? makeCombatantCard(leftTemplate, storedLeftName) : null,
+    [leftTemplate, storedLeftName],
+  );
+  const restoredRightCard = useMemo(
+    () =>
+      storedRightName
+        ? makeCombatantCard(rightTemplate, storedRightName)
+        : null,
+    [rightTemplate, storedRightName],
+  );
+  const [leftCardState, setLeftCard] = useState<
+    ArenaCard | null | undefined
+  >();
+  const [rightCardState, setRightCard] = useState<
+    ArenaCard | null | undefined
+  >();
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isReportReadyState, setIsReportReady] = useState<
+    boolean | undefined
+  >();
+  const [battleReportState, setBattleReport] = useState<
+    BattleReportJson | null | undefined
+  >();
   const [battleError, setBattleError] = useState<string | null>(null);
-  const [reportSerial, setReportSerial] = useState(0);
+  const [reportSerialState, setReportSerial] = useState<number | undefined>();
   const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
   const [isBattleLoading, setIsBattleLoading] = useState(false);
   const [loadoutFocusSide, setLoadoutFocusSide] =
     useState<ArenaCardSide>("left");
+  const hasRunPersistenceEffect = useRef(false);
+  const leftCard =
+    leftCardState === undefined ? restoredLeftCard : leftCardState;
+  const rightCard =
+    rightCardState === undefined ? restoredRightCard : rightCardState;
+  const battleReport =
+    battleReportState === undefined ? storedBattleReport : battleReportState;
+  const isReportReady =
+    isReportReadyState ??
+    Boolean(storedArenaState?.isReportReady && storedBattleReport);
+  const reportSerial =
+    reportSerialState ?? storedArenaState?.reportSerial ?? 0;
+
+  useEffect(() => {
+    if (!hasRunPersistenceEffect.current) {
+      hasRunPersistenceEffect.current = true;
+
+      if (!storedArenaStateText) return;
+    }
+
+    const readyReport = isReportReady ? battleReport : null;
+
+    writeStoredHomeArenaState({
+      leftName: leftCard?.name,
+      rightName: rightCard?.name,
+      battleReport: readyReport,
+      isReportReady: Boolean(readyReport),
+      reportSerial,
+    });
+
+    if (readyReport) {
+      writeLatestBattleReport(readyReport);
+    }
+  }, [
+    battleReport,
+    isReportReady,
+    leftCard?.name,
+    reportSerial,
+    rightCard?.name,
+    storedArenaStateText,
+  ]);
 
   function openReport() {
     console.log("[BATTLE_UI] full report", battleReport ?? MOCK_BATTLE_REPORT);
@@ -71,6 +254,7 @@ export default function HomeArenaStage() {
     setIsReportReady(false);
     setBattleReport(null);
     setBattleError(null);
+    clearLatestBattleReport();
   }
 
   function handleBattleStart() {
@@ -83,6 +267,7 @@ export default function HomeArenaStage() {
     setRightCard(null);
     setIsLoadoutConsoleOpen(false);
     setIsBattleLoading(false);
+    clearStoredHomeArenaState();
     resetBattleState();
   }
 
@@ -188,7 +373,8 @@ export default function HomeArenaStage() {
             onReportReady={(report) => {
               setIsBattleLoading(false);
               setBattleReport(report);
-              setReportSerial((current) => current + 1);
+              writeLatestBattleReport(report);
+              setReportSerial((current) => (current ?? reportSerial) + 1);
               setIsReportReady(true);
             }}
             onBattleError={(message) => {

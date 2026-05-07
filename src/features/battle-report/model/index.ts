@@ -15,6 +15,8 @@ export {
   type FindingRecord,
 } from "./fullReportFormatters";
 export {
+  clearLatestBattleReport,
+  LATEST_BATTLE_REPORT_STORAGE_EVENT,
   parseLatestBattleReport,
   readLatestBattleReportText,
   writeLatestBattleReport,
