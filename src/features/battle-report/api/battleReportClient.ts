@@ -31,6 +31,40 @@ function readErrorMessage(payload: unknown) {
   return "Battle request failed";
 }
 
+async function readResponsePayload(response: Response): Promise<unknown> {
+  const text = await response.text();
+  const trimmed = text.trim();
+
+  if (!trimmed) return null;
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const looksLikeJson = trimmed.startsWith("{") || trimmed.startsWith("[");
+
+  if (contentType.includes("application/json") || looksLikeJson) {
+    try {
+      return JSON.parse(trimmed) as unknown;
+    } catch {
+      return {
+        error: `Battle API returned malformed JSON (${response.status}).`,
+        raw: trimmed.slice(0, 500),
+      };
+    }
+  }
+
+  if (response.status === 504) {
+    return {
+      error:
+        "Battle API timed out on Vercel. The model call took too long to finish.",
+      raw: trimmed.slice(0, 500),
+    };
+  }
+
+  return {
+    error: `Battle API returned a non-JSON response (${response.status}).`,
+    raw: trimmed.slice(0, 500),
+  };
+}
+
 export async function requestBattleReport({
   fighterA,
   fighterB,
@@ -58,7 +92,7 @@ export async function requestBattleReportFromApi({
     }),
     signal,
   });
-  const payload: unknown = await response.json();
+  const payload = await readResponsePayload(response);
 
   if (!response.ok) {
     throw new BattleReportRequestError(
