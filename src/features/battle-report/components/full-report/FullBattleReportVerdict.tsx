@@ -15,8 +15,19 @@ import {
   type ReportFighter,
 } from "../../model";
 import { FactIssueButton } from "./FactIssueButton";
+import { claimTargetId } from "./fullReportAnchors";
 import { SectionHeading } from "./FullBattleReportSectionHeading";
 import styles from "./FullBattleReportPage.module.css";
+
+const CHAIN_ROLE_LABELS: Record<string, string> = {
+  ANTI_ARGUMENT: "Counter-route",
+  ABILITY_INTERACTION: "Ability interaction",
+  DATA_QUALITY: "Data quality",
+  RESISTANCE_CHECK: "Resistance check",
+  STAT_ADVANTAGE: "Stat advantage",
+  SUBJECTIVE_REASONING: "Subjective reasoning",
+  WIN_CONDITION: "Win route",
+};
 
 export function VerdictBrief({
   primaryReason,
@@ -221,24 +232,9 @@ function ChainMeta({ label, value }: { label: string; value: string }) {
 }
 
 function displayChainRole(chainType: string | undefined) {
-  switch (chainType) {
-    case "STAT_ADVANTAGE":
-      return "Stat advantage";
-    case "ABILITY_INTERACTION":
-      return "Ability interaction";
-    case "RESISTANCE_CHECK":
-      return "Resistance check";
-    case "WIN_CONDITION":
-      return "Win route";
-    case "ANTI_ARGUMENT":
-      return "Counter-route";
-    case "DATA_QUALITY":
-      return "Data quality";
-    case "SUBJECTIVE_REASONING":
-      return "Subjective reasoning";
-    default:
-      return displayTitle(chainType ?? "Argument");
-  }
+  return chainType
+    ? CHAIN_ROLE_LABELS[chainType] ?? displayTitle(chainType)
+    : "Argument";
 }
 
 function PremiseRecord({
@@ -288,10 +284,6 @@ function PremiseRecord({
       />
     </div>
   );
-}
-
-function claimTargetId(claimId: string) {
-  return `claim-${claimId.replace(/[^\w-]/g, "_")}`;
 }
 
 function ConfidencePanel({

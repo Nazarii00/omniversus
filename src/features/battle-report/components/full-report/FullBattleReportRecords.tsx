@@ -19,8 +19,29 @@ import {
   type ReportVerdict,
 } from "../../model";
 import { FactIssueButton } from "./FactIssueButton";
+import { claimTargetId } from "./fullReportAnchors";
 import { SectionHeading } from "./FullBattleReportSectionHeading";
 import styles from "./FullBattleReportPage.module.css";
+
+type ClaimReviewState = "danger" | "caution" | "stable";
+
+const CLAIM_REVIEW_STATUS: Record<
+  ClaimReviewState,
+  { label: string; title: string }
+> = {
+  caution: {
+    label: "Source check",
+    title: "Source or outlier risk; review before trusting it.",
+  },
+  danger: {
+    label: "Contested claim",
+    title: "This claim is contested and needs verification.",
+  },
+  stable: {
+    label: "No review flag",
+    title: "No special review flag on this claim.",
+  },
+};
 
 export function SubjectFaceoff({
   fighterA,
@@ -270,7 +291,7 @@ function ClaimCard({
   claim: ReportClaim;
   fighters: ReportFighter[];
 }) {
-  const state = claim.contested
+  const state: ClaimReviewState = claim.contested
     ? "danger"
     : claim.outlier || hasSourceRisk(claim.source)
       ? "caution"
@@ -307,27 +328,6 @@ function ClaimCard({
   );
 }
 
-function claimTargetId(claimId: string) {
-  return `claim-${claimId.replace(/[^\w-]/g, "_")}`;
-}
-
-function claimReviewStatus(state: "danger" | "caution" | "stable") {
-  if (state === "danger") {
-    return {
-      label: "Contested claim",
-      title: "This claim is contested and needs verification.",
-    };
-  }
-
-  if (state === "caution") {
-    return {
-      label: "Source check",
-      title: "Source or outlier risk; review before trusting it.",
-    };
-  }
-
-  return {
-    label: "No review flag",
-    title: "No special review flag on this claim.",
-  };
+function claimReviewStatus(state: ClaimReviewState) {
+  return CLAIM_REVIEW_STATUS[state];
 }

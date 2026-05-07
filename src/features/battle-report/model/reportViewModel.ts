@@ -255,7 +255,7 @@ function claimToPremise(
 function resolveDisplayPremises(
   chain: ReportArgumentChain,
   claimsById: Map<string, ReportClaim>,
-): ReportArgumentChain["premises"] {
+): ReportChainPremise[] {
   const usedClaimIds = new Set<string>();
   const premises = chain.premises ?? [];
   const displayPremises = premises.flatMap((premise) => {
