@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { ArenaCardSide, ArenaCardTheme } from "../../types";
+import type { ArenaCardSide, ArenaCardTheme } from "../../model";
 
 type CardDockSlotProps = {
   side: ArenaCardSide;

@@ -2,19 +2,26 @@
 
 import { useState } from "react";
 
-import { arenaCards } from "../../data/arenaCards";
-import { combatantAutocompleteOptions } from "../../data/combatantAutocompleteOptions";
-import { MOCK_BATTLE_REPORT } from "../../data/mockBattleReport";
-import type { ArenaCard, ArenaCardSide, BattleReportJson } from "../../types";
-import ArenaVersusMark from "../arena/ArenaVersusMark";
-import BattleControls from "../battle-controls/BattleControls";
-import BattleLoadingConsole from "../battle-controls/BattleLoadingConsole";
-import BattleReportButton from "../battle-controls/BattleReportButton";
-import BattleResultPanel from "../battle-report/BattleResultPanel";
-import CombatantDeck from "../battle-report/CombatantDeck";
-import ArenaBetSelector from "../betting/ArenaBetSelector";
-import CombatantLoadoutConsole from "../combatant-entry/CombatantLoadoutConsole";
-import CombatantEntrySlot from "../combatant-entry/CombatantEntrySlot";
+import {
+  BattleResultPanel,
+  MOCK_BATTLE_REPORT,
+  type BattleReportJson,
+} from "@/features/battle-report";
+
+import { arenaCards, combatantAutocompleteOptions } from "../../data";
+import type { ArenaCard, ArenaCardSide } from "../../model";
+import { ArenaVersusMark } from "../arena";
+import {
+  BattleControls,
+  BattleLoadingConsole,
+  BattleReportButton,
+} from "../battle-controls";
+import { ArenaBetSelector } from "../betting";
+import { CombatantDeck } from "../combatant-deck";
+import {
+  CombatantEntrySlot,
+  CombatantLoadoutConsole,
+} from "../combatant-entry";
 
 function makeCombatantCard(template: ArenaCard, name: string): ArenaCard {
   const trimmedName = name.trim();
@@ -93,7 +100,10 @@ export default function HomeArenaStage() {
       data-view={isReportOpen ? "report" : "setup"}
     >
       {(isReportReady || leftCard || rightCard) && !isReportOpen ? (
-        <div className="home-arena-top-actions" aria-label="Arena quick actions">
+        <div
+          className="home-arena-top-actions"
+          aria-label="Arena quick actions"
+        >
           {isReportReady ? (
             <BattleReportButton key={reportSerial} onViewReport={openReport} />
           ) : null}

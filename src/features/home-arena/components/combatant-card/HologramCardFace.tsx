@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { ArenaCardTheme } from "../../types";
+import type { ArenaCardTheme } from "../../model";
 
 const beveledClipPath =
   "polygon(0.82rem 0, calc(100% - 0.82rem) 0, 100% 0.82rem, 100% calc(100% - 0.82rem), calc(100% - 0.82rem) 100%, 0.82rem 100%, 0 calc(100% - 0.82rem), 0 0.82rem)";
@@ -50,8 +50,7 @@ export default function HologramCardFace({
       <div
         className="absolute inset-[0.72rem] border bg-[linear-gradient(180deg,rgba(1,7,6,0.96),rgba(2,11,9,0.98))]"
         style={{
-          borderColor:
-            "color-mix(in srgb, var(--card-accent) 58%, #010201)",
+          borderColor: "color-mix(in srgb, var(--card-accent) 58%, #010201)",
           boxShadow:
             "inset 0 0 24px rgba(0,0,0,0.82), inset 0 0 22px var(--card-accent-soft), 0 0 10px var(--card-accent-glow)",
           clipPath: beveledClipPath,

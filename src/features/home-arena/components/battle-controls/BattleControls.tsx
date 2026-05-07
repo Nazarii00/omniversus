@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { requestBattleReport } from "../../api/battleReportClient";
-import type { BattleReportJson } from "../../types";
+import {
+  requestBattleReport,
+  type BattleReportJson,
+} from "@/features/battle-report";
 import BattleStartButton, {
   type BattleStartButtonState,
 } from "./BattleStartButton";

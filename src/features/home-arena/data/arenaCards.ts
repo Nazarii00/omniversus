@@ -1,4 +1,4 @@
-import type { ArenaCard, ArenaCardTheme } from "../types";
+import type { ArenaCard, ArenaCardTheme } from "../model";
 
 const greenTheme: ArenaCardTheme = {
   accent: "#245c24",

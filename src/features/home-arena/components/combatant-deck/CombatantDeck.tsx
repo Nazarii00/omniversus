@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { ArenaCard } from "../../types";
+import type { ArenaCard } from "../../model";
 
 type CombatantDeckProps = {
   cards: [ArenaCard, ArenaCard];

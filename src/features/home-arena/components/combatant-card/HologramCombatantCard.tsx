@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type KeyboardEvent } from "react";
-import type { ArenaCard } from "../../types";
+import type { ArenaCard } from "../../model";
 import CardImagePlaceholder from "./CardImagePlaceholder";
 import HologramCardFace from "./HologramCardFace";
 

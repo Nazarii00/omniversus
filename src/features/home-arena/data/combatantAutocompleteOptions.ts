@@ -1,4 +1,4 @@
-import type { CombatantOption } from "../types";
+import type { CombatantOption } from "../model";
 
 export const combatantAutocompleteOptions: CombatantOption[] = [
   {

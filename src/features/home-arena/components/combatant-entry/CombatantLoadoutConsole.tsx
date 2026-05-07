@@ -11,7 +11,7 @@ import {
   type MouseEvent,
 } from "react";
 
-import type { ArenaCardSide, CombatantOption } from "../../types";
+import type { ArenaCardSide, CombatantOption } from "../../model";
 
 type CombatantDrafts = Record<ArenaCardSide, string>;
 type CaretPositions = Record<ArenaCardSide, number>;

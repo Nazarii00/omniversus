@@ -2,9 +2,8 @@
 
 import type { CSSProperties } from "react";
 
-import type { ArenaCard } from "../../types";
-import CardDockSlot from "../combatant-card/CardDockSlot";
-import HologramCombatantCard from "../combatant-card/HologramCombatantCard";
+import type { ArenaCard } from "../../model";
+import { CardDockSlot, HologramCombatantCard } from "../combatant-card";
 
 type CombatantEntrySlotProps = {
   card: ArenaCard | null;
