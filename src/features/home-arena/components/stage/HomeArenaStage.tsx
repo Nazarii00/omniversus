@@ -281,7 +281,7 @@ export default function HomeArenaStage() {
 
   return (
     <section
-      className="home-arena-stage h-screen overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
+      className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
       data-view={isReportOpen ? "report" : "setup"}
     >
       {(isReportReady || leftCard || rightCard) && !isReportOpen ? (

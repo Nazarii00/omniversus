@@ -16,6 +16,7 @@ import {
 } from "../../model";
 import {
   ArgumentTimeline,
+  BattleProgression,
   ClaimsDeck,
   ReportHero,
   SectionTabs,
@@ -158,6 +159,8 @@ export default function FullBattleReportPage() {
             />
 
             <ClaimsDeck claims={claims} fighters={fighters} />
+
+            <BattleProgression view={view} />
           </div>
         </div>
       </div>

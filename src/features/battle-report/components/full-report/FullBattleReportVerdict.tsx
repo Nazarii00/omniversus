@@ -28,6 +28,29 @@ const CHAIN_ROLE_LABELS: Record<string, string> = {
   SUBJECTIVE_REASONING: "Subjective reasoning",
   WIN_CONDITION: "Win route",
 };
+const CLAIM_JUMP_HIGHLIGHT_ATTR = "data-jump-highlight";
+const CLAIM_JUMP_HIGHLIGHT_MS = 3200;
+
+let claimJumpHighlightTimeoutId: number | null = null;
+
+function highlightClaimTarget(target: HTMLElement) {
+  document
+    .querySelectorAll<HTMLElement>(`[${CLAIM_JUMP_HIGHLIGHT_ATTR}="true"]`)
+    .forEach((highlightedTarget) => {
+      highlightedTarget.removeAttribute(CLAIM_JUMP_HIGHLIGHT_ATTR);
+    });
+
+  target.setAttribute(CLAIM_JUMP_HIGHLIGHT_ATTR, "true");
+
+  if (claimJumpHighlightTimeoutId !== null) {
+    window.clearTimeout(claimJumpHighlightTimeoutId);
+  }
+
+  claimJumpHighlightTimeoutId = window.setTimeout(() => {
+    target.removeAttribute(CLAIM_JUMP_HIGHLIGHT_ATTR);
+    claimJumpHighlightTimeoutId = null;
+  }, CLAIM_JUMP_HIGHLIGHT_MS);
+}
 
 export function VerdictBrief({
   primaryReason,
@@ -257,6 +280,7 @@ function PremiseRecord({
     event.preventDefault();
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     window.history.replaceState(null, "", `#${targetId}`);
+    highlightClaimTarget(target);
   };
   const content = (
     <>
@@ -332,6 +356,45 @@ function Meter({ label, value }: { label: string; value: number }) {
   );
 }
 
+function comparisonPowerSplit(
+  row: ReportComparisonRow,
+  fighters: ReportFighter[],
+) {
+  const normalizedMargin = row.margin?.toUpperCase() ?? "";
+  const isEven =
+    !row.winner ||
+    row.winner === "TIE" ||
+    row.winner === "SYSTEM" ||
+    row.winner === "BOTH" ||
+    row.winner === "DRAW" ||
+    row.winner === "INCONCLUSIVE" ||
+    normalizedMargin.includes("TIE") ||
+    normalizedMargin.includes("NONE") ||
+    normalizedMargin.includes("EVEN");
+
+  if (isEven) {
+    return {
+      aShare: 50,
+      bShare: 50,
+      aLabel: formatSide("A", fighters),
+      bLabel: formatSide("B", fighters),
+    };
+  }
+
+  const advantagedShare = Math.min(
+    88,
+    Math.max(52, 50 + Math.round(marginStrength(row.margin) * 0.38)),
+  );
+  const trailingShare = 100 - advantagedShare;
+
+  return {
+    aShare: row.winner === "A" ? advantagedShare : trailingShare,
+    bShare: row.winner === "B" ? advantagedShare : trailingShare,
+    aLabel: formatSide("A", fighters),
+    bLabel: formatSide("B", fighters),
+  };
+}
+
 function ComparisonPulse({
   comparison,
   fighters,
@@ -343,25 +406,43 @@ function ComparisonPulse({
     <section className={styles.comparisonRegister}>
       <span>Category Advantages</span>
       <div>
-        {comparison.slice(0, 5).map((row) => (
-          <article key={row.category} data-contested={row.contested}>
-            <header>
-              <b>{row.category}</b>
-              <em>{formatSide(row.winner, fighters)}</em>
-            </header>
-            <i
-              data-winner={row.winner ?? "SYSTEM"}
-              style={
-                {
-                  "--row-strength": `${marginStrength(row.margin)}%`,
-                } as CSSProperties
-              }
-            />
-            <p>
-              {row.margin ?? "EVEN"} / {row.reason}
-            </p>
-          </article>
-        ))}
+        {comparison.slice(0, 5).map((row) => {
+          const split = comparisonPowerSplit(row, fighters);
+          const splitLabel = `${split.aLabel}: ${split.aShare}% / ${split.bLabel}: ${split.bShare}%`;
+
+          return (
+            <article key={row.category} data-contested={row.contested}>
+              <header>
+                <b>{row.category}</b>
+                <em title={splitLabel}>
+                  <span data-side="A">
+                    {split.aLabel}: {split.aShare}%
+                  </span>
+                  <span data-side="B">
+                    {split.bLabel}: {split.bShare}%
+                  </span>
+                </em>
+              </header>
+              <div
+                className={styles.comparisonSplitBar}
+                role="img"
+                aria-label={splitLabel}
+                style={
+                  {
+                    "--a-share": `${split.aShare}%`,
+                    "--b-share": `${split.bShare}%`,
+                  } as CSSProperties
+                }
+              >
+                <span data-side="A" aria-hidden="true" />
+                <span data-side="B" aria-hidden="true" />
+              </div>
+              <p>
+                {row.margin ?? "EVEN"} / {row.reason}
+              </p>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

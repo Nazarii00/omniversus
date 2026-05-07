@@ -180,6 +180,34 @@ function buildGenerationMetadata(
   };
 }
 
+function providerErrorStatus(error: unknown): number | null {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  return null;
+}
+
+function providerErrorMessage(error: unknown): string {
+  const status = providerErrorStatus(error);
+
+  if (status === 429) {
+    return "Gemini rate limit or quota was hit. Wait a bit, then retry with the same fighters.";
+  }
+
+  if (status && status >= 500) {
+    return "Gemini provider is temporarily unavailable. Retry the battle request shortly.";
+  }
+
+  if (error instanceof Error) return error.message;
+  return "Gemini provider request failed";
+}
+
 export async function runBattleAnalysisWithMetadata(
   fighterA: string,
   fighterB: string,
@@ -210,10 +238,16 @@ export async function runBattleAnalysisWithMetadata(
     response_format: buildBattleResponseFormat(),
   };
 
-  const completionResult = await createBattleCompletion(
-    client,
-    completionRequest,
-  );
+  let completionResult: BattleCompletionResult;
+
+  try {
+    completionResult = await createBattleCompletion(client, completionRequest);
+  } catch (error) {
+    throw new BattleAnalysisError(providerErrorMessage(error), {
+      status: providerErrorStatus(error) ?? 502,
+    });
+  }
+
   const completion = completionResult.completion;
   const requestMetadata = {
     model,

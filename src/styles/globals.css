@@ -5,15 +5,17 @@
 }
 
 html {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #010201;
 }
 
 body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #010201;
   color: #d7e2d6;
   font-family:
@@ -2515,9 +2517,10 @@ select {
 .home-report-free-beats {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: start;
-  grid-auto-rows: minmax(7.4rem, auto);
+  align-content: stretch;
+  grid-auto-rows: minmax(max-content, 1fr);
   gap: 0.58rem;
+  height: 100%;
   margin-top: 0.58rem;
   min-height: 0;
   overflow-y: auto;
@@ -2528,7 +2531,7 @@ select {
 .home-report-step-block--static {
   align-content: start;
   gap: 0.36rem;
-  height: auto;
+  height: 100%;
   min-height: 7.4rem;
   padding: 0.68rem 0.82rem 0.76rem;
 }
@@ -2550,21 +2553,17 @@ select {
 }
 
 .home-report-step-block--static .home-report-step-block__log {
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
   font-size: 0.68rem;
   line-height: 1.42;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .home-report-step-block--static .home-report-step-block__why {
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
   font-size: 0.64rem;
   line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .home-report-step-block--static .home-report-step-block__meta {

@@ -1,17 +1,34 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import ArenaScene from "./ArenaScene";
-import TVTurnOn from "./TVTurnOn";
+import TVTurnOn, { isTurnOnDone } from "./TVTurnOn";
 
 type CRTBackgroundProps = {
   children?: ReactNode;
 };
 
 export default function CRTBackground({ children }: CRTBackgroundProps) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => isTurnOnDone());
+
+  useEffect(() => {
+    const fallbackId = window.setTimeout(() => setReady(true), 1800);
+
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        setReady(true);
+      }
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.clearTimeout(fallbackId);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#010201]">

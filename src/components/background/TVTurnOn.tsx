@@ -13,6 +13,7 @@ type TVTurnOnProps = {
 let activePhase: TurnOnPhase = "off";
 let hasStartedTurnOn = false;
 const phaseListeners = new Set<PhaseListener>();
+let turnOnTimeoutIds: number[] = [];
 
 function emitPhase(phase: TurnOnPhase) {
   activePhase = phase;
@@ -28,6 +29,33 @@ function subscribeToTurnOn(listener: PhaseListener) {
   };
 }
 
+function queuePhase(phase: TurnOnPhase, delayMs: number) {
+  const timeoutId = window.setTimeout(() => {
+    turnOnTimeoutIds = turnOnTimeoutIds.filter((id) => id !== timeoutId);
+    emitPhase(phase);
+  }, delayMs);
+
+  turnOnTimeoutIds.push(timeoutId);
+}
+
+function clearQueuedPhases() {
+  for (const timeoutId of turnOnTimeoutIds) {
+    window.clearTimeout(timeoutId);
+  }
+
+  turnOnTimeoutIds = [];
+}
+
+export function isTurnOnDone() {
+  return activePhase === "done";
+}
+
+export function completeTurnOn() {
+  clearQueuedPhases();
+  hasStartedTurnOn = true;
+  emitPhase("done");
+}
+
 function startTurnOn() {
   if (hasStartedTurnOn) {
     return;
@@ -35,10 +63,10 @@ function startTurnOn() {
 
   hasStartedTurnOn = true;
 
-  window.setTimeout(() => emitPhase("line"), 200);
-  window.setTimeout(() => emitPhase("expand"), 500);
-  window.setTimeout(() => emitPhase("flicker"), 1000);
-  window.setTimeout(() => emitPhase("done"), 1400);
+  queuePhase("line", 200);
+  queuePhase("expand", 500);
+  queuePhase("flicker", 1000);
+  queuePhase("done", 1400);
 }
 
 export default function TVTurnOn({ onDone }: TVTurnOnProps) {
@@ -54,6 +82,28 @@ export default function TVTurnOn({ onDone }: TVTurnOnProps) {
     startTurnOn();
 
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        completeTurnOn();
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && hasStartedTurnOn) {
+        completeTurnOn();
+      }
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
