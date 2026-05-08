@@ -17,6 +17,7 @@ import {
   buildUserPrompt,
   OMNIVERSUS_MASTER_PROMPT,
 } from "./prompts/battlePrompt";
+import { resolveBattleDossierContext } from "./dossier";
 import {
   OmniversusBattleSchema,
   type BattleGenerationMetadata,
@@ -41,6 +42,12 @@ export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
 export { enforceBusinessCaps, normalizeBattleResult } from "./pipeline/normalize";
 export { BATTLE_MODEL_CONFIG } from "./config/model";
 export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompts/battlePrompt";
+export {
+  resolveBattleDossierContext,
+  type BattleDossierContext,
+  type DossierFact,
+  type FighterDossier,
+} from "./dossier";
 
 type RunBattleAnalysisWithMetadataResult = {
   result: OmniversusBattle;
@@ -222,6 +229,11 @@ export async function runBattleAnalysisWithMetadata(
     options.maxCompletionTokens,
   );
   const startedAtMs = Date.now();
+  const dossierContext = await resolveBattleDossierContext(
+    fighterA,
+    fighterB,
+    options,
+  );
 
   const completionRequest: Parameters<typeof createBattleCompletion>[1] = {
     model,
@@ -233,7 +245,10 @@ export async function runBattleAnalysisWithMetadata(
       : {}),
     messages: [
       { role: "system", content: OMNIVERSUS_MASTER_PROMPT },
-      { role: "user", content: buildUserPrompt(fighterA, fighterB, options) },
+      {
+        role: "user",
+        content: buildUserPrompt(fighterA, fighterB, options, dossierContext),
+      },
     ],
     response_format: buildBattleResponseFormat(),
   };
