@@ -17,6 +17,8 @@
     "format:check": "prettier . --check",
     "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit",
+    "db:seed": "prisma db execute --file prisma/seed.sql",
+    "db:seed:check": "node scripts/check-seed.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
