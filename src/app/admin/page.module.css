@@ -1,7 +1,7 @@
 .page {
-  display: grid;
+  --admin-sidebar-width: 15rem;
+
   min-height: 100vh;
-  grid-template-columns: 15rem minmax(0, 1fr);
   background: #050505;
   color: #ededed;
   font-family:
@@ -10,10 +10,12 @@
 }
 
 .sidebar {
-  position: sticky;
-  top: 0;
-  align-self: start;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 10;
+  box-sizing: border-box;
   display: grid;
+  width: var(--admin-sidebar-width);
   height: 100dvh;
   max-height: 100dvh;
   grid-template-rows: auto 1fr;
@@ -59,6 +61,8 @@
   align-content: start;
   gap: 1.1rem;
   min-width: 0;
+  min-height: 100vh;
+  margin-left: var(--admin-sidebar-width);
   padding: 1.25rem;
 }
 
@@ -404,11 +408,12 @@
 
 @media (max-width: 1180px) {
   .page {
-    grid-template-columns: 1fr;
+    display: grid;
   }
 
   .sidebar {
     position: static;
+    width: auto;
     height: auto;
     max-height: none;
     overflow: visible;
@@ -420,6 +425,10 @@
   .sidebar nav {
     display: flex;
     flex-wrap: wrap;
+  }
+
+  .content {
+    margin-left: 0;
   }
 
   .metrics {
