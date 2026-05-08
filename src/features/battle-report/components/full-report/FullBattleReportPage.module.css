@@ -255,16 +255,20 @@
 }
 
 .heroCopy h1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   margin: 0;
   color: var(--primary);
   font-size: clamp(1.9rem, 2.55vw, 2.8rem);
   font-weight: 950;
   letter-spacing: 0.045em;
-  line-height: 0.95;
+  line-height: 1;
   overflow: hidden;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
   text-overflow: clip;
-  white-space: nowrap;
+  text-wrap: balance;
+  white-space: normal;
   text-shadow:
     0 0 8px rgba(201, 255, 200, 0.16),
     0 0 18px rgba(104, 183, 104, 0.1);

@@ -1290,13 +1290,15 @@ select {
 }
 
 .home-loadout-console__match:hover,
-.home-loadout-console__match:focus-visible {
+.home-loadout-console__match:focus-visible,
+.home-loadout-console__match[data-highlighted="true"] {
   background: #00ff00;
   color: #000000;
 }
 
 .home-loadout-console__match:hover span,
-.home-loadout-console__match:focus-visible span {
+.home-loadout-console__match:focus-visible span,
+.home-loadout-console__match[data-highlighted="true"] span {
   color: #000000;
 }
 

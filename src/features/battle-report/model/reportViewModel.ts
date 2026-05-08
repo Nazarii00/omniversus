@@ -51,6 +51,14 @@ function indexById<T extends { id: string }>(items: T[]): Map<string, T> {
   return new Map(items.map((item) => [item.id, item]));
 }
 
+function comparableText(text: string | undefined) {
+  return (text ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
 export function formatSide(
   side: string | undefined,
   fighters: ReportFighter[],
@@ -257,12 +265,19 @@ function resolveDisplayPremises(
   claimsById: Map<string, ReportClaim>,
 ): ReportChainPremise[] {
   const usedClaimIds = new Set<string>();
+  const usedPremiseTexts = new Set<string>();
   const premises = chain.premises ?? [];
   const displayPremises = premises.flatMap((premise) => {
     if (!isTechnicalPremise(premise)) {
+      const premiseSignature = comparableText(premise.text);
+      if (premiseSignature && usedPremiseTexts.has(premiseSignature)) {
+        return [];
+      }
+
       if (premise.claim_id && premise.claim_id !== "N_A") {
         usedClaimIds.add(premise.claim_id);
       }
+      if (premiseSignature) usedPremiseTexts.add(premiseSignature);
 
       return [premise];
     }
@@ -275,6 +290,7 @@ function resolveDisplayPremises(
     if (!claim) return [];
 
     usedClaimIds.add(claim.id);
+    usedPremiseTexts.add(comparableText(claim.text));
     return [claimToPremise(claim, premise)];
   });
 
@@ -287,10 +303,22 @@ function resolveDisplayPremises(
       const claim = claimsById.get(claimId);
       if (!claim) return [];
 
+      const claimSignature = comparableText(claim.text);
+      if (claimSignature && usedPremiseTexts.has(claimSignature)) return [];
+
       usedClaimIds.add(claim.id);
+      if (claimSignature) usedPremiseTexts.add(claimSignature);
       return [claimToPremise(claim)];
     })
     .slice(0, 3);
+}
+
+function chainDisplaySignature(chain: ReportArgumentChain) {
+  return [
+    chain.side,
+    chain.chain_type,
+    comparableText(chain.conclusion || chain.inference || chain.title),
+  ].join("|");
 }
 
 function resolveChains(
@@ -298,11 +326,20 @@ function resolveChains(
   claimsById: Map<string, ReportClaim>,
 ): ReportArgumentChain[] {
   const sourceChains = chains?.length ? chains : FALLBACK_CHAINS;
+  const seenChains = new Set<string>();
 
-  return sourceChains.map((chain) => ({
-    ...chain,
-    premises: resolveDisplayPremises(chain, claimsById),
-  }));
+  return sourceChains.flatMap((chain) => {
+    const displayChain = {
+      ...chain,
+      premises: resolveDisplayPremises(chain, claimsById),
+    };
+    const signature = chainDisplaySignature(displayChain);
+
+    if (signature && seenChains.has(signature)) return [];
+
+    seenChains.add(signature);
+    return [displayChain];
+  });
 }
 
 function resolveNarrative(

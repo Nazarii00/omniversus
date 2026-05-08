@@ -43,6 +43,8 @@ const DURABILITY_TEXT_PATTERN = /durability|tank|survive|defense/i;
 const STAMINA_TEXT_PATTERN = /stamina|endurance|time limit|exhaust/i;
 const ABILITY_TEXT_PATTERN =
   /ability|hax|drain|seal|bfr|dodge|contact|passive|mind|soul|time|space|concept|causal/i;
+const HP_RECOVERY_TEXT_PATTERN =
+  /regenerat|regen\b|healing?\b|heal\b|self[-\s]?repair|reconstitut|restore(?:s|d|ing)?|rebuild|rapid recovery/i;
 const RESISTANCE_TEXT_PATTERN = /resist|immune|counter/i;
 const AP_TEXT_PATTERN =
   /ap|attack potency|tier|power|force|damage|destructive|universal|multiversal|star|planet|moon|city|mountain|cosmo/i;
@@ -301,6 +303,116 @@ function uniqueStrings(values: string[], maxItems: number): string[] {
   return Array.from(new Set(values.filter(Boolean))).slice(0, maxItems);
 }
 
+function scoreFingerprint(seed: string): number {
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash);
+}
+
+function scoreBandFloor(score: number): number {
+  if (score >= 80) return 80;
+  if (score >= 65) return 65;
+  if (score >= 50) return 50;
+  return 1;
+}
+
+function scoreBandCeiling(score: number): number {
+  if (score >= 80) return 100;
+  if (score >= 65) return 79;
+  if (score >= 50) return 64;
+  return 49;
+}
+
+function isCoarsePercentageScore(score: number): boolean {
+  return score > 1 && score < 100 && score % 5 === 0;
+}
+
+function refinePercentageScore(
+  score: number,
+  seed: string,
+  options: {
+    maxScore?: number;
+    minScore?: number;
+    preserveBand?: boolean;
+  } = {},
+): number {
+  const minScore = options.minScore ?? 1;
+  const maxScore = options.maxScore ?? 100;
+  const preserveBand = options.preserveBand ?? true;
+  const value = Math.max(minScore, Math.min(maxScore, Math.round(score)));
+
+  if (!isCoarsePercentageScore(value)) return value;
+
+  const lowerBound = Math.max(
+    minScore,
+    preserveBand ? scoreBandFloor(value) : minScore,
+  );
+  const upperBound = Math.min(
+    maxScore,
+    preserveBand ? scoreBandCeiling(value) : maxScore,
+  );
+
+  if (lowerBound >= upperBound) return value;
+
+  const hash = scoreFingerprint(seed);
+  const offset = (hash % 3) + 1;
+  const preferDown = hash % 2 === 0;
+  const candidates = preferDown
+    ? [value - offset, value + offset, value - 1, value + 1]
+    : [value + offset, value - offset, value + 1, value - 1];
+
+  return (
+    candidates.find(
+      (candidate) =>
+        candidate >= lowerBound &&
+        candidate <= upperBound &&
+        candidate !== value &&
+        !isCoarsePercentageScore(candidate),
+    ) ?? value
+  );
+}
+
+function varyPercentageScore(
+  score: number,
+  seed: string,
+  radius = 3,
+): number {
+  const spread = radius * 2 + 1;
+  const adjustment = (scoreFingerprint(seed) % spread) - radius;
+
+  return refinePercentageScore(score + adjustment, seed);
+}
+
+function blendPercentageScores(
+  primaryScore: number,
+  secondaryScore: number,
+  primaryWeight: number,
+  seed: string,
+): number {
+  const blended =
+    primaryScore * primaryWeight + secondaryScore * (1 - primaryWeight);
+
+  return refinePercentageScore(blended, seed);
+}
+
+function confidenceScoreSeed(
+  result: OmniversusBattle,
+  reason: string,
+): string {
+  return [
+    result.metadata.title,
+    result.verdict.winner_side,
+    result.verdict.difficulty,
+    result.verdict.decisive_chain_id,
+    result.quality_flags.most_fragile_assumption,
+    reason,
+  ].join("|");
+}
+
 type BattleSide = "A" | "B";
 type ClaimCategory = OmniversusBattle["claims"][number]["category"];
 type Fighter = OmniversusBattle["fighters"][number];
@@ -529,6 +641,11 @@ export function capConfidence(
     return result;
   }
 
+  const cappedScore = capScore(
+    result.verdict.confidence_score,
+    maxScore,
+    confidenceScoreSeed(result, reason),
+  );
   const riskFactors =
     result.verdict.risk_factors.length === 1 &&
     result.verdict.risk_factors[0].toLowerCase() === "none"
@@ -539,8 +656,8 @@ export function capConfidence(
     ...result,
     verdict: {
       ...result.verdict,
-      confidence_score: maxScore,
-      confidence_band: clampConfidenceBand(maxScore),
+      confidence_score: cappedScore,
+      confidence_band: clampConfidenceBand(cappedScore),
       risk_factors: riskFactors,
     },
     quality_flags: {
@@ -982,7 +1099,11 @@ function normalizeClaimTrust(result: OmniversusBattle): OmniversusBattle {
         ...claim,
         kind: normalizedKind,
         tag: normalizedTag,
-        confidence: Math.min(claim.confidence, 75),
+        confidence: capScore(
+          claim.confidence,
+          75,
+          `${claim.id}|${claim.text}|weak-evidence`,
+        ),
         review_flag:
           weakScaling &&
           (claim.review_flag === "OK" || claim.review_flag === "NEEDS_SOURCE")
@@ -1016,7 +1137,11 @@ function normalizeChainConfidence(result: OmniversusBattle): OmniversusBattle {
 
       return {
         ...chain,
-        confidence: Math.min(chain.confidence, chain.contested ? 65 : 75),
+        confidence: capScore(
+          chain.confidence,
+          chain.contested ? 65 : 75,
+          `${chain.id}|${chain.conclusion}|chain-confidence`,
+        ),
       };
     }),
   };
@@ -1272,36 +1397,73 @@ function attachClaimsToComparisonRows(
 }
 
 function normalizeNarrativeHp(result: OmniversusBattle): OmniversusBattle {
-  if (result.verdict.winner_side !== "A" && result.verdict.winner_side !== "B") {
-    return result;
-  }
+  const sideHasHpRecoveryTrait = (side: "A" | "B") => {
+    const fighter = result.fighters.find((item) => item.side === side);
+    const profileText = fighter
+      ? [
+          fighter.profile.stamina,
+          fighter.profile.abilities,
+          fighter.profile.resistances,
+          ...fighter.profile.win_conditions,
+          ...fighter.profile.counters,
+        ].join(" ")
+      : "";
+    const claimText = result.claims
+      .filter(
+        (claim) =>
+          (claim.side === side || claim.side === "BOTH") &&
+          (claim.category === "ABILITY" ||
+            claim.category === "DURABILITY" ||
+            claim.category === "RESISTANCE" ||
+            claim.category === "STAMINA"),
+      )
+      .map((claim) => claim.text)
+      .join(" ");
 
-  const winner = result.verdict.winner_side;
-  let previousLoserHp = 100;
+    return HP_RECOVERY_TEXT_PATTERN.test(`${profileText} ${claimText}`);
+  };
+
+  const stepUsesHpRecovery = (
+    step: OmniversusBattle["narrative"][number],
+  ) => HP_RECOVERY_TEXT_PATTERN.test(`${step.title} ${step.log} ${step.why}`);
+
+  const normalizeHpValue = (
+    currentHp: number,
+    previousHp: number | null,
+    canRecoverThisStep: boolean,
+  ) => {
+    if (previousHp === null || currentHp <= previousHp) return currentHp;
+
+    return canRecoverThisStep ? currentHp : previousHp;
+  };
+
+  const canARecover = sideHasHpRecoveryTrait("A");
+  const canBRecover = sideHasHpRecoveryTrait("B");
+  let previousAHp: number | null = null;
+  let previousBHp: number | null = null;
 
   return {
     ...result,
-    narrative: result.narrative.map((step, index, steps) => {
-      const isFinalStep = index === steps.length - 1;
+    narrative: result.narrative.map((step) => {
+      const recoveryStep = stepUsesHpRecovery(step);
+      const aHp = normalizeHpValue(
+        step.a_hp,
+        previousAHp,
+        canARecover && recoveryStep,
+      );
+      const bHp = normalizeHpValue(
+        step.b_hp,
+        previousBHp,
+        canBRecover && recoveryStep,
+      );
 
-      if (winner === "A") {
-        const bHp = isFinalStep ? 0 : Math.min(step.b_hp, previousLoserHp);
-        previousLoserHp = bHp;
-
-        return {
-          ...step,
-          a_hp: isFinalStep ? 100 : step.a_hp,
-          b_hp: bHp,
-        };
-      }
-
-      const aHp = isFinalStep ? 0 : Math.min(step.a_hp, previousLoserHp);
-      previousLoserHp = aHp;
+      previousAHp = aHp;
+      previousBHp = bHp;
 
       return {
         ...step,
         a_hp: aHp,
-        b_hp: isFinalStep ? 100 : step.b_hp,
+        b_hp: bHp,
       };
     }),
   };
@@ -1353,48 +1515,61 @@ function inferDifficultyFromResult(result: OmniversusBattle): OmniversusBattle {
   };
 }
 
-function capScore(score: number, maxScore: number): number {
-  return Math.min(score, maxScore);
+function capScore(score: number, maxScore: number, seed = ""): number {
+  const cappedScore = Math.min(score, maxScore);
+  const upperBound = Math.min(maxScore, Math.round(score));
+
+  return refinePercentageScore(cappedScore, seed || `${score}:${maxScore}`, {
+    maxScore: upperBound,
+    preserveBand: false,
+  });
 }
 
 function confidenceForDifficulty(
   result: OmniversusBattle,
   decisiveRows: number,
 ): number {
-  if (result.verdict.winner_side === "DRAW") return 45;
-  if (result.verdict.winner_side === "INCONCLUSIVE") return 35;
+  const seed = confidenceScoreSeed(result, "difficulty-confidence");
+
+  if (result.verdict.winner_side === "DRAW") {
+    return varyPercentageScore(43, `${seed}:draw`, 3);
+  }
+
+  if (result.verdict.winner_side === "INCONCLUSIVE") {
+    return varyPercentageScore(34, `${seed}:inconclusive`, 3);
+  }
 
   let score: number;
 
   switch (result.verdict.difficulty) {
     case "STOMP":
-      score = 97;
-      break;
-    case "NO_DIFF":
       score = 96;
       break;
+    case "NO_DIFF":
+      score = 94;
+      break;
     case "LOW_DIFF":
-      score = 90;
+      score = 87;
       break;
     case "MID_DIFF":
-      score = 80;
+      score = 78;
       break;
     case "HIGH_DIFF":
-      score = 72;
+      score = 71;
       break;
     case "EXTREME_DIFF":
-      score = 62;
+      score = 59;
       break;
     case "INCONCLUSIVE":
-      score = 35;
+      score = 34;
       break;
     default:
-      score = 75;
+      score = 74;
       break;
   }
 
-  if (decisiveRows >= 2) score = Math.max(score, 95);
-  if (decisiveRows === 1) score = Math.max(score, 88);
+  if (decisiveRows >= 2) score = Math.max(score, 93);
+  if (decisiveRows === 1) score = Math.max(score, 86);
 
   const winnerHasVeryHighRoute = result.win_conditions.some(
     (item) =>
@@ -1402,9 +1577,9 @@ function confidenceForDifficulty(
       item.probability === "VERY_HIGH",
   );
 
-  if (winnerHasVeryHighRoute) score = Math.max(score, 92);
+  if (winnerHasVeryHighRoute) score = Math.max(score, 89);
 
-  return score;
+  return varyPercentageScore(score, seed, 3);
 }
 
 function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattle {
@@ -1446,48 +1621,112 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
     result.data_provenance.mode !== "MANUAL" ||
     result.quality_flags.has_data_input_warning ||
     result.fighters.some((fighter) => fighter.origin.data_source !== "MANUAL");
+  const seed = confidenceScoreSeed(result, "confidence-breakdown");
 
-  let dataConfidence = 100;
+  let dataConfidence = refinePercentageScore(
+    result.verdict.data_confidence_score || 100,
+    `${seed}:data-start`,
+  );
 
-  if (hasDataInputWarning) dataConfidence = capScore(dataConfidence, 90);
-  if (weakSourceClaims.length > 0) dataConfidence = capScore(dataConfidence, 90);
-  if (weakDecisiveClaims.length > 0) dataConfidence = capScore(dataConfidence, 70);
-  if (contestedScalingClaims.length > 0) {
-    dataConfidence = capScore(dataConfidence, 75);
+  if (hasDataInputWarning) {
+    dataConfidence = capScore(dataConfidence, 90, `${seed}:data-input`);
   }
-  if (contestedTier) dataConfidence = capScore(dataConfidence, 75);
-  if (possibleOutliers) dataConfidence = capScore(dataConfidence, 65);
-  if (severeChainGap) dataConfidence = capScore(dataConfidence, 80);
+  if (weakSourceClaims.length > 0) {
+    dataConfidence = capScore(dataConfidence, 90, `${seed}:weak-sources`);
+  }
+  if (weakDecisiveClaims.length > 0) {
+    dataConfidence = capScore(dataConfidence, 70, `${seed}:weak-decisive`);
+  }
+  if (contestedScalingClaims.length > 0) {
+    dataConfidence = capScore(dataConfidence, 75, `${seed}:contested-scaling`);
+  }
+  if (contestedTier) {
+    dataConfidence = capScore(dataConfidence, 75, `${seed}:contested-tier`);
+  }
+  if (possibleOutliers) {
+    dataConfidence = capScore(dataConfidence, 65, `${seed}:possible-outliers`);
+  }
+  if (severeChainGap) {
+    dataConfidence = capScore(dataConfidence, 80, `${seed}:chain-gap-data`);
+  }
 
-  let verdictGivenData = confidenceForDifficulty(result, decisiveRows);
+  let verdictGivenData = blendPercentageScores(
+    result.verdict.verdict_confidence_given_data_score,
+    confidenceForDifficulty(result, decisiveRows),
+    0.55,
+    `${seed}:given-data-start`,
+  );
 
-  if (severeChainGap) verdictGivenData = capScore(verdictGivenData, 85);
+  if (severeChainGap) {
+    verdictGivenData = capScore(verdictGivenData, 85, `${seed}:chain-gap-given`);
+  }
   if (winnerDecisiveContestedAbility) {
-    verdictGivenData = capScore(verdictGivenData, 65);
+    verdictGivenData = capScore(
+      verdictGivenData,
+      65,
+      `${seed}:contested-ability-given`,
+    );
   }
   if (result.metadata.battle_type === "SUBJECTIVE") {
-    verdictGivenData = capScore(verdictGivenData, 60);
+    verdictGivenData = capScore(verdictGivenData, 60, `${seed}:subjective`);
   }
 
-  let verdictRobustness = verdictGivenData;
+  let verdictRobustness = blendPercentageScores(
+    result.verdict.verdict_confidence_robustness_score,
+    verdictGivenData,
+    0.55,
+    `${seed}:robustness-start`,
+  );
+
+  if (verdictRobustness > verdictGivenData) {
+    verdictRobustness = capScore(
+      verdictRobustness,
+      verdictGivenData,
+      `${seed}:robustness-not-above-given`,
+    );
+  }
 
   if (weakDecisiveClaims.length > 0) {
     verdictRobustness = capScore(
       verdictRobustness,
       result.verdict.difficulty === "STOMP" && decisiveRows >= 2 ? 90 : 75,
+      `${seed}:weak-decisive-robustness`,
     );
   }
   if (contestedScalingClaims.length > 0) {
     verdictRobustness = capScore(
       verdictRobustness,
       result.verdict.difficulty === "STOMP" && decisiveRows >= 2 ? 90 : 80,
+      `${seed}:scaling-robustness`,
     );
   }
-  if (contestedTier) verdictRobustness = capScore(verdictRobustness, 85);
-  if (possibleOutliers) verdictRobustness = capScore(verdictRobustness, 75);
-  if (severeChainGap) verdictRobustness = capScore(verdictRobustness, 80);
+  if (contestedTier) {
+    verdictRobustness = capScore(
+      verdictRobustness,
+      85,
+      `${seed}:tier-robustness`,
+    );
+  }
+  if (possibleOutliers) {
+    verdictRobustness = capScore(
+      verdictRobustness,
+      75,
+      `${seed}:outlier-robustness`,
+    );
+  }
+  if (severeChainGap) {
+    verdictRobustness = capScore(
+      verdictRobustness,
+      80,
+      `${seed}:chain-gap-robustness`,
+    );
+  }
   if (winnerDecisiveContestedAbility) {
-    verdictRobustness = capScore(verdictRobustness, 65);
+    verdictRobustness = capScore(
+      verdictRobustness,
+      65,
+      `${seed}:contested-ability-robustness`,
+    );
   }
 
   const confidenceExplanation =
@@ -1535,12 +1774,18 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
     };
 
     if (next.verdict.confidence_score > 60) {
+      const subjectiveScore = capScore(
+        next.verdict.confidence_score,
+        60,
+        confidenceScoreSeed(next, "subjective-battle"),
+      );
+
       next = {
         ...next,
         verdict: {
           ...next.verdict,
-          confidence_score: 60,
-          confidence_band: "CONTESTED_50_64",
+          confidence_score: subjectiveScore,
+          confidence_band: clampConfidenceBand(subjectiveScore),
         },
       };
     }

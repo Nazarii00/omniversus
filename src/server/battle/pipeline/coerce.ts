@@ -117,6 +117,15 @@ export function coerceBattleDraft(
     normalizeFighter(rawFighters[0] ?? { side: "A" }, "A", context),
     normalizeFighter(rawFighters[1] ?? { side: "B" }, "B", context),
   ];
+  const fighterATitleName =
+    asString(context.fighterA).trim() ||
+    asString(fighters[0]?.name).trim() ||
+    "Fighter A";
+  const fighterBTitleName =
+    asString(context.fighterB).trim() ||
+    asString(fighters[1]?.name).trim() ||
+    "Fighter B";
+  const matchupTitle = `${fighterATitleName} vs ${fighterBTitleName}`;
 
   let claims = asArray(draft.claims || draft.evidence_and_claims)
     .map((claim, index) => normalizeClaim(claim, index))
@@ -576,8 +585,8 @@ export function coerceBattleDraft(
         ["A", "B", "NEUTRAL"] as const,
         "NEUTRAL",
       );
-      const defaultAHp = advantage === "A" ? 75 : advantage === "B" ? 45 : 60;
-      const defaultBHp = advantage === "B" ? 75 : advantage === "A" ? 45 : 60;
+      const defaultAHp = advantage === "A" ? 73 : advantage === "B" ? 47 : 61;
+      const defaultBHp = advantage === "B" ? 73 : advantage === "A" ? 47 : 61;
 
       return {
         step: clampInt(row.step, 1, 5, index + 1),
@@ -595,13 +604,15 @@ export function coerceBattleDraft(
 
   while (narrative.length < 5) {
     const step = narrative.length + 1;
+    const fallbackHp = [91, 82, 69, 56, 43][step - 1] ?? 61;
+
     narrative.push({
       step,
       title:
         step === 1 ? "Intro" : step === 5 ? "Conclusion" : `Act ${step - 1}`,
       log: "Fallback narrative step; model output needs improvement.",
-      a_hp: 100,
-      b_hp: step === 5 ? 0 : 100,
+      a_hp: fallbackHp,
+      b_hp: fallbackHp,
       why: "Maintains fixed five-step UI contract.",
       claim_ids: [],
       chain_ids: [],
@@ -665,7 +676,7 @@ export function coerceBattleDraft(
         "OBJECTIVE",
       ),
       language: pickEnum(metadata.language, ["en", "uk"] as const, "en"),
-      title: asString(metadata.title),
+      title: matchupTitle,
       canon_scope: asString(metadata.canon_scope),
       speed_equalized: asBoolean(metadata.speed_equalized, false),
       assumptions: asString(metadata.assumptions),

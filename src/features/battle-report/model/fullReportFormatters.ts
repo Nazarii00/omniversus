@@ -12,6 +12,29 @@ export type FindingRecord = {
   tone: "filed" | "caution";
 };
 
+function comparableText(text: string | undefined) {
+  return (text ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function compactUniqueTexts(values: string[]) {
+  const seen = new Set<string>();
+  const uniqueValues: string[] = [];
+
+  for (const value of values) {
+    const signature = comparableText(value);
+    if (!signature || seen.has(signature)) continue;
+
+    seen.add(signature);
+    uniqueValues.push(value);
+  }
+
+  return uniqueValues;
+}
+
 export function groupClaims(claims: ReportClaim[]) {
   const groups = new Map<string, ReportClaim[]>();
 
@@ -31,9 +54,9 @@ export function buildFindingRecords(
   decisiveChain: ReportArgumentChain | null,
   fallbackDetail: string,
 ): FindingRecord[] {
-  const sourceFactors = factors.length
-    ? factors
-    : comparison.map((row) => row.category);
+  const sourceFactors = compactUniqueTexts(
+    factors.length ? factors : comparison.map((row) => row.category),
+  );
 
   if (!sourceFactors.length) {
     return [
@@ -45,31 +68,70 @@ export function buildFindingRecords(
     ];
   }
 
-  return sourceFactors.slice(0, 5).map((factor, index) => {
-    const row = matchingComparisonRow(factor, comparison, index);
+  const usedRowIndexes = new Set<number>();
+  const usedDetails = new Set<string>();
+  const findings: FindingRecord[] = [];
 
-    return {
+  for (const factor of sourceFactors) {
+    if (findings.length >= 5) break;
+
+    const match = matchingComparisonRow(factor, comparison, usedRowIndexes);
+    const row = match?.row ?? null;
+    const detail = row?.reason ?? decisiveChain?.conclusion ?? fallbackDetail;
+    const detailSignature = comparableText(detail);
+
+    if (detailSignature && usedDetails.has(detailSignature)) continue;
+    if (match) usedRowIndexes.add(match.index);
+    if (detailSignature) usedDetails.add(detailSignature);
+
+    findings.push({
       title: displayVerdict(row?.category ?? factor),
-      detail: row?.reason ?? decisiveChain?.conclusion ?? fallbackDetail,
+      detail,
       tone: row?.contested ? "caution" : "filed",
-    };
-  });
+    });
+  }
+
+  return findings.length
+    ? findings
+    : [
+        {
+          title: "ROUTE STABILITY",
+          detail: decisiveChain?.conclusion ?? fallbackDetail,
+          tone: "filed",
+        },
+      ];
 }
 
 export function matchingComparisonRow(
   factor: string,
   comparison: ReportComparisonRow[],
-  index: number,
+  usedRowIndexes: Set<number> = new Set(),
 ) {
   const normalizedFactor = factor.toUpperCase();
 
-  return (
-    comparison.find((row) =>
+  const directMatchIndex = comparison.findIndex(
+    (row, index) =>
+      !usedRowIndexes.has(index) &&
       normalizedFactor.includes(row.category.toUpperCase()),
-    ) ??
-    comparison[index] ??
-    null
   );
+
+  if (directMatchIndex >= 0) {
+    return {
+      row: comparison[directMatchIndex],
+      index: directMatchIndex,
+    };
+  }
+
+  const fallbackIndex = comparison.findIndex(
+    (_, index) => !usedRowIndexes.has(index),
+  );
+
+  return fallbackIndex >= 0
+    ? {
+        row: comparison[fallbackIndex],
+        index: fallbackIndex,
+      }
+    : null;
 }
 
 export function qualityWarnings(report: BattleReportJson) {

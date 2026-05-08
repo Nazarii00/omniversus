@@ -108,6 +108,9 @@ export default function CombatantLoadoutConsole({
     left: initialLeftName.length,
     right: initialRightName.length,
   });
+  const [highlightedMatchIndex, setHighlightedMatchIndex] = useState<
+    number | null
+  >(null);
   const leftInputRef = useRef<HTMLInputElement | null>(null);
   const rightInputRef = useRef<HTMLInputElement | null>(null);
   const activeMatches = useMemo(
@@ -121,6 +124,11 @@ export default function CombatantLoadoutConsole({
     }),
     [drafts.left, drafts.right, options],
   );
+  const activeHighlightedMatchIndex =
+    highlightedMatchIndex !== null &&
+    highlightedMatchIndex < activeMatches.length
+      ? highlightedMatchIndex
+      : null;
   const canSubmit = Boolean(drafts.left.trim() && drafts.right.trim());
 
   useEffect(() => {
@@ -161,6 +169,12 @@ export default function CombatantLoadoutConsole({
     });
   }
 
+  function focusDraftSide(side: ArenaCardSide) {
+    setActiveSide(side);
+    setHighlightedMatchIndex(null);
+    focusInput(side, drafts[side].length);
+  }
+
   function readCaretPosition(
     side: ArenaCardSide,
     input: HTMLInputElement | null,
@@ -175,6 +189,7 @@ export default function CombatantLoadoutConsole({
   }
 
   function updateDraftFromInput(side: ArenaCardSide, input: HTMLInputElement) {
+    setHighlightedMatchIndex(null);
     updateDraft(side, input.value);
     readCaretPosition(side, input);
   }
@@ -182,6 +197,7 @@ export default function CombatantLoadoutConsole({
   function selectMatch(side: ArenaCardSide, option: CombatantOption) {
     updateDraft(side, option.name);
     setActiveSide(side);
+    setHighlightedMatchIndex(null);
     focusInput(side, option.name.length);
   }
 
@@ -201,7 +217,71 @@ export default function CombatantLoadoutConsole({
     side: ArenaCardSide,
     event: ReactKeyboardEvent<HTMLInputElement>,
   ) {
+    const sideMatches =
+      side === activeSide ? activeMatches : findMatches(options, drafts[side]);
+    const sideHighlightedMatchIndex =
+      highlightedMatchIndex !== null &&
+      highlightedMatchIndex < sideMatches.length
+        ? highlightedMatchIndex
+        : null;
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+
+      if (
+        event.key === "ArrowDown" &&
+        side === "left" &&
+        sideHighlightedMatchIndex === null
+      ) {
+        focusDraftSide("right");
+        return;
+      }
+
+      if (
+        event.key === "ArrowUp" &&
+        side === "right" &&
+        sideHighlightedMatchIndex === null
+      ) {
+        focusDraftSide("left");
+        return;
+      }
+
+      if (!sideMatches.length) return;
+
+      setActiveSide(side);
+      setHighlightedMatchIndex((currentIndex) => {
+        const safeCurrentIndex =
+          currentIndex !== null && currentIndex < sideMatches.length
+            ? currentIndex
+            : null;
+
+        if (event.key === "ArrowDown") {
+          return safeCurrentIndex === null
+            ? 0
+            : (safeCurrentIndex + 1) % sideMatches.length;
+        }
+
+        if (safeCurrentIndex === 0) return null;
+
+        return safeCurrentIndex === null
+          ? sideMatches.length - 1
+          : (safeCurrentIndex - 1 + sideMatches.length) % sideMatches.length;
+      });
+      return;
+    }
+
     if (event.key !== "Enter") {
+      return;
+    }
+
+    const highlightedMatch =
+      sideHighlightedMatchIndex === null
+        ? null
+        : sideMatches[sideHighlightedMatchIndex];
+
+    if (highlightedMatch) {
+      event.preventDefault();
+      selectMatch(side, highlightedMatch);
       return;
     }
 
@@ -265,17 +345,32 @@ export default function CombatantLoadoutConsole({
       ? Math.min(caretPosition, value.length - 1)
       : 0;
     const caretCharacter = value[caretOverlayIndex] ?? "\u00a0";
+    const inputId = `combatant-${side}-input`;
+    const matchesId = `combatant-${side}-matches`;
+    const highlightedMatchId =
+      isActive && activeHighlightedMatchIndex !== null
+        ? `${matchesId}-${activeHighlightedMatchIndex}`
+        : undefined;
 
     return (
       <span className="home-loadout-console__input-wrap">
         <input
+          id={inputId}
           ref={inputRef}
           value={value}
           placeholder={placeholder}
           autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls={matchesId}
+          aria-expanded={isActive && activeMatches.length > 0}
+          aria-activedescendant={highlightedMatchId}
           onChange={(event) => updateDraftFromInput(side, event.currentTarget)}
           onClick={(event) => readCaretPosition(side, event.currentTarget)}
           onFocus={(event) => {
+            if (activeSide !== side) {
+              setHighlightedMatchIndex(null);
+            }
             setActiveSide(side);
             readCaretPosition(side, event.currentTarget);
           }}
@@ -349,15 +444,27 @@ export default function CombatantLoadoutConsole({
             {renderPromptInput("right", rightInputRef, "Superman")}
           </label>
 
-          <div className="home-loadout-console__matches" aria-live="polite">
+          <div
+            id={`combatant-${activeSide}-matches`}
+            className="home-loadout-console__matches"
+            role="listbox"
+            aria-live="polite"
+          >
             <p>&nbsp;</p>
             <p>C:\Omniversus&gt;dir /b matches\{sideLabel(activeSide)}</p>
             {activeMatches.length ? (
               activeMatches.map((option, index) => (
                 <button
+                  id={`combatant-${activeSide}-matches-${index}`}
                   key={option.id}
                   type="button"
                   className="home-loadout-console__match"
+                  role="option"
+                  aria-selected={activeHighlightedMatchIndex === index}
+                  data-highlighted={
+                    activeHighlightedMatchIndex === index ? "true" : undefined
+                  }
+                  onMouseEnter={() => setHighlightedMatchIndex(index)}
                   onClick={() => selectMatch(activeSide, option)}
                 >
                   <span>{String(index + 1).padStart(2, "0")}</span>
