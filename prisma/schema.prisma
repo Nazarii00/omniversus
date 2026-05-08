@@ -69,6 +69,11 @@ enum ReviewStatus {
   MODEL_INFERRED
 }
 
+enum UserAppealKind {
+  INFO_APPEAL
+  SUBJECT_REQUEST
+}
+
 enum ProvenanceKind {
   MANUAL_DB
   IMPORTED_SOURCE
@@ -262,8 +267,9 @@ model Subject {
   createdAt       DateTime     @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime     @updatedAt @db.Timestamptz(6)
 
-  aliases  SubjectAlias[]
-  versions SubjectVersion[]
+  aliases            SubjectAlias[]
+  versions           SubjectVersion[]
+  createdFromAppeals UserAppeal[]     @relation("UserAppealCreatedSubject")
 
   @@index([kind])
   @@index([originMedium])
@@ -321,6 +327,8 @@ model SubjectVersion {
   scenarioParticipants ScenarioParticipant[]
   snapshots            DossierSnapshot[]
   suggestions          FactSuggestion[]
+  targetedUserAppeals  UserAppeal[]          @relation("UserAppealTargetVersion")
+  createdFromAppeals   UserAppeal[]          @relation("UserAppealCreatedVersion")
 
   @@unique([subjectId, slug])
   @@index([canonScope])
@@ -676,6 +684,41 @@ model FactSuggestion {
   @@index([status])
   @@index([subjectName])
   @@map("fact_suggestions")
+}
+
+model UserAppeal {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind             UserAppealKind
+  status           ReviewStatus   @default(REQUIRES_REVIEW)
+  subjectName      String
+  targetVersionId  String?        @db.Uuid
+  title            String?
+  body             String
+  proposedText     String?
+  sourceRef        String?
+  submitterName    String?
+  submitterContact String?
+  createdByUserId  String?        @db.Uuid
+  reviewedByUserId String?        @db.Uuid
+  reviewedAt       DateTime?      @db.Timestamptz(6)
+  resolutionNote   String?
+  createdSubjectId String?        @db.Uuid
+  createdVersionId String?        @db.Uuid
+  metadata         Json?
+  createdAt        DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(6)
+
+  targetVersion  SubjectVersion? @relation("UserAppealTargetVersion", fields: [targetVersionId], references: [id], onDelete: SetNull)
+  createdSubject Subject?        @relation("UserAppealCreatedSubject", fields: [createdSubjectId], references: [id], onDelete: SetNull)
+  createdVersion SubjectVersion? @relation("UserAppealCreatedVersion", fields: [createdVersionId], references: [id], onDelete: SetNull)
+
+  @@index([kind, status])
+  @@index([status, createdAt])
+  @@index([targetVersionId])
+  @@index([createdSubjectId])
+  @@index([createdVersionId])
+  @@index([subjectName])
+  @@map("user_appeals")
 }
 
 model BattleEnvironment {

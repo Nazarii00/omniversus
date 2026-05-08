@@ -10,13 +10,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           Omniversus
         </Link>
         <nav>
-          <a href="#overview">Overview</a>
-          <a href="#subjects">Subjects</a>
-          <a href="#subject-version">Subject form</a>
-          <a href="#capability">Capability</a>
-          <a href="#ability">Ability</a>
-          <a href="#condition">Win/Loss</a>
-          <a href="#references">References</a>
+          <a href="/admin#overview">Overview</a>
+          <a href="/admin#subjects">Subjects</a>
+          <a href="/admin#subject-version">Subject form</a>
+          <a href="/admin#capability">Capability</a>
+          <a href="/admin#ability">Ability</a>
+          <a href="/admin#condition">Win/Loss</a>
+          <a href="/admin#references">References</a>
+          <Link href="/admin/appeals">Appeals</Link>
         </nav>
       </aside>
 
