@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   BattleAnalysisError,
+  completeBattleRunRecord,
+  createBattleRunRecord,
+  failBattleRunRecord,
   runBattleAnalysisWithMetadata,
   type RunBattleAnalysisOptions,
 } from "@/server/battle";
@@ -100,27 +103,45 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const options = readOptions(body);
+  const battleRun = await createBattleRunRecord({
+    fighterA,
+    fighterB,
+    options,
+  });
+
   try {
     const { result, generation } = await runBattleAnalysisWithMetadata(
       fighterA,
       fighterB,
-      readOptions(body),
+      options,
     );
+
+    await completeBattleRunRecord(battleRun, { result, generation });
 
     return NextResponse.json({
       ...result,
       generation,
+      battle_run_id: battleRun?.id ?? null,
     });
   } catch (error) {
     console.error(error);
     const generation = errorGeneration(error);
     const issues = validationIssues(error);
+    const message = errorMessage(error);
+
+    await failBattleRunRecord(battleRun, {
+      errorMessage: message,
+      generation,
+      validationIssues: issues,
+    });
 
     return NextResponse.json(
       {
-        error: errorMessage(error),
+        error: message,
         ...(generation ? { generation } : {}),
         ...(issues ? { validation_issues: issues } : {}),
+        battle_run_id: battleRun?.id ?? null,
       },
       { status: errorStatus(error) },
     );

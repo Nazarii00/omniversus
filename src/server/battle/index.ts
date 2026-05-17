@@ -40,6 +40,12 @@ export {
 export { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
 export {
+  completeBattleRunRecord,
+  createBattleRunRecord,
+  failBattleRunRecord,
+  type BattleRunHandle,
+} from "./runs";
+export {
   enforceBusinessCaps,
   normalizeBattleResult,
 } from "./pipeline/normalize";
