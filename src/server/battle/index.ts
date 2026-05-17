@@ -5,7 +5,7 @@ import {
   getClient,
   resolveBattleModel,
 } from "./providers/gemini/client";
-import { coerceBattleDraft } from "./pipeline/coerce";
+import { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 import {
   DEFAULT_MAX_COMPLETION_TOKENS,
   DEFAULT_TEMPERATURE,
@@ -37,11 +37,17 @@ export {
   createBattleCompletion,
   getClient,
 } from "./providers/gemini/client";
-export { coerceBattleDraft } from "./pipeline/coerce";
+export { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
-export { enforceBusinessCaps, normalizeBattleResult } from "./pipeline/normalize";
+export {
+  enforceBusinessCaps,
+  normalizeBattleResult,
+} from "./pipeline/normalize";
 export { BATTLE_MODEL_CONFIG } from "./config/model";
-export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompts/battlePrompt";
+export {
+  buildUserPrompt,
+  OMNIVERSUS_MASTER_PROMPT,
+} from "./prompts/battlePrompt";
 export {
   resolveBattleDossierContext,
   type BattleDossierContext,
@@ -152,7 +158,7 @@ function buildGenerationMetadata(
 
   return {
     provider: "gemini",
-    api: "openai-compatible-chat-completions",
+    api: completionResult.api,
     requested_model: request.model,
     model: completion.model ?? null,
     thinking_level: request.reasoningEffort,
@@ -202,6 +208,14 @@ function providerErrorStatus(error: unknown): number | null {
 
 function providerErrorMessage(error: unknown): string {
   const status = providerErrorStatus(error);
+
+  if (status === 400) {
+    const detail = error instanceof Error ? error.message : "";
+
+    return detail
+      ? `Gemini rejected the battle generation request: ${detail}`
+      : "Gemini rejected the battle generation request.";
+  }
 
   if (status === 429) {
     return "Gemini rate limit or quota was hit. Wait a bit, then retry with the same fighters.";
@@ -326,17 +340,17 @@ export async function runBattleAnalysisWithMetadata(
     }
   }
 
-  const coerced = coerceBattleDraft(raw, {
+  const prepared = prepareBattleOutput(raw, {
     fighterA,
     fighterB,
-    characterAVersion: options.characterAVersion,
-    characterBVersion: options.characterBVersion,
+    outputLanguage: options.outputLanguage,
+    speedEqualized: options.speedEqualized,
   });
-  const parsed = OmniversusBattleSchema.safeParse(coerced);
+  const parsed = OmniversusBattleSchema.safeParse(prepared);
 
   if (!parsed.success) {
     throw new BattleAnalysisError(
-      `Battle JSON validation failed: ${parsed.error.message}`,
+      `Battle JSON contract validation failed: ${parsed.error.message}`,
       {
         status: 502,
         generation,
@@ -345,8 +359,22 @@ export async function runBattleAnalysisWithMetadata(
     );
   }
 
+  const normalized = normalizeBattleResult(parsed.data);
+  const normalizedParsed = OmniversusBattleSchema.safeParse(normalized);
+
+  if (!normalizedParsed.success) {
+    throw new BattleAnalysisError(
+      `Battle JSON semantic validation failed: ${normalizedParsed.error.message}`,
+      {
+        status: 502,
+        generation,
+        validationIssues: normalizedParsed.error.issues,
+      },
+    );
+  }
+
   return {
-    result: normalizeBattleResult(parsed.data),
+    result: normalizedParsed.data,
     generation,
   };
 }

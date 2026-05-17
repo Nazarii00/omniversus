@@ -135,9 +135,13 @@ function RelatedDocumentPanel() {
 export function ClaimsDeck({
   claims,
   fighters,
+  reportId,
+  reportTitle,
 }: {
   claims: ReportClaim[];
   fighters: ReportFighter[];
+  reportId: string;
+  reportTitle: string;
 }) {
   const groups = groupClaims(claims);
 
@@ -165,7 +169,13 @@ export function ClaimsDeck({
             </header>
             <div>
               {categoryClaims.map((claim) => (
-                <ClaimCard key={claim.id} claim={claim} fighters={fighters} />
+                <ClaimCard
+                  key={claim.id}
+                  claim={claim}
+                  fighters={fighters}
+                  reportId={reportId}
+                  reportTitle={reportTitle}
+                />
               ))}
             </div>
           </article>
@@ -287,9 +297,13 @@ function portraitInitials(name: string) {
 function ClaimCard({
   claim,
   fighters,
+  reportId,
+  reportTitle,
 }: {
   claim: ReportClaim;
   fighters: ReportFighter[];
+  reportId: string;
+  reportTitle: string;
 }) {
   const state: ClaimReviewState = claim.contested
     ? "danger"
@@ -297,14 +311,15 @@ function ClaimCard({
       ? "caution"
       : "stable";
   const reviewStatus = claimReviewStatus(state);
-  const [hasFactIssue, setHasFactIssue] = useState(false);
+  const [appealId, setAppealId] = useState<string | null>(null);
+  const appealSubject = appealSubjectForSide(claim.side, fighters, reportTitle);
 
   return (
     <article
       id={claimTargetId(claim.id)}
       className={styles.claimRecord}
       data-contested={claim.contested}
-      data-fact-issue={hasFactIssue}
+      data-fact-issue={Boolean(appealId)}
       data-outlier={claim.outlier}
       data-state={state}
     >
@@ -320,8 +335,22 @@ function ClaimCard({
       <footer>
         <span>{sourceSummary(claim.source)}</span>
         <FactIssueButton
-          active={hasFactIssue}
-          onToggle={() => setHasFactIssue((current) => !current)}
+          active={Boolean(appealId)}
+          onSubmitted={setAppealId}
+          target={{
+            reportId,
+            reportTitle,
+            targetType: "claim",
+            targetId: claim.id,
+            targetText: claim.text,
+            subjectName: appealSubject.name,
+            subjectVersion: appealSubject.version,
+            side: claim.side,
+            category: claim.category ?? claim.kind ?? claim.tag,
+            claimId: claim.id,
+            sourceRef: sourceSummary(claim.source),
+            confidence: claim.confidence,
+          }}
         />
       </footer>
     </article>
@@ -330,4 +359,33 @@ function ClaimCard({
 
 function claimReviewStatus(state: ClaimReviewState) {
   return CLAIM_REVIEW_STATUS[state];
+}
+
+function appealSubjectForSide(
+  side: string | undefined,
+  fighters: ReportFighter[],
+  reportTitle: string,
+) {
+  if (side === "A" || side === "B") {
+    const fighter = fighters.find((item) => item.side === side);
+
+    if (fighter) {
+      return {
+        name: fighter.name,
+        version: fighter.version,
+      };
+    }
+  }
+
+  if (side === "BOTH") {
+    return {
+      name: fighters.map((fighter) => fighter.name).join(" vs ") || reportTitle,
+      version: undefined,
+    };
+  }
+
+  return {
+    name: reportTitle,
+    version: undefined,
+  };
 }

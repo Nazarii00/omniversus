@@ -107,10 +107,14 @@ export function ArgumentTimeline({
   chains,
   decisiveChain,
   fighters,
+  reportId,
+  reportTitle,
 }: {
   chains: ReportArgumentChain[];
   decisiveChain: ReportArgumentChain | null;
   fighters: ReportFighter[];
+  reportId: string;
+  reportTitle: string;
 }) {
   const orderedChains = decisiveChain
     ? [
@@ -133,6 +137,8 @@ export function ArgumentTimeline({
             chain={chain}
             index={index}
             fighters={fighters}
+            reportId={reportId}
+            reportTitle={reportTitle}
           />
         ))}
       </ol>
@@ -200,10 +206,14 @@ function ChainEvent({
   chain,
   index,
   fighters,
+  reportId,
+  reportTitle,
 }: {
   chain: ReportArgumentChain;
   index: number;
   fighters: ReportFighter[];
+  reportId: string;
+  reportTitle: string;
 }) {
   const chainNumber = String(index + 1).padStart(2, "0");
 
@@ -214,7 +224,10 @@ function ChainEvent({
         <header className={styles.chainCardHeader}>
           <ChainMeta label="Argument" value={`Chain ${chainNumber}`} />
           <ChainMeta label="Role" value={displayChainRole(chain.chain_type)} />
-          <ChainMeta label="Argues for" value={formatSide(chain.side, fighters)} />
+          <ChainMeta
+            label="Argues for"
+            value={formatSide(chain.side, fighters)}
+          />
           <ChainMeta label="Confidence" value={percentText(chain.confidence)} />
         </header>
         <h3>{displayTitle(chain.title)}</h3>
@@ -223,7 +236,12 @@ function ChainEvent({
           {(chain.premises ?? []).slice(0, 3).map((premise, premiseIndex) => (
             <PremiseRecord
               key={premise.id ?? premiseIndex}
+              chain={chain}
               claimId={premise.claim_id}
+              fighters={fighters}
+              premiseIndex={premiseIndex}
+              reportId={reportId}
+              reportTitle={reportTitle}
               role={premise.role ?? "PREMISE"}
               text={premise.text}
             />
@@ -256,21 +274,33 @@ function ChainMeta({ label, value }: { label: string; value: string }) {
 
 function displayChainRole(chainType: string | undefined) {
   return chainType
-    ? CHAIN_ROLE_LABELS[chainType] ?? displayTitle(chainType)
+    ? (CHAIN_ROLE_LABELS[chainType] ?? displayTitle(chainType))
     : "Argument";
 }
 
 function PremiseRecord({
+  chain,
   claimId,
+  fighters,
+  premiseIndex,
+  reportId,
+  reportTitle,
   role,
   text,
 }: {
+  chain: ReportArgumentChain;
   claimId: string | undefined;
+  fighters: ReportFighter[];
+  premiseIndex: number;
+  reportId: string;
+  reportTitle: string;
   role: string;
   text: string;
 }) {
-  const [hasFactIssue, setHasFactIssue] = useState(false);
+  const [appealId, setAppealId] = useState<string | null>(null);
   const targetId = claimId && claimId !== "N_A" ? claimTargetId(claimId) : null;
+  const appealSubject = appealSubjectForSide(chain.side, fighters, reportTitle);
+  const premiseId = `${chain.id}_premise_${premiseIndex + 1}`;
   const handleJumpToClaim = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!targetId) return;
 
@@ -289,7 +319,7 @@ function PremiseRecord({
   );
 
   return (
-    <div className={styles.premiseRecord} data-fact-issue={hasFactIssue}>
+    <div className={styles.premiseRecord} data-fact-issue={Boolean(appealId)}>
       {targetId ? (
         <a
           className={styles.premiseText}
@@ -303,11 +333,55 @@ function PremiseRecord({
         <span className={styles.premiseText}>{content}</span>
       )}
       <FactIssueButton
-        active={hasFactIssue}
-        onToggle={() => setHasFactIssue((current) => !current)}
+        active={Boolean(appealId)}
+        onSubmitted={setAppealId}
+        target={{
+          reportId,
+          reportTitle,
+          targetType: "premise",
+          targetId: premiseId,
+          targetText: text,
+          subjectName: appealSubject.name,
+          subjectVersion: appealSubject.version,
+          side: chain.side,
+          category: role,
+          claimId,
+          chainId: chain.id,
+          sourceRef: claimId ? `Linked claim ${claimId}` : undefined,
+          confidence: chain.confidence,
+        }}
       />
     </div>
   );
+}
+
+function appealSubjectForSide(
+  side: string | undefined,
+  fighters: ReportFighter[],
+  reportTitle: string,
+) {
+  if (side === "A" || side === "B") {
+    const fighter = fighters.find((item) => item.side === side);
+
+    if (fighter) {
+      return {
+        name: fighter.name,
+        version: fighter.version,
+      };
+    }
+  }
+
+  if (side === "BOTH") {
+    return {
+      name: fighters.map((fighter) => fighter.name).join(" vs ") || reportTitle,
+      version: undefined,
+    };
+  }
+
+  return {
+    name: reportTitle,
+    version: undefined,
+  };
 }
 
 function ConfidencePanel({

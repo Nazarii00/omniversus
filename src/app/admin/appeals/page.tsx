@@ -1,14 +1,17 @@
 import Link from "next/link";
 
-import { AdminDisabled, MissingDatabase } from "../_components/AdminNotice";
-import { AdminShell } from "../_components/AdminShell";
-import { AppealsReview } from "../_components/AppealsReview";
+import {
+  AdminDisabled,
+  AdminShell,
+  AppealsReview,
+  MissingDatabase,
+} from "@/features/admin/components";
 import {
   hasAppealsDatabase,
+  isAdminEnabled,
   loadAppealsData,
-} from "../_data/loadAppealsData";
-import { isAdminEnabled } from "../_data/loadAdminData";
-import styles from "../page.module.css";
+} from "@/features/admin/data";
+import styles from "@/features/admin/styles/AdminPanel.module.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

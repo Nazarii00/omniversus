@@ -25,6 +25,7 @@ import {
   BattleReportButton,
 } from "../battle-controls";
 import { ArenaBetSelector } from "../betting";
+import type { BattleRevealConfig } from "../combatant-card";
 import { CombatantDeck } from "../combatant-deck";
 import {
   CombatantEntrySlot,
@@ -57,6 +58,13 @@ type StoredHomeArenaState = {
   battleReport?: BattleReportJson | null;
   isReportReady?: boolean;
   reportSerial?: number;
+};
+
+type BattleRevealRun = {
+  runId: number;
+  winnerSide: ArenaCardSide;
+  loserSide: ArenaCardSide;
+  actCount: number;
 };
 
 function homeArenaStorage() {
@@ -134,6 +142,55 @@ function clearStoredHomeArenaState() {
   }
 }
 
+function reportWinnerArenaSide(
+  report: BattleReportJson,
+): ArenaCardSide | null {
+  if (report.verdict?.winner_side === "A") return "left";
+  if (report.verdict?.winner_side === "B") return "right";
+
+  return null;
+}
+
+function buildBattleRevealRun(
+  report: BattleReportJson,
+  runId: number,
+): BattleRevealRun | null {
+  const winnerSide = reportWinnerArenaSide(report);
+  if (!winnerSide) return null;
+
+  return {
+    runId,
+    winnerSide,
+    loserSide: winnerSide === "left" ? "right" : "left",
+    actCount: Math.max(1, report.narrative?.length ?? 3),
+  };
+}
+
+function battleRevealForSide(
+  reveal: BattleRevealRun | null,
+  side: ArenaCardSide,
+): BattleRevealConfig | null {
+  if (!reveal) return null;
+
+  if (reveal.winnerSide === side) {
+    return {
+      runId: reveal.runId,
+      role: "winner",
+      actCount: reveal.actCount,
+    };
+  }
+
+  if (reveal.loserSide === side) {
+    return {
+      runId: reveal.runId,
+      role: "loser",
+      actCount: reveal.actCount,
+    };
+  }
+
+  return null;
+}
+
 function subscribeToHomeArenaStorage(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
 
@@ -191,6 +248,9 @@ export default function HomeArenaStage() {
   const [battleReportState, setBattleReport] = useState<
     BattleReportJson | null | undefined
   >();
+  const [battleReveal, setBattleReveal] = useState<BattleRevealRun | null>(
+    null,
+  );
   const [battleError, setBattleError] = useState<string | null>(null);
   const [reportSerialState, setReportSerial] = useState<number | undefined>();
   const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
@@ -253,6 +313,7 @@ export default function HomeArenaStage() {
     setIsReportOpen(false);
     setIsReportReady(false);
     setBattleReport(null);
+    setBattleReveal(null);
     setBattleError(null);
     clearLatestBattleReport();
   }
@@ -317,6 +378,7 @@ export default function HomeArenaStage() {
                 card={leftCard}
                 template={leftTemplate}
                 label="ALPHA_SLOT"
+                battleReveal={battleRevealForSide(battleReveal, "left")}
                 onOpenConsole={() => openLoadoutConsole("left")}
               />
             </div>
@@ -328,6 +390,7 @@ export default function HomeArenaStage() {
                 card={rightCard}
                 template={rightTemplate}
                 label="OMEGA_SLOT"
+                battleReveal={battleRevealForSide(battleReveal, "right")}
                 onOpenConsole={() => openLoadoutConsole("right")}
               />
             </div>
@@ -373,6 +436,7 @@ export default function HomeArenaStage() {
             onReportReady={(report) => {
               setIsBattleLoading(false);
               setBattleReport(report);
+              setBattleReveal(buildBattleRevealRun(report, Date.now()));
               writeLatestBattleReport(report);
               setReportSerial((current) => (current ?? reportSerial) + 1);
               setIsReportReady(true);

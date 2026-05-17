@@ -280,6 +280,154 @@ select {
   }
 }
 
+@keyframes home-battle-card-brutal-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) skewX(0deg);
+  }
+
+  6% {
+    transform: translate3d(-0.55rem, -0.08rem, 0) skewX(-7deg);
+  }
+
+  12% {
+    transform: translate3d(0.48rem, 0.1rem, 0) skewX(8deg);
+  }
+
+  18% {
+    transform: translate3d(-0.7rem, 0.02rem, 0) skewX(11deg);
+  }
+
+  26% {
+    transform: translate3d(0.78rem, -0.12rem, 0) skewX(-10deg);
+  }
+
+  34% {
+    transform: translate3d(-0.34rem, 0.16rem, 0) skewX(6deg);
+  }
+
+  42% {
+    transform: translate3d(0.62rem, -0.04rem, 0) skewX(-12deg);
+  }
+
+  52% {
+    transform: translate3d(-0.86rem, 0.08rem, 0) skewX(13deg);
+  }
+
+  64% {
+    transform: translate3d(0.72rem, 0.14rem, 0) skewX(-8deg);
+  }
+
+  76% {
+    transform: translate3d(-0.46rem, -0.1rem, 0) skewX(9deg);
+  }
+
+  88% {
+    transform: translate3d(0.28rem, 0.04rem, 0) skewX(-5deg);
+  }
+}
+
+@keyframes home-battle-card-destruction-body {
+  0% {
+    opacity: 1;
+    filter: saturate(1.8) contrast(1.25)
+      drop-shadow(0.42rem 0 rgba(255, 0, 56, 0.78))
+      drop-shadow(-0.42rem 0 rgba(0, 255, 255, 0.68));
+    transform: translate3d(0, 0, 0) skewX(0deg);
+  }
+
+  52% {
+    opacity: 0.9;
+    filter: saturate(2.2) contrast(1.42)
+      drop-shadow(0.7rem 0 rgba(255, 0, 56, 0.82))
+      drop-shadow(-0.7rem 0 rgba(0, 255, 255, 0.72));
+    transform: translate3d(0.12rem, -0.08rem, 0) skewX(-4deg);
+  }
+
+  82% {
+    opacity: 0.42;
+    filter: saturate(2.6) contrast(1.7)
+      drop-shadow(0.95rem 0 rgba(255, 0, 56, 0.86))
+      drop-shadow(-0.95rem 0 rgba(0, 255, 255, 0.76));
+    transform: translate3d(-0.08rem, 0.1rem, 0) skewX(5deg) scale(0.995);
+  }
+
+  100% {
+    opacity: 0;
+    filter: saturate(0.3) contrast(2)
+      drop-shadow(1.15rem 0 rgba(255, 0, 56, 0))
+      drop-shadow(-1.15rem 0 rgba(0, 255, 255, 0));
+    transform: translate3d(0, 0, 0) skewX(0deg) scale(0.985);
+  }
+}
+
+@keyframes home-battle-winner-clean-body {
+  0% {
+    filter: saturate(1.8) brightness(1.8)
+      drop-shadow(0.32rem 0 rgba(255, 0, 56, 0.4))
+      drop-shadow(-0.32rem 0 rgba(0, 255, 255, 0.4));
+  }
+
+  48% {
+    filter: saturate(1.25) brightness(2.35);
+  }
+
+  100% {
+    filter: none;
+  }
+}
+
+@keyframes home-battle-clean-flash {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.18);
+  }
+
+  34% {
+    opacity: 0.92;
+    transform: scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes home-battle-stamp-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(0.86);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(1);
+  }
+}
+
+@keyframes home-battle-winner-stamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(0.4);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(1.12);
+  }
+
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(1);
+  }
+}
+
 @keyframes home-report-heading-char {
   0% {
     opacity: 0;
@@ -395,6 +543,203 @@ select {
 
 .home-card-dock-scan {
   animation: home-card-dock-scan 3.8s ease-in-out infinite;
+}
+
+.home-battle-reveal-card {
+  isolation: isolate;
+}
+
+.home-battle-reveal-card__body {
+  z-index: 2;
+  transform-origin: center center;
+  transition:
+    opacity 180ms ease,
+    filter 180ms ease,
+    visibility 180ms ease;
+  will-change: opacity, filter, transform;
+}
+
+.home-battle-reveal-canvas,
+.home-battle-reveal-clean-flash,
+.home-battle-reveal-stamp {
+  pointer-events: none;
+}
+
+.home-battle-reveal-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: block;
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(
+    0.82rem 0,
+    calc(100% - 0.82rem) 0,
+    100% 0.82rem,
+    100% calc(100% - 0.82rem),
+    calc(100% - 0.82rem) 100%,
+    0.82rem 100%,
+    0 calc(100% - 0.82rem),
+    0 0.82rem
+  );
+  image-rendering: pixelated;
+  transition: opacity 180ms ease;
+}
+
+.home-battle-reveal-canvas--damage {
+  mix-blend-mode: difference;
+  opacity: 0.86;
+}
+
+.home-battle-reveal-canvas--flash {
+  z-index: 6;
+  mix-blend-mode: screen;
+}
+
+.home-battle-reveal-card[data-reveal-role="loser"][data-reveal-phase="brutal"]
+  .home-battle-reveal-card__body {
+  animation: home-battle-card-brutal-shake 720ms steps(18, end) both;
+  filter: saturate(2.2) contrast(1.35)
+    drop-shadow(0.48rem 0 rgba(255, 0, 56, 0.72))
+    drop-shadow(-0.48rem 0 rgba(0, 255, 255, 0.68));
+}
+
+.home-battle-reveal-card[data-reveal-role="loser"][data-reveal-phase="brutal"]
+  .home-battle-reveal-canvas--flash {
+  mix-blend-mode: difference;
+  opacity: 0.96;
+}
+
+.home-battle-reveal-card[data-reveal-role="loser"][data-reveal-phase="destruction"]
+  .home-battle-reveal-card__body {
+  animation: home-battle-card-destruction-body 1320ms steps(16, end) forwards;
+}
+
+.home-battle-reveal-card[data-reveal-destroyed="true"]
+  .home-battle-reveal-card__body {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.home-battle-reveal-card[data-reveal-destroyed="true"]
+  .home-battle-reveal-canvas {
+  opacity: 0;
+}
+
+.home-battle-reveal-card[data-reveal-role="winner"][data-reveal-phase="verdict"]
+  .home-battle-reveal-card__body {
+  animation: home-battle-winner-clean-body 360ms steps(6, end) both;
+}
+
+.home-battle-reveal-card[data-reveal-role="winner"][data-reveal-phase="verdict"]
+  .home-battle-reveal-canvas {
+  opacity: 0;
+}
+
+.home-battle-reveal-clean-flash {
+  position: absolute;
+  inset: -0.18rem;
+  z-index: 7;
+  display: none;
+  clip-path: polygon(
+    0.82rem 0,
+    calc(100% - 0.82rem) 0,
+    100% 0.82rem,
+    100% calc(100% - 0.82rem),
+    calc(100% - 0.82rem) 100%,
+    0.82rem 100%,
+    0 calc(100% - 0.82rem),
+    0 0.82rem
+  );
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.95),
+      transparent
+    ),
+    rgba(255, 229, 128, 0.2);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform-origin: center center;
+}
+
+.home-battle-reveal-card[data-reveal-role="winner"][data-reveal-phase="verdict"]
+  .home-battle-reveal-clean-flash {
+  display: block;
+  animation: home-battle-clean-flash 380ms cubic-bezier(0.18, 0.8, 0.18, 1)
+    both;
+}
+
+.home-battle-reveal-stamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 8;
+  display: grid;
+  min-width: min(84%, 14rem);
+  place-items: center;
+  border: 0.24rem solid rgba(96, 13, 13, 0.96);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(40, 0, 0, 0.72),
+      rgba(8, 0, 0, 0.86)
+    ),
+    rgba(0, 0, 0, 0.64);
+  color: #ffd9d2;
+  font-size: 2.15rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  opacity: 0;
+  padding: 0.46rem 0.82rem 0.5rem;
+  text-align: center;
+  text-shadow:
+    0 0 8px rgba(255, 44, 44, 0.55),
+    0 0 20px rgba(80, 0, 0, 0.72);
+  text-transform: uppercase;
+  transform: translate(-50%, -50%) rotate(-12deg) scale(0.86);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 210, 210, 0.12),
+    inset 0 0 22px rgba(0, 0, 0, 0.62),
+    0 0 22px rgba(255, 36, 36, 0.2);
+}
+
+.home-battle-reveal-card[data-reveal-role="loser"][data-reveal-phase="verdict"]
+  .home-battle-reveal-stamp {
+  animation: home-battle-stamp-fade 420ms ease-out 80ms forwards;
+}
+
+.home-battle-reveal-card[data-reveal-role="winner"][data-reveal-phase="verdict"]
+  .home-battle-reveal-stamp {
+  border-color: rgba(220, 168, 72, 0.98);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(78, 46, 6, 0.72),
+      rgba(20, 12, 1, 0.86)
+    ),
+    rgba(0, 0, 0, 0.6);
+  color: #ffe49a;
+  text-shadow:
+    0 0 8px rgba(255, 225, 128, 0.76),
+    0 0 24px rgba(220, 168, 72, 0.54);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 246, 190, 0.16),
+    inset 0 0 22px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(220, 168, 72, 0.36);
+  animation: home-battle-winner-stamp 680ms
+    cubic-bezier(0.16, 1.18, 0.24, 1) 80ms forwards;
+}
+
+@media (max-width: 639px) {
+  .home-battle-reveal-stamp {
+    border-width: 0.18rem;
+    font-size: 1.38rem;
+    min-width: min(82%, 10rem);
+    padding: 0.38rem 0.62rem 0.42rem;
+  }
 }
 
 .home-card-dock {

@@ -23,6 +23,7 @@ export type BattleCompletionResult = {
   completion: ChatCompletionResponse;
   responseFormat: ResponseFormatType | null;
   responseFormatFallbackUsed: boolean;
+  api: "openai-compatible-chat-completions";
 };
 
 const GEMINI_OPENAI_BASE_URL =
@@ -40,6 +41,7 @@ export function getClient(): OpenAI {
 
   return cachedClient;
 }
+
 export function resolveBattleModel(model?: string): string {
   return model ?? DEFAULT_MODEL;
 }
@@ -76,5 +78,6 @@ export async function createBattleCompletion(
     completion: await createChatCompletion(client, request),
     responseFormat: request.response_format?.type ?? null,
     responseFormatFallbackUsed: false,
+    api: "openai-compatible-chat-completions",
   };
 }

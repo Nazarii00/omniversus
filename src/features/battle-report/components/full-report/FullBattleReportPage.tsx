@@ -142,6 +142,8 @@ export default function FullBattleReportPage() {
                 chains={chains}
                 decisiveChain={decisiveChain}
                 fighters={fighters}
+                reportId={view.id}
+                reportTitle={view.title}
               />
             </section>
 
@@ -158,7 +160,12 @@ export default function FullBattleReportPage() {
               comparison={comparison}
             />
 
-            <ClaimsDeck claims={claims} fighters={fighters} />
+            <ClaimsDeck
+              claims={claims}
+              fighters={fighters}
+              reportId={view.id}
+              reportTitle={view.title}
+            />
 
             <BattleProgression view={view} />
           </div>

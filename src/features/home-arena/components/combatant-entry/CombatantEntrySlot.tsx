@@ -3,12 +3,17 @@
 import type { CSSProperties } from "react";
 
 import type { ArenaCard } from "../../model";
-import { CardDockSlot, HologramCombatantCard } from "../combatant-card";
+import {
+  CardDockSlot,
+  HologramCombatantCard,
+  type BattleRevealConfig,
+} from "../combatant-card";
 
 type CombatantEntrySlotProps = {
   card: ArenaCard | null;
   template: ArenaCard;
   label: string;
+  battleReveal?: BattleRevealConfig | null;
   onOpenConsole: () => void;
 };
 
@@ -16,6 +21,7 @@ export default function CombatantEntrySlot({
   card,
   template,
   label,
+  battleReveal = null,
   onOpenConsole,
 }: CombatantEntrySlotProps) {
   const themeStyle = {
@@ -33,7 +39,9 @@ export default function CombatantEntrySlot({
     >
       <CardDockSlot side={template.side} theme={template.theme} />
 
-      {card ? <HologramCombatantCard card={card} /> : null}
+      {card ? (
+        <HologramCombatantCard card={card} battleReveal={battleReveal} />
+      ) : null}
 
       {!card ? (
         <button

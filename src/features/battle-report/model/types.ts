@@ -1,133 +1,103 @@
+import type {
+  BattleGenerationMetadata,
+  OmniversusBattle,
+} from "@/server/battle/domain/schema";
+
 export type ReportSide =
-  | "A"
-  | "B"
-  | "BOTH"
-  | "SYSTEM"
-  | "DRAW"
-  | "INCONCLUSIVE";
+  | OmniversusBattle["claims"][number]["side"]
+  | OmniversusBattle["verdict"]["winner_side"]
+  | "TIE";
 
-export type ReportSource = {
-  type?: string;
-  ref?: string;
-  status?: string;
-  reliability?: string;
-  note?: string;
-};
+export type ReportSource = Partial<
+  OmniversusBattle["claims"][number]["source"]
+>;
 
-export type ReportClaim = {
-  id: string;
+export type ReportClaim = Partial<
+  Omit<OmniversusBattle["claims"][number], "id" | "side" | "text" | "source">
+> & {
+  id: OmniversusBattle["claims"][number]["id"];
   side?: ReportSide;
-  kind?: string;
-  tag?: string;
-  category?: string;
-  text: string;
+  text: OmniversusBattle["claims"][number]["text"];
   source?: ReportSource;
-  evidence_level?: string;
-  importance?: string;
-  confidence?: number;
-  supports_verdict?: boolean;
-  contested?: boolean;
-  outlier?: boolean;
-  appeal_hint?: string;
 };
 
-export type ReportChainPremise = {
-  id?: string;
-  role?: string;
-  claim_id?: string;
-  text: string;
-  contested?: boolean;
+export type ReportChainPremise = Partial<
+  Omit<OmniversusBattle["argument_chains"][number]["premises"][number], "text">
+> & {
+  text: OmniversusBattle["argument_chains"][number]["premises"][number]["text"];
 };
 
-export type ReportArgumentChain = {
-  id: string;
+export type ReportArgumentChain = Partial<
+  Omit<
+    OmniversusBattle["argument_chains"][number],
+    "id" | "side" | "title" | "conclusion" | "premises"
+  >
+> & {
+  id: OmniversusBattle["argument_chains"][number]["id"];
   side?: ReportSide;
-  chain_type?: string;
-  title: string;
-  conclusion: string;
+  title: OmniversusBattle["argument_chains"][number]["title"];
+  conclusion: OmniversusBattle["argument_chains"][number]["conclusion"];
   premises?: ReportChainPremise[];
-  inference_rule?: string;
-  inference?: string;
-  confidence?: number;
-  contested?: boolean;
-  breaks_if?: string;
-  linked_claim_ids?: string[];
 };
 
-export type ReportComparisonRow = {
-  category: string;
+export type ReportComparisonRow = Partial<
+  Omit<OmniversusBattle["comparison"][number], "category" | "winner" | "reason">
+> & {
+  category: OmniversusBattle["comparison"][number]["category"];
   winner?: ReportSide | "TIE";
-  margin?: string;
-  reason: string;
-  claim_ids?: string[];
-  contested?: boolean;
+  reason: OmniversusBattle["comparison"][number]["reason"];
 };
 
-export type ReportNarrativeStep = {
-  step: number;
-  title: string;
-  log: string;
-  a_hp?: number;
-  b_hp?: number;
-  why: string;
-  claim_ids?: string[];
-  chain_ids?: string[];
-  contested?: boolean;
+export type ReportNarrativeStep = Partial<
+  Omit<OmniversusBattle["narrative"][number], "step" | "title" | "log" | "why">
+> & {
+  step: OmniversusBattle["narrative"][number]["step"];
+  title: OmniversusBattle["narrative"][number]["title"];
+  log: OmniversusBattle["narrative"][number]["log"];
+  why: OmniversusBattle["narrative"][number]["why"];
 };
 
-export type ReportFighter = {
-  side: "A" | "B";
-  name: string;
-  version?: string;
-  verse?: string;
-  tier?: {
-    rating?: string;
-    basis?: string;
-  };
+export type ReportFighter = Partial<
+  Omit<
+    OmniversusBattle["fighters"][number],
+    "side" | "name" | "origin" | "tier" | "profile"
+  >
+> & {
+  side: OmniversusBattle["fighters"][number]["side"];
+  name: OmniversusBattle["fighters"][number]["name"];
+  origin?: Partial<OmniversusBattle["fighters"][number]["origin"]>;
+  tier?: Partial<OmniversusBattle["fighters"][number]["tier"]>;
+  profile?: Partial<OmniversusBattle["fighters"][number]["profile"]>;
 };
 
-export type ReportVerdict = {
+export type ReportVerdict = Partial<
+  Omit<OmniversusBattle["verdict"], "winner_side">
+> & {
   winner_side?: ReportSide;
-  winner_name?: string;
-  difficulty?: string;
-  confidence_score?: number;
-  data_confidence_score?: number;
-  verdict_confidence_given_data_score?: number;
-  verdict_confidence_robustness_score?: number;
-  confidence_explanation?: string;
-  primary_reason?: string;
-  decisive_chain_id?: string;
-  loser_best_argument?: string;
-  why_not_other_side?: string;
-  flip_condition?: string;
-  key_factors?: string[];
-  risk_factors?: string[];
-  recommended_rematch?: string;
-  summary_3_sentences?: string;
 };
 
-export type ReportUi = {
-  headline?: string;
-  subheadline?: string;
-  share_text?: string;
-  verdict_stamp?: string;
-  chain_teaser?: string;
-  tags?: string[];
-  card_variant?: string;
-  primary_badge?: string;
-};
+export type ReportUi = Partial<OmniversusBattle["ui"]>;
 
-export type BattleReportJson = {
+export type BattleReportJson = Partial<
+  Omit<
+    OmniversusBattle,
+    | "metadata"
+    | "fighters"
+    | "claims"
+    | "argument_chains"
+    | "comparison"
+    | "narrative"
+    | "verdict"
+    | "ui"
+    | "audit"
+    | "quality_flags"
+  >
+> & {
   id?: string;
   status?: string;
   headline?: string;
-  metadata?: {
-    title?: string;
-    battle_type?: string;
-    canon_scope?: string;
-    speed_equalized?: boolean;
-    assumptions?: string;
-  };
+  generation?: BattleGenerationMetadata;
+  metadata?: Partial<OmniversusBattle["metadata"]>;
   fighters?: ReportFighter[];
   claims?: ReportClaim[];
   argument_chains?: ReportArgumentChain[];
@@ -136,14 +106,5 @@ export type BattleReportJson = {
   verdict?: ReportVerdict;
   ui?: ReportUi;
   audit?: Partial<Record<string, string>>;
-  quality_flags?: {
-    has_unverified_sources?: boolean;
-    has_contested_scaling?: boolean;
-    has_possible_outliers?: boolean;
-    has_mechanics_mismatch?: boolean;
-    has_confidence_cap?: boolean;
-    has_data_input_warning?: boolean;
-    has_chain_gap?: boolean;
-    most_fragile_assumption?: string;
-  };
+  quality_flags?: Partial<OmniversusBattle["quality_flags"]>;
 };

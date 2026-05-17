@@ -1,10 +1,47 @@
 import type { OmniversusBattle } from "../domain/schema";
-import {
-  asString,
-  clampConfidenceBand,
-  isWeakAppealNeeded,
-  looksLikeAbilityWinCondition,
-} from "./coerce";
+
+function clampConfidenceBand(
+  score: number,
+): OmniversusBattle["verdict"]["confidence_band"] {
+  if (score >= 80) return "DOMINANT_80_100";
+  if (score >= 65) return "CONFIDENT_65_79";
+  if (score >= 50) return "CONTESTED_50_64";
+  return "INDETERMINATE_1_49";
+}
+
+function isWeakAppealNeeded(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.length < 12 ||
+    ["true", "false", "yes", "no", "none"].includes(normalized)
+  );
+}
+
+function looksLikeAbilityWinCondition(value: string): boolean {
+  const text = value.toLowerCase();
+
+  return [
+    "seal",
+    "sealing",
+    "domain",
+    "contract",
+    "mind",
+    "soul",
+    "bfr",
+    "banish",
+    "drain",
+    "life force",
+    "passive",
+    "concept",
+    "conceptual",
+    "causality",
+    "time stop",
+    "space",
+    "void",
+    "infinity",
+    "curse",
+  ].some((keyword) => text.includes(keyword));
+}
 
 function isGenericSourceRef(ref: string): boolean {
   const normalized = ref.trim().toLowerCase();
@@ -40,12 +77,10 @@ function isGenericSourceRef(ref: string): boolean {
 const SPEED_TEXT_PATTERN =
   /speed|faster|blitz|reaction|mftl|ftl|lightspeed|supersonic|hypersonic/i;
 const DURABILITY_TEXT_PATTERN = /durability|tank|survive|defense/i;
-const STAMINA_TEXT_PATTERN = /stamina|endurance|time limit|exhaust/i;
 const ABILITY_TEXT_PATTERN =
   /ability|hax|drain|seal|bfr|dodge|contact|passive|mind|soul|time|space|concept|causal/i;
 const HP_RECOVERY_TEXT_PATTERN =
   /regenerat|regen\b|healing?\b|heal\b|self[-\s]?repair|reconstitut|restore(?:s|d|ing)?|rebuild|rapid recovery/i;
-const RESISTANCE_TEXT_PATTERN = /resist|immune|counter/i;
 const AP_TEXT_PATTERN =
   /ap|attack potency|tier|power|force|damage|destructive|universal|multiversal|star|planet|moon|city|mountain|cosmo/i;
 
@@ -136,116 +171,6 @@ function normalizeClaimKindForTag(
   return claim.kind;
 }
 
-function isPureRuleOrAssumptionPremise(
-  premise: OmniversusBattle["argument_chains"][number]["premises"][number],
-): boolean {
-  return premise.role === "RULE" || premise.role === "ASSUMPTION";
-}
-
-function inferClaimIdForPremise(
-  premise: OmniversusBattle["argument_chains"][number]["premises"][number],
-  chain: OmniversusBattle["argument_chains"][number],
-  result: OmniversusBattle,
-): string | null {
-  const text = `${premise.text} ${chain.conclusion} ${chain.inference}`
-    .toLowerCase()
-    .replace(/[^\w\s]/g, " ");
-
-  const findClaim = (
-    side: "A" | "B" | null,
-    categories: Array<OmniversusBattle["claims"][number]["category"]>,
-  ) =>
-    result.claims.find(
-      (claim) =>
-        (side === null || claim.side === side || claim.side === "BOTH") &&
-        categories.includes(claim.category),
-    )?.id ?? null;
-
-  const mentionsFighter = (side: "A" | "B") => {
-    const name = result.fighters.find((fighter) => fighter.side === side)?.name;
-    const tokens = asString(name)
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((token) => token.length >= 3);
-
-    return tokens.some((token) => text.includes(token));
-  };
-  const mentionsSideA =
-    mentionsFighter("A") || /\b(side|fighter|combatant)\s+a\b/.test(text);
-  const mentionsSideB =
-    mentionsFighter("B") || /\b(side|fighter|combatant)\s+b\b/.test(text);
-  const inferredCategory = claimCategoryFromText(text);
-
-  if (inferredCategory) {
-    const categories =
-      inferredCategory === "AP"
-        ? (["AP", "DURABILITY"] as ClaimCategory[])
-        : ([inferredCategory] as ClaimCategory[]);
-
-    if (mentionsSideA && !mentionsSideB) {
-      return findClaim("A", categories) ?? findClaim(null, categories);
-    }
-
-    if (mentionsSideB && !mentionsSideA) {
-      return findClaim("B", categories) ?? findClaim(null, categories);
-    }
-
-    if (chain.side === "A" || chain.side === "B") {
-      return findClaim(chain.side, categories) ?? findClaim(null, categories);
-    }
-
-    return findClaim(null, categories);
-  }
-
-  if (chain.side === "A" || chain.side === "B") {
-    return findClaim(chain.side, ["AP", "SPEED", "WIN_CONDITION"]);
-  }
-
-  return null;
-}
-
-function repairChainPremises(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  return {
-    ...result,
-    argument_chains: result.argument_chains.map((chain) => {
-      const premises = chain.premises.map((premise) => {
-        if (
-          premise.claim_id !== "N_A" ||
-          isPureRuleOrAssumptionPremise(premise)
-        ) {
-          return premise;
-        }
-
-        const claimId = inferClaimIdForPremise(premise, chain, result);
-        return claimId
-          ? { ...premise, claim_id: claimId }
-          : {
-              ...premise,
-              role: "ASSUMPTION" as const,
-              contested: true,
-            };
-      });
-      const linkedClaimIds = uniqueStrings(
-        [
-          ...chain.linked_claim_ids,
-          ...premises
-            .map((premise) => premise.claim_id)
-            .filter((claimId) => claimId !== "N_A"),
-        ],
-        8,
-      );
-
-      return {
-        ...chain,
-        premises,
-        linked_claim_ids: linkedClaimIds,
-      };
-    }),
-  };
-}
-
 function isWeakRecommendedRematch(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   return ["", "none", "n/a", "na", "not required", "not recommended"].includes(
@@ -301,6 +226,40 @@ function normalizeAppealNeeded(
 
 function uniqueStrings(values: string[], maxItems: number): string[] {
   return Array.from(new Set(values.filter(Boolean))).slice(0, maxItems);
+}
+
+function orderBattleResult(result: OmniversusBattle): OmniversusBattle {
+  return {
+    metadata: result.metadata,
+    data_provenance: result.data_provenance,
+    rules: result.rules,
+    stat_model: result.stat_model,
+    fighters: result.fighters,
+    tier_sanitization: result.tier_sanitization,
+    claims: result.claims,
+    argument_chains: result.argument_chains,
+    comparison: result.comparison,
+    ability_interactions: result.ability_interactions,
+    win_conditions: result.win_conditions,
+    audit: result.audit,
+    quality_flags: result.quality_flags,
+    narrative: result.narrative,
+    verdict: result.verdict,
+    appeals: result.appeals,
+    ui: result.ui,
+  };
+}
+
+function normalizeMetadataRuleConsistency(
+  result: OmniversusBattle,
+): OmniversusBattle {
+  return {
+    ...result,
+    rules: {
+      ...result.rules,
+      speed_equalized: result.metadata.speed_equalized,
+    },
+  };
 }
 
 function scoreFingerprint(seed: string): number {
@@ -376,11 +335,7 @@ function refinePercentageScore(
   );
 }
 
-function varyPercentageScore(
-  score: number,
-  seed: string,
-  radius = 3,
-): number {
+function varyPercentageScore(score: number, seed: string, radius = 3): number {
   const spread = radius * 2 + 1;
   const adjustment = (scoreFingerprint(seed) % spread) - radius;
 
@@ -399,10 +354,7 @@ function blendPercentageScores(
   return refinePercentageScore(blended, seed);
 }
 
-function confidenceScoreSeed(
-  result: OmniversusBattle,
-  reason: string,
-): string {
+function confidenceScoreSeed(result: OmniversusBattle, reason: string): string {
   return [
     result.metadata.title,
     result.verdict.winner_side,
@@ -413,223 +365,11 @@ function confidenceScoreSeed(
   ].join("|");
 }
 
-type BattleSide = "A" | "B";
-type ClaimCategory = OmniversusBattle["claims"][number]["category"];
-type Fighter = OmniversusBattle["fighters"][number];
+function confidenceCapReason(current: string, fallback: string): string {
+  const trimmed = current.trim();
+  if (trimmed && trimmed !== "No confidence cap applied.") return trimmed;
 
-const PROFILE_CLAIM_CATEGORIES = [
-  "AP",
-  "DURABILITY",
-  "SPEED",
-  "STAMINA",
-  "ABILITY",
-  "RESISTANCE",
-] as const satisfies readonly ClaimCategory[];
-type ProfileClaimCategory = (typeof PROFILE_CLAIM_CATEGORIES)[number];
-
-function isProfileClaimCategory(
-  category: ClaimCategory,
-): category is ProfileClaimCategory {
-  return (PROFILE_CLAIM_CATEGORIES as readonly ClaimCategory[]).includes(
-    category,
-  );
-}
-
-function claimCategoryFromText(text: string): ClaimCategory | null {
-  if (SPEED_TEXT_PATTERN.test(text)) {
-    return "SPEED";
-  }
-
-  if (DURABILITY_TEXT_PATTERN.test(text)) {
-    return "DURABILITY";
-  }
-
-  if (STAMINA_TEXT_PATTERN.test(text)) {
-    return "STAMINA";
-  }
-
-  if (ABILITY_TEXT_PATTERN.test(text)) {
-    return "ABILITY";
-  }
-
-  if (RESISTANCE_TEXT_PATTERN.test(text)) {
-    return "RESISTANCE";
-  }
-
-  if (AP_TEXT_PATTERN.test(text)) {
-    return "AP";
-  }
-
-  return null;
-}
-
-function textMentionsSide(
-  result: OmniversusBattle,
-  side: BattleSide,
-  text: string,
-): boolean {
-  const fighter = result.fighters.find((item) => item.side === side);
-  const normalized = text.toLowerCase();
-  const tokens = asString(fighter?.name)
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 3);
-
-  return (
-    tokens.some((token) => normalized.includes(token)) ||
-    new RegExp(`\\b(side|fighter|combatant)\\s+${side.toLowerCase()}\\b`).test(
-      normalized,
-    )
-  );
-}
-
-function inferSideFromText(
-  result: OmniversusBattle,
-  text: string,
-): BattleSide | null {
-  const mentionsA = textMentionsSide(result, "A", text);
-  const mentionsB = textMentionsSide(result, "B", text);
-
-  if (mentionsA && !mentionsB) return "A";
-  if (mentionsB && !mentionsA) return "B";
-  return null;
-}
-
-function profileValueForClaimCategory(
-  fighter: Fighter,
-  category: ClaimCategory,
-): string {
-  switch (category) {
-    case "AP":
-      return fighter.profile.ap;
-    case "DURABILITY":
-      return fighter.profile.durability;
-    case "SPEED":
-      return fighter.profile.speed;
-    case "STAMINA":
-      return fighter.profile.stamina;
-    case "ABILITY":
-      return fighter.profile.abilities;
-    case "RESISTANCE":
-      return fighter.profile.resistances;
-    default:
-      return "";
-  }
-}
-
-function profileClaimText(
-  fighter: Fighter,
-  category: ClaimCategory,
-  value: string,
-): string {
-  switch (category) {
-    case "AP":
-      return `${fighter.name}'s generated profile lists attack potency as ${value}.`;
-    case "DURABILITY":
-      return `${fighter.name}'s generated profile lists durability as ${value}.`;
-    case "SPEED":
-      return `${fighter.name}'s generated profile lists speed as ${value}.`;
-    case "STAMINA":
-      return `${fighter.name}'s generated profile lists stamina as ${value}.`;
-    case "ABILITY":
-      return `${fighter.name}'s generated profile lists relevant abilities as ${value}.`;
-    case "RESISTANCE":
-      return `${fighter.name}'s generated profile lists resistances as ${value}.`;
-    default:
-      return `${fighter.name}'s generated profile lists ${category.toLowerCase()} as ${value}.`;
-  }
-}
-
-function hasClaimForSideCategory(
-  result: OmniversusBattle,
-  side: BattleSide,
-  category: ClaimCategory,
-): boolean {
-  return result.claims.some(
-    (claim) =>
-      (claim.side === side || claim.side === "BOTH") &&
-      claim.category === category,
-  );
-}
-
-function ensureProfileClaimsForReferencedStats(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  const needed = new Map<string, { side: BattleSide; category: ClaimCategory }>();
-  const addNeed = (side: BattleSide, category: ClaimCategory | null) => {
-    if (!category || !isProfileClaimCategory(category)) return;
-    if (hasClaimForSideCategory(result, side, category)) return;
-
-    const fighter = result.fighters.find((item) => item.side === side);
-    if (!fighter || !profileValueForClaimCategory(fighter, category).trim()) {
-      return;
-    }
-
-    needed.set(`${side}:${category}`, { side, category });
-  };
-
-  for (const chain of result.argument_chains) {
-    for (const premise of chain.premises) {
-      if (premise.claim_id !== "N_A" || isPureRuleOrAssumptionPremise(premise)) {
-        continue;
-      }
-
-      const side =
-        inferSideFromText(result, premise.text) ??
-        (chain.side === "A" || chain.side === "B" ? chain.side : null);
-      if (side) addNeed(side, claimCategoryFromText(premise.text));
-    }
-  }
-
-  for (const row of result.comparison) {
-    if (!isProfileClaimCategory(row.category)) continue;
-
-    addNeed("A", row.category);
-    addNeed("B", row.category);
-  }
-
-  if (needed.size === 0 || result.claims.length >= 14) return result;
-
-  const additions: OmniversusBattle["claims"] = [];
-
-  for (const { side, category } of needed.values()) {
-    if (result.claims.length + additions.length >= 14) break;
-
-    const fighter = result.fighters.find((item) => item.side === side);
-    if (!fighter) continue;
-
-    const value = profileValueForClaimCategory(fighter, category);
-    const id = `auto_${side.toLowerCase()}_${category.toLowerCase()}_profile`;
-
-    additions.push({
-      id,
-      side,
-      kind: "DATA_QUALITY",
-      tag: "INTERPRETATION",
-      category,
-      text: profileClaimText(fighter, category, value),
-      source: {
-        type: "UNKNOWN",
-        ref: "Generated fighter profile",
-        status: "REQUIRES_VERIFICATION",
-        reliability: "UNKNOWN",
-        note: "Auto-created to connect generated profile stats to argument chains.",
-      },
-      evidence_level: "UNKNOWN",
-      importance: side === result.verdict.winner_side ? "HIGH" : "MEDIUM",
-      confidence: 40,
-      supports_verdict: side === result.verdict.winner_side,
-      review_flag: "DATA_INPUT_RISK",
-      contested: true,
-      outlier: false,
-      appeal_hint: "Replace with a source-backed claim.",
-    });
-  }
-
-  return {
-    ...result,
-    claims: [...result.claims, ...additions],
-  };
+  return fallback;
 }
 
 export function capConfidence(
@@ -663,6 +403,10 @@ export function capConfidence(
     quality_flags: {
       ...result.quality_flags,
       has_confidence_cap: true,
+      confidence_cap_reason: confidenceCapReason(
+        result.quality_flags.confidence_cap_reason,
+        reason,
+      ),
     },
   };
 }
@@ -734,7 +478,7 @@ export function buildAutoAppeals(
   }
 
   const abilityMismatch = result.ability_interactions.filter(
-    (row) => row.contested || row.effective === null,
+    (row) => row.contested || row.effective === "UNCLEAR",
   );
   const abilityTargetIds = uniqueStrings(
     abilityMismatch.flatMap((row) => [
@@ -777,144 +521,6 @@ export function buildAutoAppeals(
   return appeals.slice(0, 5);
 }
 
-function findBestChainForSide(
-  result: OmniversusBattle,
-  side: "A" | "B",
-): string[] {
-  const best = result.argument_chains.find(
-    (chain) =>
-      chain.side === side &&
-      (chain.chain_type === "WIN_CONDITION" ||
-        chain.chain_type === "STAT_ADVANTAGE" ||
-        chain.chain_type === "ABILITY_INTERACTION" ||
-        chain.chain_type === "ANTI_ARGUMENT"),
-  );
-
-  return best ? [best.id] : [];
-}
-
-function findBestClaimsForSide(
-  result: OmniversusBattle,
-  side: "A" | "B",
-): string[] {
-  return result.claims
-    .filter((claim) => claim.side === side || claim.side === "BOTH")
-    .map((claim) => claim.id)
-    .slice(0, 3);
-}
-
-function isAbilityLikeWinCondition(
-  item: OmniversusBattle["win_conditions"][number],
-): boolean {
-  const text = `${item.method} ${item.requires} ${item.blocked_by}`;
-
-  return (
-    item.type === "ABILITY" ||
-    item.type === "BFR" ||
-    looksLikeAbilityWinCondition(text)
-  );
-}
-
-function hasAbilityMethodOverlap(
-  row: OmniversusBattle["ability_interactions"][number],
-  winCondition: OmniversusBattle["win_conditions"][number],
-): boolean {
-  const method = winCondition.method.trim().toLowerCase();
-  const rowText = `${row.ability} ${row.relevance_to_win_condition}`
-    .trim()
-    .toLowerCase();
-
-  if (!method || !rowText) return false;
-  if (rowText.includes(method) || method.includes(row.ability.toLowerCase())) {
-    return true;
-  }
-
-  return method
-    .split(/[^a-z0-9]+/i)
-    .filter((part) => part.length >= 4)
-    .some((part) => rowText.includes(part));
-}
-
-function inferAbilityTypeFromText(
-  text: string,
-): OmniversusBattle["ability_interactions"][number]["ability_type"] {
-  const lower = text.toLowerCase();
-
-  if (/seal/.test(lower)) return "SEALING";
-  if (/domain/.test(lower)) return "DOMAIN";
-  if (/contract|binding/.test(lower)) return "CONTRACT";
-  if (/mind|mental/.test(lower)) return "MIND";
-  if (/soul/.test(lower)) return "SOUL";
-  if (/bfr|remove|banish/.test(lower)) return "BFR";
-  if (/concept/.test(lower)) return "CONCEPTUAL";
-  if (/causal|fate/.test(lower)) return "CAUSALITY";
-  if (/time/.test(lower)) return "TIME";
-  if (/space|spatial|infinity/.test(lower)) return "SPACE";
-  if (/passive/.test(lower)) return "PASSIVE";
-
-  return "OTHER";
-}
-
-function ensureWinConditionsForBothSides(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  const hasA = result.win_conditions.some((item) => item.side === "A");
-  const hasB = result.win_conditions.some((item) => item.side === "B");
-
-  if (hasA && hasB) return result;
-
-  const missingSides: Array<"A" | "B"> = [];
-  if (!hasA) missingSides.push("A");
-  if (!hasB) missingSides.push("B");
-
-  const autoWinConditions = missingSides.flatMap((missingSide) => {
-    const fighter = result.fighters.find((item) => item.side === missingSide);
-    if (!fighter) return [];
-
-    const isWinner = missingSide === result.verdict.winner_side;
-    const isSubjective = result.metadata.battle_type === "SUBJECTIVE";
-
-    return [
-      {
-        id: `AUTO_${missingSide}_FALLBACK_PATH`,
-        side: missingSide,
-        method: isWinner
-          ? result.verdict.primary_reason
-          : fighter.best_argument || "Fallback argument only",
-        type: isSubjective ? "SUBJECTIVE_EDGE" : "STAT_CHECK",
-        requires: isWinner
-          ? "The main verdict chain remains valid."
-          : result.verdict.flip_condition ||
-            "A major interpretation, rule, resistance, or stat assumption change.",
-        blocked_by: isWinner
-          ? "Not blocked; this side is already the predicted winner."
-          : result.verdict.primary_reason,
-        probability: isWinner ? "HIGH" : "VERY_LOW",
-        claim_ids: findBestClaimsForSide(result, missingSide),
-        chain_ids: findBestChainForSide(result, missingSide),
-        contested: !isWinner,
-      } satisfies OmniversusBattle["win_conditions"][number],
-    ];
-  });
-
-  if (autoWinConditions.length === 0) return result;
-
-  const merged = [...result.win_conditions, ...autoWinConditions];
-
-  const firstBySide = merged.filter((item, index, array) => {
-    return array.findIndex((other) => other.side === item.side) === index;
-  });
-
-  const rest = merged.filter(
-    (item) => !firstBySide.some((kept) => kept.id === item.id),
-  );
-
-  return {
-    ...result,
-    win_conditions: [...firstBySide, ...rest].slice(0, 6),
-  };
-}
-
 function normalizeAbilityWinConditionTypes(
   result: OmniversusBattle,
 ): OmniversusBattle {
@@ -932,136 +538,6 @@ function normalizeAbilityWinConditionTypes(
         type: /bfr|banish/i.test(text) ? "BFR" : "ABILITY",
       };
     }),
-  };
-}
-
-function attachChainsToWinConditions(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  return {
-    ...result,
-    win_conditions: result.win_conditions.map((item) => {
-      if (item.chain_ids.length > 0) return item;
-
-      const chainIds = findBestChainForSide(result, item.side);
-      return {
-        ...item,
-        chain_ids: chainIds,
-        contested: item.contested || chainIds.length === 0,
-      };
-    }),
-  };
-}
-
-function findClaimIdsForChains(
-  result: OmniversusBattle,
-  chainIds: string[],
-): string[] {
-  return uniqueStrings(
-    chainIds.flatMap((chainId) => {
-      const chain = result.argument_chains.find((item) => item.id === chainId);
-      if (!chain) return [];
-
-      return [
-        ...chain.linked_claim_ids,
-        ...chain.premises
-          .map((premise) => premise.claim_id)
-          .filter((claimId) => claimId !== "N_A"),
-      ];
-    }),
-    4,
-  );
-}
-
-function attachClaimsToWinConditions(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  return {
-    ...result,
-    win_conditions: result.win_conditions.map((item) => {
-      const claimIds = uniqueStrings(
-        [
-          ...item.claim_ids,
-          ...findClaimIdsForChains(result, item.chain_ids),
-        ],
-        4,
-      );
-
-      if (claimIds.length > 0) {
-        return {
-          ...item,
-          claim_ids: claimIds,
-        };
-      }
-
-      return {
-        ...item,
-        claim_ids: findBestClaimsForSide(result, item.side),
-      };
-    }),
-  };
-}
-
-function ensureAbilityInteractionsForAbilityRoutes(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  const missingRoutes = result.win_conditions.filter((item) => {
-    if (!isAbilityLikeWinCondition(item)) return false;
-
-    return !result.ability_interactions.some(
-      (row) =>
-        row.attacker === item.side &&
-        (row.chain_ids.some((id) => item.chain_ids.includes(id)) ||
-          hasAbilityMethodOverlap(row, item)),
-    );
-  });
-
-  if (missingRoutes.length === 0) return result;
-
-  const autoInteractions = missingRoutes.map((item, index) => {
-    const defender: "A" | "B" = item.side === "A" ? "B" : "A";
-    const text = `${item.method} ${item.requires} ${item.blocked_by}`;
-
-    return {
-      id: `AUTO_${item.side}_ABILITY_${index + 1}`,
-      attacker: item.side,
-      defender,
-      ability: item.method || "Theoretical ability route",
-      ability_type: inferAbilityTypeFromText(text),
-      activation: item.requires || "Source requires verification.",
-      range: "Source requires verification.",
-      timing: "Source requires verification.",
-      target_requirement: item.requires || "Source requires verification.",
-      defender_resistance: item.blocked_by || "Source requires verification.",
-      resistance_basis:
-        "Auto-created from win condition; manual review recommended.",
-      structurally_similar_resistance: "Source requires verification.",
-      deliverable: item.probability !== "VERY_LOW",
-      effective: null,
-      relevance_to_win_condition: item.method,
-      reason:
-        "Auto-created because an ability-like win condition lacked an ability interaction log.",
-      counterplay: item.blocked_by || "Source requires verification.",
-      contested: true,
-      impact:
-        item.probability === "VERY_HIGH" || item.probability === "HIGH"
-          ? "WIN_CONDITION"
-          : "MINOR",
-      claim_ids: item.claim_ids,
-      chain_ids: item.chain_ids,
-    } satisfies OmniversusBattle["ability_interactions"][number];
-  });
-
-  return {
-    ...result,
-    ability_interactions: [
-      ...result.ability_interactions,
-      ...autoInteractions,
-    ].slice(0, 8),
-    quality_flags: {
-      ...result.quality_flags,
-      has_mechanics_mismatch: true,
-    },
   };
 }
 
@@ -1084,8 +560,7 @@ function normalizeClaimTrust(result: OmniversusBattle): OmniversusBattle {
           normalizedKind === "CALC" ||
           normalizedTag === "SCALING" ||
           normalizedTag === "CALC");
-      const weakDecisiveClaim =
-        weakEvidence && claim.importance === "DECISIVE";
+      const weakDecisiveClaim = weakEvidence && claim.importance === "DECISIVE";
 
       if (!weakEvidence) {
         return {
@@ -1226,7 +701,9 @@ function mergeAutoAppeals(result: OmniversusBattle): OmniversusBattle {
   if (result.metadata.battle_type !== "OBJECTIVE") return result;
 
   const autoAppeals = buildAutoAppeals(result);
-  const modelAppeals = result.appeals.filter((appeal) => !isWeakModelAppeal(appeal));
+  const modelAppeals = result.appeals.filter(
+    (appeal) => !isWeakModelAppeal(appeal),
+  );
   if (autoAppeals.length === 0) {
     return modelAppeals.length === result.appeals.length
       ? result
@@ -1368,34 +845,6 @@ function normalizeComparisonCategories(
   };
 }
 
-function claimIdsForCategory(
-  result: OmniversusBattle,
-  category: ClaimCategory,
-): string[] {
-  return result.claims
-    .filter((claim) => claim.category === category)
-    .map((claim) => claim.id);
-}
-
-function attachClaimsToComparisonRows(
-  result: OmniversusBattle,
-): OmniversusBattle {
-  return {
-    ...result,
-    comparison: result.comparison.map((row) => {
-      if (!isProfileClaimCategory(row.category)) return row;
-
-      return {
-        ...row,
-        claim_ids: uniqueStrings(
-          [...row.claim_ids, ...claimIdsForCategory(result, row.category)],
-          4,
-        ),
-      };
-    }),
-  };
-}
-
 function normalizeNarrativeHp(result: OmniversusBattle): OmniversusBattle {
   const sideHasHpRecoveryTrait = (side: "A" | "B") => {
     const fighter = result.fighters.find((item) => item.side === side);
@@ -1423,9 +872,8 @@ function normalizeNarrativeHp(result: OmniversusBattle): OmniversusBattle {
     return HP_RECOVERY_TEXT_PATTERN.test(`${profileText} ${claimText}`);
   };
 
-  const stepUsesHpRecovery = (
-    step: OmniversusBattle["narrative"][number],
-  ) => HP_RECOVERY_TEXT_PATTERN.test(`${step.title} ${step.log} ${step.why}`);
+  const stepUsesHpRecovery = (step: OmniversusBattle["narrative"][number]) =>
+    HP_RECOVERY_TEXT_PATTERN.test(`${step.title} ${step.log} ${step.why}`);
 
   const normalizeHpValue = (
     currentHp: number,
@@ -1466,52 +914,6 @@ function normalizeNarrativeHp(result: OmniversusBattle): OmniversusBattle {
         b_hp: bHp,
       };
     }),
-  };
-}
-
-function inferDifficultyFromResult(result: OmniversusBattle): OmniversusBattle {
-  if (
-    result.verdict.difficulty !== "INCONCLUSIVE" ||
-    (result.verdict.winner_side !== "A" && result.verdict.winner_side !== "B")
-  ) {
-    return result;
-  }
-
-  const text = [
-    result.verdict.primary_reason,
-    result.verdict.summary_3_sentences,
-    result.ui.verdict_stamp,
-    result.ui.chain_teaser,
-    result.ui.card_variant,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  let difficulty: OmniversusBattle["verdict"]["difficulty"] = "MID_DIFF";
-
-  const decisiveRows = result.comparison.filter(
-    (row) =>
-      row.winner === result.verdict.winner_side && row.margin === "DECISIVE",
-  ).length;
-
-  if (/stomp|no viable path|zero viable|statistical mismatch/.test(text)) {
-    difficulty = "STOMP";
-  } else if (
-    /easy|low diff|low difficulty|overwhelming|insurmountable/.test(text)
-  ) {
-    difficulty = decisiveRows >= 2 ? "STOMP" : "LOW_DIFF";
-  } else if (decisiveRows >= 2) {
-    difficulty = "STOMP";
-  } else if (decisiveRows === 1) {
-    difficulty = "LOW_DIFF";
-  }
-
-  return {
-    ...result,
-    verdict: {
-      ...result.verdict,
-      difficulty,
-    },
   };
 }
 
@@ -1582,7 +984,9 @@ function confidenceForDifficulty(
   return varyPercentageScore(score, seed, 3);
 }
 
-function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattle {
+function normalizeConfidenceBreakdown(
+  result: OmniversusBattle,
+): OmniversusBattle {
   const weakSourceClaims = result.claims.filter(isWeakSource);
   const weakDecisiveClaims = weakSourceClaims.filter(
     (claim) => claim.importance === "DECISIVE" && claim.supports_verdict,
@@ -1597,7 +1001,9 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
   const possibleOutliers = result.claims.some(
     (claim) => claim.outlier || claim.review_flag === "POSSIBLE_OUTLIER",
   );
-  const contestedTier = result.fighters.some((fighter) => fighter.tier.contested);
+  const contestedTier = result.fighters.some(
+    (fighter) => fighter.tier.contested,
+  );
   const decisiveRows = result.comparison.filter(
     (row) =>
       row.winner === result.verdict.winner_side && row.margin === "DECISIVE",
@@ -1614,7 +1020,7 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
     (row) =>
       row.attacker === result.verdict.winner_side &&
       row.impact === "WIN_CONDITION" &&
-      (row.contested || row.effective === null),
+      (row.contested || row.effective === "UNCLEAR"),
   );
   const hasDataInputWarning =
     result.data_provenance.needs_manual_review ||
@@ -1658,7 +1064,11 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
   );
 
   if (severeChainGap) {
-    verdictGivenData = capScore(verdictGivenData, 85, `${seed}:chain-gap-given`);
+    verdictGivenData = capScore(
+      verdictGivenData,
+      85,
+      `${seed}:chain-gap-given`,
+    );
   }
   if (winnerDecisiveContestedAbility) {
     verdictGivenData = capScore(
@@ -1731,15 +1141,22 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
 
   const confidenceExplanation =
     "Data confidence measures source/input reliability; verdict confidence assumes those inputs; robustness estimates whether the winner changes under aggressive source review.";
+  const hasConfidenceCap =
+    result.quality_flags.has_confidence_cap ||
+    dataConfidence < verdictGivenData ||
+    verdictRobustness < verdictGivenData;
 
   return {
     ...result,
     quality_flags: {
       ...result.quality_flags,
-      has_confidence_cap:
-        result.quality_flags.has_confidence_cap ||
-        dataConfidence < verdictGivenData ||
-        verdictRobustness < verdictGivenData,
+      has_confidence_cap: hasConfidenceCap,
+      confidence_cap_reason: hasConfidenceCap
+        ? confidenceCapReason(
+            result.quality_flags.confidence_cap_reason,
+            "Confidence was capped by source, chain, or robustness review.",
+          )
+        : result.quality_flags.confidence_cap_reason,
     },
     verdict: {
       ...result.verdict,
@@ -1748,8 +1165,7 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
       data_confidence_score: dataConfidence,
       data_confidence_band: clampConfidenceBand(dataConfidence),
       verdict_confidence_given_data_score: verdictGivenData,
-      verdict_confidence_given_data_band:
-        clampConfidenceBand(verdictGivenData),
+      verdict_confidence_given_data_band: clampConfidenceBand(verdictGivenData),
       verdict_confidence_robustness_score: verdictRobustness,
       verdict_confidence_robustness_band:
         clampConfidenceBand(verdictRobustness),
@@ -1758,7 +1174,9 @@ function normalizeConfidenceBreakdown(result: OmniversusBattle): OmniversusBattl
   };
 }
 
-export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattle {
+export function normalizeBattleResult(
+  result: OmniversusBattle,
+): OmniversusBattle {
   let next = result;
 
   if (next.metadata.battle_type === "SUBJECTIVE") {
@@ -1770,6 +1188,14 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
         has_confidence_cap:
           next.quality_flags.has_confidence_cap ||
           next.verdict.confidence_score > 60,
+        confidence_cap_reason:
+          next.quality_flags.has_confidence_cap ||
+          next.verdict.confidence_score > 60
+            ? confidenceCapReason(
+                next.quality_flags.confidence_cap_reason,
+                "Subjective battles cap verdict confidence at 60.",
+              )
+            : next.quality_flags.confidence_cap_reason,
       },
     };
 
@@ -1791,71 +1217,61 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
     }
   }
 
+  next = normalizeMetadataRuleConsistency(next);
   next = normalizeClaimTrust(next);
-  next = ensureProfileClaimsForReferencedStats(next);
-  next = repairChainPremises(next);
   next = normalizeChainConfidence(next);
   next = {
     ...next,
     appeals: next.appeals.map(normalizeAppealNeeded),
   };
   next = normalizeRuleImpact(next);
-  next = inferDifficultyFromResult(next);
   next = normalizeAbilityWinConditionTypes(next);
-  next = attachChainsToWinConditions(next);
-  next = attachClaimsToWinConditions(next);
-  next = ensureAbilityInteractionsForAbilityRoutes(next);
   next = normalizeComparisonCategories(next);
-  next = attachClaimsToComparisonRows(next);
 
-  const normalizedAbilityInteractions = next.ability_interactions.map((row) => {
-    const isExplicitlyIrrelevant =
-      row.impact === "NONE" &&
-      /irrelevant|not relevant|no impact|does not affect/.test(
-        `${row.reason} ${row.relevance_to_win_condition}`.toLowerCase(),
-      );
-    const shouldContestMechanics =
-      (row.effective === null || row.deliverable === false) &&
-      !isExplicitlyIrrelevant;
+  const normalizedAbilityInteractions: OmniversusBattle["ability_interactions"] =
+    next.ability_interactions.map((row) => {
+      const isExplicitlyIrrelevant =
+        row.impact === "NONE" &&
+        /irrelevant|not relevant|no impact|does not affect/.test(
+          `${row.reason} ${row.relevance_to_win_condition}`.toLowerCase(),
+        );
+      const shouldContestMechanics =
+        (row.effective === "UNCLEAR" || row.deliverable === false) &&
+        !isExplicitlyIrrelevant;
 
-    if (
-      row.deliverable === false &&
-      row.effective === false &&
-      !isExplicitlyIrrelevant
-    ) {
-      return {
-        ...row,
-        effective: null,
-        contested: true,
-        reason:
-          row.reason.includes("not deliverable") ||
-          row.reason.includes("cannot land") ||
-          row.reason.includes("too fast")
-            ? row.reason
-            : `${row.reason} The ability is treated as not deliverable rather than mechanically ineffective.`,
-      };
-    }
-
-    return shouldContestMechanics
-      ? {
+      if (
+        row.deliverable === false &&
+        row.effective === "NO" &&
+        !isExplicitlyIrrelevant
+      ) {
+        return {
           ...row,
+          effective: "UNCLEAR" as const,
           contested: true,
-        }
-      : row;
-  });
+          reason:
+            row.reason.includes("not deliverable") ||
+            row.reason.includes("cannot land") ||
+            row.reason.includes("too fast")
+              ? row.reason
+              : `${row.reason} The ability is treated as not deliverable rather than mechanically ineffective.`,
+        };
+      }
+
+      return shouldContestMechanics
+        ? {
+            ...row,
+            contested: true,
+          }
+        : row;
+    });
 
   next = {
     ...next,
     ability_interactions: normalizedAbilityInteractions,
   };
 
-  next = ensureWinConditionsForBothSides(next);
   next = normalizeAbilityWinConditionTypes(next);
-  next = attachChainsToWinConditions(next);
-  next = attachClaimsToWinConditions(next);
-  next = ensureAbilityInteractionsForAbilityRoutes(next);
   next = normalizeComparisonCategories(next);
-  next = attachClaimsToComparisonRows(next);
   next = normalizeUtilityComparisonRows(next);
 
   const weakSourceClaims = next.claims.filter(isWeakSource);
@@ -1875,7 +1291,7 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
   const mechanicsMismatch =
     next.quality_flags.has_mechanics_mismatch ||
     next.ability_interactions.some(
-      (row) => row.effective === null || row.contested,
+      (row) => row.effective === "UNCLEAR" || row.contested,
     );
   const contestedTier = next.fighters.some((fighter) => fighter.tier.contested);
   const decisiveContestedAbility = next.ability_interactions.some(
@@ -1910,6 +1326,13 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
     next.argument_chains.some(
       (chain) => isDecisiveOrWinnerChain(chain, next) && chainHasGap(chain),
     );
+  const confidenceCapApplies =
+    next.quality_flags.has_confidence_cap ||
+    weakDecisiveClaims.length > 0 ||
+    decisiveContestedAbility ||
+    contestedTier ||
+    hasDataInputWarning ||
+    severeChainGap;
 
   next = {
     ...next,
@@ -1933,19 +1356,19 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
       has_possible_outliers:
         next.quality_flags.has_possible_outliers || possibleOutliers,
       has_mechanics_mismatch: mechanicsMismatch,
-      has_confidence_cap:
-        next.quality_flags.has_confidence_cap ||
-        weakDecisiveClaims.length > 0 ||
-        decisiveContestedAbility ||
-        contestedTier ||
-        hasDataInputWarning ||
-        severeChainGap,
+      has_confidence_cap: confidenceCapApplies,
       has_data_input_warning: hasDataInputWarning,
       has_chain_gap: anyChainGap,
       most_fragile_assumption:
         next.quality_flags.most_fragile_assumption.trim().length > 0
           ? next.quality_flags.most_fragile_assumption
           : "No fragile assumption identified.",
+      confidence_cap_reason: confidenceCapApplies
+        ? confidenceCapReason(
+            next.quality_flags.confidence_cap_reason,
+            "Confidence was capped by data, tier, ability, or chain review.",
+          )
+        : next.quality_flags.confidence_cap_reason,
     },
   };
 
@@ -2058,6 +1481,6 @@ export function normalizeBattleResult(result: OmniversusBattle): OmniversusBattl
     };
   }
 
-  return next;
+  return orderBattleResult(next);
 }
 export const enforceBusinessCaps = normalizeBattleResult;

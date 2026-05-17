@@ -1,17 +1,21 @@
-import { AdminDisabled, MissingDatabase } from "./_components/AdminNotice";
-import { AdminHeader, AdminShell } from "./_components/AdminShell";
-import { DossierForms } from "./_components/forms/DossierForms";
-import { Metrics } from "./_components/Metrics";
-import { RecentFacts } from "./_components/RecentFacts";
-import { RecentRuns } from "./_components/RecentRuns";
-import { ReferenceLists } from "./_components/ReferenceLists";
-import { SubjectTable } from "./_components/SubjectTable";
+import {
+  AdminDisabled,
+  AdminHeader,
+  AdminShell,
+  DossierForms,
+  Metrics,
+  MissingDatabase,
+  RecentFacts,
+  RecentRuns,
+  ReferenceLists,
+  SubjectTable,
+} from "@/features/admin/components";
 import {
   hasAdminDatabase,
   isAdminEnabled,
   loadAdminData,
-} from "./_data/loadAdminData";
-import styles from "./page.module.css";
+} from "@/features/admin/data";
+import styles from "@/features/admin/styles/AdminPanel.module.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

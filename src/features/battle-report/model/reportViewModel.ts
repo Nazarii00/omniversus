@@ -9,12 +9,12 @@ import type {
   ReportVerdict,
 } from "./types";
 import {
-  FALLBACK_CHAINS,
-  FALLBACK_CLAIMS,
-  FALLBACK_COMPARISON,
-  FALLBACK_FIGHTERS,
-  FALLBACK_NARRATIVE,
-} from "./reportViewModelFallbacks";
+  DEFAULT_CHAINS,
+  DEFAULT_CLAIMS,
+  DEFAULT_COMPARISON,
+  DEFAULT_FIGHTERS,
+  DEFAULT_NARRATIVE,
+} from "./reportViewModelDefaults";
 import type {
   ReportRadarMetric,
   ReportTimelineStep,
@@ -36,8 +36,8 @@ const DEFAULT_HEADLINE = "BATTLE_REPORT";
 const DEFAULT_WINNER_NAME = "Contender Omega";
 const DEFAULT_DIFFICULTY = "MID_DIFF";
 const TECHNICAL_PREMISE_PATTERNS = [
-  /^fallback premise from available claims\.?$/i,
-  /^fallback rule premise; manual review recommended\.?$/i,
+  /^premise reconstructed from available claims\.?$/i,
+  /^rule premise; manual review recommended\.?$/i,
   /manual review recommended/i,
 ];
 
@@ -121,7 +121,7 @@ export function comparisonPreview(
 ): ReportComparisonRow[] {
   return view.comparison.length
     ? view.comparison.slice(0, MAX_COMPARISON_PREVIEW_ROWS)
-    : FALLBACK_COMPARISON.slice();
+    : DEFAULT_COMPARISON.slice();
 }
 
 type RadarMetricConfig = {
@@ -234,11 +234,11 @@ function resolveFighters(
 ): ReportFighter[] {
   return fighters && fighters.length >= MIN_FIGHTER_COUNT
     ? fighters
-    : FALLBACK_FIGHTERS;
+    : DEFAULT_FIGHTERS;
 }
 
 function resolveClaims(claims: BattleReportJson["claims"]): ReportClaim[] {
-  return claims?.length ? claims : FALLBACK_CLAIMS;
+  return claims?.length ? claims : DEFAULT_CLAIMS;
 }
 
 function isTechnicalPremise(premise: ReportChainPremise) {
@@ -325,7 +325,7 @@ function resolveChains(
   chains: BattleReportJson["argument_chains"],
   claimsById: Map<string, ReportClaim>,
 ): ReportArgumentChain[] {
-  const sourceChains = chains?.length ? chains : FALLBACK_CHAINS;
+  const sourceChains = chains?.length ? chains : DEFAULT_CHAINS;
   const seenChains = new Set<string>();
 
   return sourceChains.flatMap((chain) => {
@@ -347,7 +347,7 @@ function resolveNarrative(
 ): ReportNarrativeStep[] {
   return narrative?.length === EXPECTED_NARRATIVE_STEP_COUNT
     ? narrative
-    : FALLBACK_NARRATIVE;
+    : DEFAULT_NARRATIVE;
 }
 
 function resolveDecisiveChain(
