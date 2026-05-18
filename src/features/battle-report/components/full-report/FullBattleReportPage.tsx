@@ -20,7 +20,7 @@ import {
   ClaimsDeck,
   ReportHero,
   SectionTabs,
-  ShareableReportArtifact,
+  ShareableReportActions,
   SubjectFaceoff,
   VerdictBrief,
   VerdictStack,
@@ -103,14 +103,15 @@ export default function FullBattleReportPage() {
               ? [`ASSUMPTION: ${report.metadata.assumptions}`]
               : []),
           ]}
-        />
-
-        <ShareableReportArtifact
-          comparison={comparison}
-          decisiveChain={decisiveChain}
-          hasStoredReport={hasStoredReport}
-          summary={heroSummary}
-          view={view}
+          actions={
+            <ShareableReportActions
+              comparison={comparison}
+              decisiveChain={decisiveChain}
+              hasStoredReport={hasStoredReport}
+              summary={heroSummary}
+              view={view}
+            />
+          }
         />
 
         <SectionTabs />

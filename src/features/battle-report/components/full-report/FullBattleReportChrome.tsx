@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 import { displayTitle, displayVerdict } from "../../model";
 import styles from "./FullBattleReportPage.module.css";
@@ -25,6 +31,7 @@ export function ReportHero({
   status,
   caseId,
   tags,
+  actions,
 }: {
   title: string;
   summary: string;
@@ -34,6 +41,7 @@ export function ReportHero({
   status: string;
   caseId: string;
   tags: string[];
+  actions?: ReactNode;
 }) {
   return (
     <section className={styles.hero}>
@@ -42,14 +50,17 @@ export function ReportHero({
           <span>CASE {caseId}</span>
           <b>{status}</b>
         </div>
-        <Link
-          className={styles.backLink}
-          href="/"
-          aria-label="Back to arena"
-          title="Back to arena"
-        >
-          Back to Arena
-        </Link>
+        <div className={styles.heroActions}>
+          {actions}
+          <Link
+            className={styles.backLink}
+            href="/"
+            aria-label="Back to arena"
+            title="Back to arena"
+          >
+            Back to Arena
+          </Link>
+        </div>
       </div>
       <div className={styles.heroGrid}>
         <div className={styles.heroCopy}>

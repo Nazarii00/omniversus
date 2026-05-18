@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   displayTitle,
@@ -23,7 +23,7 @@ const PAPER_WIDTH = 968;
 const PAPER_HEIGHT = 1260;
 const MAX_SHARE_LINES = 4;
 
-type ShareableReportArtifactProps = {
+type ShareableReportActionsProps = {
   comparison: ReportComparisonRow[];
   decisiveChain: ReportArgumentChain | null;
   hasStoredReport: boolean;
@@ -77,44 +77,33 @@ type ExportStatus = {
   text: string;
 };
 
-export function ShareableReportArtifact({
+export function ShareableReportActions({
   comparison,
   decisiveChain,
   hasStoredReport,
   summary,
   view,
-}: ShareableReportArtifactProps) {
+}: ShareableReportActionsProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [status, setStatus] = useState<ExportStatus>({
     tone: "idle",
     text: "",
   });
-  const artifact = useMemo(
-    () =>
-      buildShareableArtifact({
-        comparison,
-        decisiveChain,
-        hasStoredReport,
-        summary,
-        view,
-      }),
-    [comparison, decisiveChain, hasStoredReport, summary, view],
-  );
-  const svgMarkup = useMemo(
-    () => renderShareableReportSvg(artifact),
-    [artifact],
-  );
-  const previewSource = useMemo(
-    () => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`,
-    [svgMarkup],
-  );
-  const fileName = useMemo(() => shareFileName(artifact), [artifact]);
 
   async function exportPng(action: "download" | "share") {
     setIsExporting(true);
     setStatus({ tone: "idle", text: "" });
 
     try {
+      const artifact = buildShareableArtifact({
+        comparison,
+        decisiveChain,
+        hasStoredReport,
+        summary,
+        view,
+      });
+      const svgMarkup = renderShareableReportSvg(artifact);
+      const fileName = shareFileName(artifact);
       const blob = await renderSvgToPngBlob(svgMarkup);
       const file = new File([blob], fileName, { type: "image/png" });
 
@@ -147,44 +136,27 @@ export function ShareableReportArtifact({
   }
 
   return (
-    <section className={styles.shareArtifactPanel} id="share-card">
-      <div className={styles.shareArtifactHeader}>
-        <div>
-          <span>Share Artifact</span>
-          <h2>Paper Simulation Report</h2>
-        </div>
-        <div className={styles.shareArtifactActions}>
-          <button
-            type="button"
-            disabled={isExporting}
-            onClick={() => void exportPng("share")}
-          >
-            Share PNG
-          </button>
-          <button
-            type="button"
-            disabled={isExporting}
-            onClick={() => void exportPng("download")}
-          >
-            Download PNG
-          </button>
-        </div>
-      </div>
+    <div className={styles.shareReportActions}>
+      <button
+        type="button"
+        disabled={isExporting}
+        onClick={() => void exportPng("share")}
+      >
+        Share PNG
+      </button>
+      <button
+        type="button"
+        disabled={isExporting}
+        onClick={() => void exportPng("download")}
+      >
+        Download PNG
+      </button>
       {status.text ? (
-        <p className={styles.shareArtifactStatus} data-tone={status.tone}>
+        <span className={styles.shareReportStatus} data-tone={status.tone}>
           {status.text}
-        </p>
+        </span>
       ) : null}
-      <div className={styles.shareArtifactPreview}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- data-URI SVG preview is generated client-side and exported as PNG. */}
-        <img
-          src={previewSource}
-          width={ARTIFACT_WIDTH}
-          height={ARTIFACT_HEIGHT}
-          alt={`${artifact.subjects[0].name} versus ${artifact.subjects[1].name} paper report share card`}
-        />
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -194,7 +166,7 @@ function buildShareableArtifact({
   hasStoredReport,
   summary,
   view,
-}: ShareableReportArtifactProps): ShareableArtifact {
+}: ShareableReportActionsProps): ShareableArtifact {
   const fighterA = view.fighters.find((fighter) => fighter.side === "A");
   const fighterB = view.fighters.find((fighter) => fighter.side === "B");
   const subjects: [ArtifactSubject, ArtifactSubject] = [
