@@ -1,35 +1,30 @@
 "use client";
 
-import type { CSSProperties } from "react";
-
-import type { ArenaCard } from "../../model";
-import {
-  CardDockSlot,
-  HologramCombatantCard,
-  type BattleRevealConfig,
-} from "../combatant-card";
+import type { ArenaCard, CardCrtGlitchImpact } from "../../model";
+import { entryThemeStyle } from "../../logic";
+import { CardDockSlot } from "../combatant-card/chrome";
+import { HologramCombatantCard } from "../combatant-card";
 
 type CombatantEntrySlotProps = {
   card: ArenaCard | null;
+  crtImpact?: CardCrtGlitchImpact | null;
+  crtResetToken?: number;
+  isEliminated?: boolean;
   template: ArenaCard;
   label: string;
-  battleReveal?: BattleRevealConfig | null;
   onOpenConsole: () => void;
 };
 
 export default function CombatantEntrySlot({
   card,
+  crtImpact = null,
+  crtResetToken = 0,
+  isEliminated = false,
   template,
   label,
-  battleReveal = null,
   onOpenConsole,
 }: CombatantEntrySlotProps) {
-  const themeStyle = {
-    "--entry-accent": template.theme.accent,
-    "--entry-accent-soft": template.theme.accentSoft,
-    "--entry-accent-glow": template.theme.accentGlow,
-    "--entry-accent-text": template.theme.accentText,
-  } as CSSProperties;
+  const themeStyle = entryThemeStyle(template.theme);
 
   return (
     <div
@@ -40,7 +35,12 @@ export default function CombatantEntrySlot({
       <CardDockSlot side={template.side} theme={template.theme} />
 
       {card ? (
-        <HologramCombatantCard card={card} battleReveal={battleReveal} />
+        <HologramCombatantCard
+          card={card}
+          crtImpact={crtImpact}
+          crtResetToken={crtResetToken}
+          isEliminated={isEliminated}
+        />
       ) : null}
 
       {!card ? (

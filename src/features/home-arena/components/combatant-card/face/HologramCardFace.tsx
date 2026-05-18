@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
-import type { ArenaCardTheme } from "../../model";
+import type { ReactNode } from "react";
+import type { ArenaCardTheme } from "../../../model";
+import { cardThemeStyle } from "../../../logic";
 
 const beveledClipPath =
   "polygon(0.82rem 0, calc(100% - 0.82rem) 0, 100% 0.82rem, 100% calc(100% - 0.82rem), calc(100% - 0.82rem) 100%, 0.82rem 100%, 0 calc(100% - 0.82rem), 0 0.82rem)";
@@ -8,23 +9,20 @@ type HologramCardFaceProps = {
   children: ReactNode;
   theme: ArenaCardTheme;
   isBack?: boolean;
+  overlay?: ReactNode;
 };
 
 export default function HologramCardFace({
   children,
   theme,
   isBack = false,
+  overlay,
 }: HologramCardFaceProps) {
-  const themeStyle = {
-    "--card-accent": theme.accent,
-    "--card-accent-soft": theme.accentSoft,
-    "--card-accent-glow": theme.accentGlow,
-    "--card-secondary": theme.secondary,
-  } as CSSProperties;
+  const themeStyle = cardThemeStyle(theme);
 
   return (
     <div
-      className="absolute inset-0 overflow-hidden border-2 bg-[linear-gradient(135deg,#06100d_0%,#020403_26%,#06110f_70%,#010201_100%)] p-[0.58rem] [backface-visibility:hidden]"
+      className="home-battle-card-face absolute inset-0 overflow-hidden border-2 bg-[linear-gradient(135deg,#06100d_0%,#020403_26%,#06110f_70%,#010201_100%)] p-[0.58rem] [backface-visibility:hidden]"
       style={{
         ...themeStyle,
         borderColor: "var(--card-accent)",
@@ -83,7 +81,8 @@ export default function HologramCardFace({
             "linear-gradient(90deg, transparent, var(--card-accent), transparent)",
         }}
       />
-      <div className="relative h-full p-4">{children}</div>
+      <div className="relative z-10 h-full p-4">{children}</div>
+      {overlay}
     </div>
   );
 }

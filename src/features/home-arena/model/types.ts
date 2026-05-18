@@ -27,6 +27,12 @@ export type ArenaCard = {
   metrics: ArenaCardMetric[];
 };
 
+export type CardCrtGlitchImpact = {
+  act: number;
+  hp: number;
+  runId: number;
+};
+
 export type CombatantOption = {
   id: string;
   name: string;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
+import { betThemeStyle } from "../../logic";
 import type { ArenaCard } from "../../model";
 
 type ArenaBetSelectorProps = {
@@ -34,13 +35,7 @@ export default function ArenaBetSelector({
           const isSelected = selectedId === card.id;
           const columnClass =
             card.side === "left" ? "col-start-1" : "col-start-3";
-          const themeStyle = {
-            "--bet-accent": card.theme.accent,
-            "--bet-accent-soft": card.theme.accentSoft,
-            "--bet-accent-glow": card.theme.accentGlow,
-            "--bet-accent-text": card.theme.accentText,
-            "--bet-secondary": card.theme.secondary,
-          } as CSSProperties;
+          const themeStyle = betThemeStyle(card.theme);
 
           return (
             <div

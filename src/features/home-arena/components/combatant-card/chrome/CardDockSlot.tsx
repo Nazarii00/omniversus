@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
-import type { ArenaCardSide, ArenaCardTheme } from "../../model";
+import type { ArenaCardSide, ArenaCardTheme } from "../../../model";
+import { cardThemeStyle } from "../../../logic";
 
 type CardDockSlotProps = {
   side: ArenaCardSide;
@@ -8,12 +8,7 @@ type CardDockSlotProps = {
 
 export default function CardDockSlot({ side, theme }: CardDockSlotProps) {
   const railOffset = side === "left" ? "left-3" : "right-3";
-  const themeStyle = {
-    "--card-accent": theme.accent,
-    "--card-accent-soft": theme.accentSoft,
-    "--card-accent-glow": theme.accentGlow,
-    "--card-accent-text": theme.accentText,
-  } as CSSProperties;
+  const themeStyle = cardThemeStyle(theme);
 
   return (
     <div

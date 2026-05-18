@@ -191,7 +191,9 @@ function conditionToFact(record: ConditionRecord): DossierFact | null {
     `${labelize(record.kind)} condition (${labelize(record.type)}): ${record.method}.`,
     record.requires ? `Requires: ${record.requires}.` : null,
     record.blockedBy ? `Blocked by: ${record.blockedBy}.` : null,
-    record.probabilityText ? `Probability note: ${record.probabilityText}.` : null,
+    record.probabilityText
+      ? `Probability note: ${record.probabilityText}.`
+      : null,
   ]);
 
   return makeFact(record, category, text);

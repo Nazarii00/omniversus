@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
 import type { ArenaCard } from "../../model";
+import { cardThemeStyle } from "../../logic";
 
 type CombatantDeckProps = {
   cards: [ArenaCard, ArenaCard];
@@ -40,13 +40,7 @@ type MiniCombatantCardProps = {
 };
 
 function MiniCombatantCard({ card, onReturn }: MiniCombatantCardProps) {
-  const themeStyle = {
-    "--card-accent": card.theme.accent,
-    "--card-accent-soft": card.theme.accentSoft,
-    "--card-accent-glow": card.theme.accentGlow,
-    "--card-accent-text": card.theme.accentText,
-    "--card-secondary": card.theme.secondary,
-  } as CSSProperties;
+  const themeStyle = cardThemeStyle(card.theme);
 
   return (
     <button

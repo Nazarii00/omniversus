@@ -34,10 +34,14 @@ function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
-function asNumber(value: unknown, fallback: number, min = 1, max = 100): number {
-  const parsed = typeof value === "number" && Number.isFinite(value)
-    ? value
-    : fallback;
+function asNumber(
+  value: unknown,
+  fallback: number,
+  min = 1,
+  max = 100,
+): number {
+  const parsed =
+    typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
   return Math.min(max, Math.max(min, Math.round(parsed)));
 }
@@ -87,7 +91,10 @@ function readSpeedEqualized(
 function fallbackFighter(side: Side, context: PrepareBattleOutputContext) {
   return {
     side,
-    name: side === "A" ? asString(context.fighterA, "Fighter A") : asString(context.fighterB, "Fighter B"),
+    name:
+      side === "A"
+        ? asString(context.fighterA, "Fighter A")
+        : asString(context.fighterB, "Fighter B"),
     version: "Unknown",
     verse: "Unknown",
     tier_rating: "Unknown",
@@ -206,7 +213,10 @@ function prepareFighters(value: unknown, context: PrepareBattleOutputContext) {
           firstDefined(fighter.profile_win_conditions, profile.win_conditions),
         ).slice(0, 5),
         lose_conditions: asStringArray(
-          firstDefined(fighter.profile_lose_conditions, profile.lose_conditions),
+          firstDefined(
+            fighter.profile_lose_conditions,
+            profile.lose_conditions,
+          ),
         ).slice(0, 5),
         counters: asStringArray(
           firstDefined(fighter.profile_counters, profile.counters),
@@ -241,18 +251,20 @@ function prepareClaims(value: unknown) {
       firstDefined(claim.source_type, source.type),
       sourceTypeFromRef(sourceRef),
     );
-    const sourceStatus = sourceType === "N_A"
-      ? "NOT_REQUIRED"
-      : asString(
-          firstDefined(claim.source_status, source.status),
-          "REQUIRES_VERIFICATION",
-        );
-    const sourceReliability = sourceType === "N_A"
-      ? "N_A"
-      : asString(
-          firstDefined(claim.source_reliability, source.reliability),
-          "UNKNOWN",
-        );
+    const sourceStatus =
+      sourceType === "N_A"
+        ? "NOT_REQUIRED"
+        : asString(
+            firstDefined(claim.source_status, source.status),
+            "REQUIRES_VERIFICATION",
+          );
+    const sourceReliability =
+      sourceType === "N_A"
+        ? "N_A"
+        : asString(
+            firstDefined(claim.source_reliability, source.reliability),
+            "UNKNOWN",
+          );
     const contested = asBoolean(claim.contested, sourceStatus !== "VERIFIED");
 
     return {
@@ -350,15 +362,24 @@ function prepareArgumentChains(value: unknown) {
     return {
       id: asString(chain.id, `CH${index + 1}`),
       side: asString(chain.side, index === 0 ? "A" : "B"),
-      chain_type: asString(chain.chain_type, index === 0 ? "WIN_CONDITION" : "ANTI_ARGUMENT"),
+      chain_type: asString(
+        chain.chain_type,
+        index === 0 ? "WIN_CONDITION" : "ANTI_ARGUMENT",
+      ),
       title: asString(chain.title, `Argument chain ${index + 1}`),
       conclusion: asString(chain.conclusion, "Source requires verification"),
       premises: preparePremises(chain, index),
-      inference_rule: asString(chain.inference_rule, "Claim-supported inference."),
+      inference_rule: asString(
+        chain.inference_rule,
+        "Claim-supported inference.",
+      ),
       inference: asString(chain.inference, "Source requires verification"),
       confidence: asNumber(chain.confidence, 50),
       contested: asBoolean(chain.contested, false),
-      breaks_if: asString(chain.breaks_if, "Source review changes the premise."),
+      breaks_if: asString(
+        chain.breaks_if,
+        "Source review changes the premise.",
+      ),
       linked_claim_ids: asStringArray(chain.linked_claim_ids),
     };
   });
@@ -402,7 +423,8 @@ function prepareTierSanitization(fighters: ReturnType<typeof prepareFighters>) {
         highball_tier: "Unknown",
         rejected_tiers: [],
         operational_tier_used: profileValue,
-        operational_tier_class: profileValue === "Unknown" ? "UNKNOWN" : "CONSISTENT",
+        operational_tier_class:
+          profileValue === "Unknown" ? "UNKNOWN" : "CONSISTENT",
         basis_claim_ids: fighter.tier.claim_ids,
         warning: fighter.tier.basis,
         contested: fighter.tier.contested,
@@ -424,13 +446,16 @@ function prepareStatModel(value: unknown) {
 
   return {
     core_stats_used: coreStats.slice(0, 4),
-    numerical_stats_role: asString(
-      statModel.numerical_stats_role,
-      "SECONDARY",
-    ),
+    numerical_stats_role: asString(statModel.numerical_stats_role, "SECONDARY"),
     hax_is_not_numeric: asBoolean(statModel.hax_is_not_numeric, true),
-    stamina_policy: asString(statModel.stamina_policy, "Track stamina qualitatively."),
-    notes: asString(statModel.notes, "Stats are interpreted with source review."),
+    stamina_policy: asString(
+      statModel.stamina_policy,
+      "Track stamina qualitatively.",
+    ),
+    notes: asString(
+      statModel.notes,
+      "Stats are interpreted with source review.",
+    ),
   };
 }
 
@@ -577,8 +602,14 @@ function prepareVerdict(value: unknown) {
   const verdict = asRecord(value);
   const confidenceScore = asNumber(verdict.confidence_score, 50);
   const dataConfidence = asNumber(verdict.data_confidence_score, 50);
-  const givenData = asNumber(verdict.verdict_confidence_given_data_score, confidenceScore);
-  const robustness = asNumber(verdict.verdict_confidence_robustness_score, confidenceScore);
+  const givenData = asNumber(
+    verdict.verdict_confidence_given_data_score,
+    confidenceScore,
+  );
+  const robustness = asNumber(
+    verdict.verdict_confidence_robustness_score,
+    confidenceScore,
+  );
 
   const keyFactors = asStringArray(verdict.key_factors).slice(0, 5);
   while (keyFactors.length < 2) {
@@ -590,7 +621,10 @@ function prepareVerdict(value: unknown) {
     winner_name: asString(verdict.winner_name, "None"),
     difficulty: asString(verdict.difficulty, "INCONCLUSIVE"),
     confidence_score: confidenceScore,
-    confidence_band: asString(verdict.confidence_band, confidenceBand(confidenceScore)),
+    confidence_band: asString(
+      verdict.confidence_band,
+      confidenceBand(confidenceScore),
+    ),
     data_confidence_score: dataConfidence,
     data_confidence_band: asString(
       verdict.data_confidence_band,
@@ -610,7 +644,10 @@ function prepareVerdict(value: unknown) {
       verdict.confidence_explanation,
       "Source requires verification",
     ),
-    primary_reason: asString(verdict.primary_reason, "Source requires verification"),
+    primary_reason: asString(
+      verdict.primary_reason,
+      "Source requires verification",
+    ),
     decisive_chain_id: asString(verdict.decisive_chain_id, "CH1"),
     loser_best_argument: asString(verdict.loser_best_argument, "Unknown"),
     why_not_other_side: asString(verdict.why_not_other_side, "Unknown"),
@@ -669,9 +706,10 @@ function prepareQualityFlags(value: unknown) {
 
 function prepareUi(value: unknown, verdict: ReturnType<typeof prepareVerdict>) {
   const ui = asRecord(value);
-  const winner = verdict.winner_side === "A" || verdict.winner_side === "B"
-    ? `${verdict.winner_name} wins`
-    : "Inconclusive";
+  const winner =
+    verdict.winner_side === "A" || verdict.winner_side === "B"
+      ? `${verdict.winner_name} wins`
+      : "Inconclusive";
 
   return {
     headline: asString(ui.headline, winner),
@@ -695,7 +733,8 @@ export function prepareBattleOutput(
   const draft = asRecord(raw);
   const sourceMetadata = asRecord(draft.metadata);
   const sourceRules = asRecord(draft.rules);
-  const title = fighterTitle(context) ?? asString(sourceMetadata.title, "Battle");
+  const title =
+    fighterTitle(context) ?? asString(sourceMetadata.title, "Battle");
   const speedEqualized = readSpeedEqualized(
     sourceMetadata,
     sourceRules,
@@ -751,7 +790,9 @@ export function prepareBattleOutput(
     claims,
     argument_chains: argumentChains,
     comparison: prepareComparison(draft.comparison),
-    ability_interactions: prepareAbilityInteractions(draft.ability_interactions),
+    ability_interactions: prepareAbilityInteractions(
+      draft.ability_interactions,
+    ),
     win_conditions: prepareWinConditions(draft.win_conditions),
     audit: draft.audit,
     quality_flags: prepareQualityFlags(draft.quality_flags),

@@ -52,7 +52,10 @@ const WAITING_LINES = [
   "VERIFYING JSON ARRIVAL...",
 ];
 
-function normalizeConsoleToken(value: string | null | undefined, fallback: string) {
+function normalizeConsoleToken(
+  value: string | null | undefined,
+  fallback: string,
+) {
   const token = value?.trim() ? value.trim() : fallback;
   const normalized = token.replace(/\s+/g, "_").toUpperCase();
 
@@ -149,7 +152,10 @@ function buildProgressBar(progress: number, width = PROGRESS_WIDTH) {
   return `${"#".repeat(filled)}${".".repeat(width - filled)}`;
 }
 
-function readProgressText(step: Extract<LoadingStep, { kind: "progress" }>, elapsedMs: number) {
+function readProgressText(
+  step: Extract<LoadingStep, { kind: "progress" }>,
+  elapsedMs: number,
+) {
   const label = `${step.label} `;
   const labelTypingMs = label.length * TYPE_MS_PER_CHAR;
 

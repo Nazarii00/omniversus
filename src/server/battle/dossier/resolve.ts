@@ -9,10 +9,7 @@ import {
 } from "./critical";
 import { findDossierVersion, findSubject } from "./repository";
 import type { DossierSide } from "./recordTypes";
-import type {
-  BattleDossierContext,
-  FighterDossierResolution,
-} from "./types";
+import type { BattleDossierContext, FighterDossierResolution } from "./types";
 
 function unresolvedDossier(
   fighterName: string,

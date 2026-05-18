@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   BattleResultPanel,
@@ -17,203 +11,22 @@ import {
 } from "@/features/battle-report";
 
 import { arenaCards, combatantAutocompleteOptions } from "../../data";
+import { makeCombatantCard } from "../../logic";
 import type { ArenaCard, ArenaCardSide } from "../../model";
 import { ArenaVersusMark } from "../arena";
-import {
-  BattleControls,
-  BattleLoadingConsole,
-  BattleReportButton,
-} from "../battle-controls";
+import { BattleControls, BattleReportButton } from "../battle-controls";
 import { ArenaBetSelector } from "../betting";
-import type { BattleRevealConfig } from "../combatant-card";
 import { CombatantDeck } from "../combatant-deck";
 import {
   CombatantEntrySlot,
   CombatantLoadoutConsole,
 } from "../combatant-entry";
-
-function makeCombatantCard(template: ArenaCard, name: string): ArenaCard {
-  const trimmedName = name.trim();
-
-  return {
-    ...template,
-    id: `${template.side}-${trimmedName.toLowerCase().replace(/\s+/g, "-")}`,
-    name: trimmedName,
-    universe: "Input Pending",
-    stance:
-      template.side === "left"
-        ? "Queued as left-side contender"
-        : "Queued as right-side contender",
-    backCopy:
-      "Temporary test card generated from the arena input slot. Full dossier data will come from the battle report pipeline.",
-  };
-}
-
-const HOME_ARENA_STORAGE_KEY = "omniversus.homeArenaState";
-const HOME_ARENA_STORAGE_EVENT = "omniversus.homeArenaStateChanged";
-
-type StoredHomeArenaState = {
-  leftName?: string;
-  rightName?: string;
-  battleReport?: BattleReportJson | null;
-  isReportReady?: boolean;
-  reportSerial?: number;
-};
-
-type BattleRevealRun = {
-  runId: number;
-  winnerSide: ArenaCardSide;
-  loserSide: ArenaCardSide;
-  actCount: number;
-};
-
-function homeArenaStorage() {
-  if (typeof window === "undefined") return null;
-
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function emitHomeArenaStorageChange() {
-  if (typeof window === "undefined") return;
-
-  window.dispatchEvent(new Event(HOME_ARENA_STORAGE_EVENT));
-}
-
-function readStoredHomeArenaStateText() {
-  let storedState: string | null = null;
-
-  try {
-    storedState = homeArenaStorage()?.getItem(HOME_ARENA_STORAGE_KEY) ?? null;
-  } catch {
-    return null;
-  }
-
-  if (!storedState) return null;
-
-  return storedState;
-}
-
-function parseStoredHomeArenaState(storedState: string | null) {
-  if (!storedState) return null;
-
-  try {
-    return JSON.parse(storedState) as StoredHomeArenaState;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredHomeArenaState(state: StoredHomeArenaState) {
-  const storage = homeArenaStorage();
-  if (!storage) return;
-
-  const hasArenaState =
-    Boolean(state.leftName || state.rightName || state.battleReport) ||
-    Boolean(state.isReportReady);
-
-  if (!hasArenaState) {
-    try {
-      storage.removeItem(HOME_ARENA_STORAGE_KEY);
-      emitHomeArenaStorageChange();
-    } catch {
-      // Ignore blocked storage; the current React state remains usable.
-    }
-    return;
-  }
-
-  try {
-    storage.setItem(HOME_ARENA_STORAGE_KEY, JSON.stringify(state));
-    emitHomeArenaStorageChange();
-  } catch {
-    // Ignore blocked storage; the current React state remains usable.
-  }
-}
-
-function clearStoredHomeArenaState() {
-  try {
-    homeArenaStorage()?.removeItem(HOME_ARENA_STORAGE_KEY);
-    emitHomeArenaStorageChange();
-  } catch {
-    // Ignore blocked storage during reset.
-  }
-}
-
-function reportWinnerArenaSide(
-  report: BattleReportJson,
-): ArenaCardSide | null {
-  if (report.verdict?.winner_side === "A") return "left";
-  if (report.verdict?.winner_side === "B") return "right";
-
-  return null;
-}
-
-function buildBattleRevealRun(
-  report: BattleReportJson,
-  runId: number,
-): BattleRevealRun | null {
-  const winnerSide = reportWinnerArenaSide(report);
-  if (!winnerSide) return null;
-
-  return {
-    runId,
-    winnerSide,
-    loserSide: winnerSide === "left" ? "right" : "left",
-    actCount: Math.max(1, report.narrative?.length ?? 3),
-  };
-}
-
-function battleRevealForSide(
-  reveal: BattleRevealRun | null,
-  side: ArenaCardSide,
-): BattleRevealConfig | null {
-  if (!reveal) return null;
-
-  if (reveal.winnerSide === side) {
-    return {
-      runId: reveal.runId,
-      role: "winner",
-      actCount: reveal.actCount,
-    };
-  }
-
-  if (reveal.loserSide === side) {
-    return {
-      runId: reveal.runId,
-      role: "loser",
-      actCount: reveal.actCount,
-    };
-  }
-
-  return null;
-}
-
-function subscribeToHomeArenaStorage(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(HOME_ARENA_STORAGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(HOME_ARENA_STORAGE_EVENT, onStoreChange);
-  };
-}
+import { useBattleTimeline, useStoredHomeArenaState } from "./hooks";
+import { clearStoredHomeArenaState, writeStoredHomeArenaState } from "./state";
 
 export default function HomeArenaStage() {
   const [leftTemplate, rightTemplate] = arenaCards;
-  const storedArenaStateText = useSyncExternalStore(
-    subscribeToHomeArenaStorage,
-    readStoredHomeArenaStateText,
-    () => null,
-  );
-  const storedArenaState = useMemo(
-    () => parseStoredHomeArenaState(storedArenaStateText),
-    [storedArenaStateText],
-  );
+  const { storedArenaState, storedArenaStateText } = useStoredHomeArenaState();
   const storedLeftName =
     typeof storedArenaState?.leftName === "string"
       ? storedArenaState.leftName
@@ -235,9 +48,7 @@ export default function HomeArenaStage() {
         : null,
     [rightTemplate, storedRightName],
   );
-  const [leftCardState, setLeftCard] = useState<
-    ArenaCard | null | undefined
-  >();
+  const [leftCardState, setLeftCard] = useState<ArenaCard | null | undefined>();
   const [rightCardState, setRightCard] = useState<
     ArenaCard | null | undefined
   >();
@@ -248,16 +59,23 @@ export default function HomeArenaStage() {
   const [battleReportState, setBattleReport] = useState<
     BattleReportJson | null | undefined
   >();
-  const [battleReveal, setBattleReveal] = useState<BattleRevealRun | null>(
-    null,
-  );
-  const [battleError, setBattleError] = useState<string | null>(null);
-  const [reportSerialState, setReportSerial] = useState<number | undefined>();
+  const [reportSerialState] = useState<number | undefined>();
   const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
-  const [isBattleLoading, setIsBattleLoading] = useState(false);
   const [loadoutFocusSide, setLoadoutFocusSide] =
     useState<ArenaCardSide>("left");
   const hasRunPersistenceEffect = useRef(false);
+  const {
+    battleEliminatedSide,
+    battleGlitchResetToken,
+    battleShockCue,
+    battleSkipToken,
+    isBattleTimelineActive,
+    leftCrtImpact,
+    resetBattleTimeline,
+    rightCrtImpact,
+    skipBattleTimeline,
+    startBattleTimeline,
+  } = useBattleTimeline();
   const leftCard =
     leftCardState === undefined ? restoredLeftCard : leftCardState;
   const rightCard =
@@ -267,9 +85,7 @@ export default function HomeArenaStage() {
   const isReportReady =
     isReportReadyState ??
     Boolean(storedArenaState?.isReportReady && storedBattleReport);
-  const reportSerial =
-    reportSerialState ?? storedArenaState?.reportSerial ?? 0;
-
+  const reportSerial = reportSerialState ?? storedArenaState?.reportSerial ?? 0;
   useEffect(() => {
     if (!hasRunPersistenceEffect.current) {
       hasRunPersistenceEffect.current = true;
@@ -313,21 +129,23 @@ export default function HomeArenaStage() {
     setIsReportOpen(false);
     setIsReportReady(false);
     setBattleReport(null);
-    setBattleReveal(null);
-    setBattleError(null);
+    resetBattleTimeline();
     clearLatestBattleReport();
   }
 
   function handleBattleStart() {
-    resetBattleState();
-    setIsBattleLoading(true);
+    setIsReportOpen(false);
+    setIsReportReady(false);
+    setBattleReport(null);
+    clearLatestBattleReport();
+
+    return startBattleTimeline(battleReport);
   }
 
   function resetSelection() {
     setLeftCard(null);
     setRightCard(null);
     setIsLoadoutConsoleOpen(false);
-    setIsBattleLoading(false);
     clearStoredHomeArenaState();
     resetBattleState();
   }
@@ -336,7 +154,6 @@ export default function HomeArenaStage() {
     setLeftCard(makeCombatantCard(leftTemplate, left));
     setRightCard(makeCombatantCard(rightTemplate, right));
     setIsLoadoutConsoleOpen(false);
-    setIsBattleLoading(false);
     resetBattleState();
   }
 
@@ -345,6 +162,29 @@ export default function HomeArenaStage() {
       className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
       data-view={isReportOpen ? "report" : "setup"}
     >
+      {battleShockCue ? (
+        <span
+          key={`${battleShockCue.runId}-${battleShockCue.act}`}
+          aria-hidden="true"
+          className="home-battle-impact"
+          data-act={battleShockCue.act}
+        >
+          <span className="home-battle-impact__pressure" />
+          <span className="home-battle-impact__edge" />
+          <span className="home-battle-impact__shock" />
+        </span>
+      ) : null}
+
+      {isBattleTimelineActive && !isReportOpen ? (
+        <button
+          type="button"
+          className="home-battle-skip"
+          onClick={skipBattleTimeline}
+        >
+          SKIP_SIM
+        </button>
+      ) : null}
+
       {(isReportReady || leftCard || rightCard) && !isReportOpen ? (
         <div
           className="home-arena-top-actions"
@@ -363,22 +203,17 @@ export default function HomeArenaStage() {
         </div>
       ) : null}
 
-      {isBattleLoading && !isReportOpen ? (
-        <BattleLoadingConsole
-          fighterA={leftCard?.name}
-          fighterB={rightCard?.name}
-        />
-      ) : null}
-
       <div className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center">
         <div className="home-arena-combat-zone w-full">
           <div className="home-arena-setup-grid grid w-full grid-cols-1 justify-items-center gap-7 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:items-center sm:gap-10 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:gap-12">
             <div className="sm:justify-self-end">
               <CombatantEntrySlot
                 card={leftCard}
+                crtImpact={leftCrtImpact}
+                crtResetToken={battleGlitchResetToken}
+                isEliminated={battleEliminatedSide === "left"}
                 template={leftTemplate}
                 label="ALPHA_SLOT"
-                battleReveal={battleRevealForSide(battleReveal, "left")}
                 onOpenConsole={() => openLoadoutConsole("left")}
               />
             </div>
@@ -388,9 +223,11 @@ export default function HomeArenaStage() {
             <div className="sm:justify-self-start">
               <CombatantEntrySlot
                 card={rightCard}
+                crtImpact={rightCrtImpact}
+                crtResetToken={battleGlitchResetToken}
+                isEliminated={battleEliminatedSide === "right"}
                 template={rightTemplate}
                 label="OMEGA_SLOT"
-                battleReveal={battleRevealForSide(battleReveal, "right")}
                 onOpenConsole={() => openLoadoutConsole("right")}
               />
             </div>
@@ -430,27 +267,11 @@ export default function HomeArenaStage() {
             </p>
           )}
           <BattleControls
+            key={battleSkipToken}
             fighterA={leftCard?.name ?? null}
             fighterB={rightCard?.name ?? null}
             onBattleStart={handleBattleStart}
-            onReportReady={(report) => {
-              setIsBattleLoading(false);
-              setBattleReport(report);
-              setBattleReveal(buildBattleRevealRun(report, Date.now()));
-              writeLatestBattleReport(report);
-              setReportSerial((current) => (current ?? reportSerial) + 1);
-              setIsReportReady(true);
-            }}
-            onBattleError={(message) => {
-              setIsBattleLoading(false);
-              setBattleError(message);
-            }}
           />
-          {battleError ? (
-            <p className="mt-3 max-w-[38rem] text-center text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#ffb4a8]">
-              &gt; API_ERROR: {battleError}
-            </p>
-          ) : null}
         </div>
       </div>
     </section>

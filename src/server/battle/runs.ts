@@ -118,7 +118,8 @@ export async function failBattleRunRecord(
       where: { id: run.id },
       data: {
         status: BattleRunStatus.FAILED,
-        requestedModel: generation?.requested_model ?? BATTLE_MODEL_CONFIG.model,
+        requestedModel:
+          generation?.requested_model ?? BATTLE_MODEL_CONFIG.model,
         resolvedModel: generation?.model ?? null,
         errorMessage,
         resultPayload: toInputJson({
