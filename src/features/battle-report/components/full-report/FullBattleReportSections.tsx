@@ -2,6 +2,7 @@
 
 export { ReportHero, SectionTabs } from "./FullBattleReportChrome";
 export { BattleProgression } from "./FullBattleReportProgression";
+export { ShareableReportArtifact } from "./ShareableReportArtifact";
 export {
   ArgumentTimeline,
   VerdictBrief,
