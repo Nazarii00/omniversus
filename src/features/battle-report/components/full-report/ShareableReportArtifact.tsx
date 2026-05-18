@@ -215,7 +215,7 @@ function buildShareableArtifact({
     reportId: view.id,
     summary,
     subjects,
-    title: "COMBAT SIMULATION REPORT",
+    title: "VERDICT FIELD SHEET",
     winner,
     winnerSide: view.verdict.winner_side,
   };
@@ -322,121 +322,144 @@ function splitMetricScore(row: ReportComparisonRow) {
 function renderShareableReportSvg(artifact: ShareableArtifact) {
   const subjectA = artifact.subjects[0];
   const subjectB = artifact.subjects[1];
-  const titleLines = wrapText(artifact.summary, 86, 2);
-  const outcomeLines = wrapText(artifact.outcome, 78, 3);
+  const summaryLines = wrapText(artifact.summary, 74, 3);
+  const outcomeLines = wrapText(artifact.outcome, 82, 3);
+  const reportSerial = escapeSvg(displayTitle(artifact.reportId).slice(0, 22));
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${ARTIFACT_WIDTH}" height="${ARTIFACT_HEIGHT}" viewBox="0 0 ${ARTIFACT_WIDTH} ${ARTIFACT_HEIGHT}" role="img" aria-label="${escapeSvg(`${subjectA.name} versus ${subjectB.name} paper simulation report`)}">
   <defs>
     <filter id="paperNoise" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" seed="13" result="noise" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" seed="13" result="noise" />
       <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
       <feComponentTransfer in="mono" result="softNoise">
-        <feFuncA type="table" tableValues="0 0.09" />
+        <feFuncA type="table" tableValues="0 0.12" />
       </feComponentTransfer>
       <feBlend in="SourceGraphic" in2="softNoise" mode="multiply" />
     </filter>
     <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#eee5bd" />
-      <stop offset="0.48" stop-color="#d9cfaa" />
-      <stop offset="1" stop-color="#c8bd96" />
+      <stop offset="0" stop-color="#f0e6bf" />
+      <stop offset="0.52" stop-color="#d9cfaa" />
+      <stop offset="1" stop-color="#c4b88f" />
     </linearGradient>
     <linearGradient id="greenInk" x1="0" x2="1">
-      <stop offset="0" stop-color="#315833" />
-      <stop offset="1" stop-color="#627646" />
+      <stop offset="0" stop-color="#264f35" />
+      <stop offset="1" stop-color="#6d7e4d" />
     </linearGradient>
     <linearGradient id="brownInk" x1="0" x2="1">
-      <stop offset="0" stop-color="#2d2416" />
-      <stop offset="1" stop-color="#6d5d38" />
+      <stop offset="0" stop-color="#31271a" />
+      <stop offset="1" stop-color="#78643c" />
     </linearGradient>
     <style>
-      .ink{fill:#383324;font-family:"Courier New",monospace}
-      .muted{fill:#756d50;font-family:"Courier New",monospace}
-      .red{fill:#9b2f2c;font-family:"Courier New",monospace}
-      .green{fill:#265c32;font-family:"Courier New",monospace}
+      .ink{fill:#352f22;font-family:"Courier New",monospace}
+      .muted{fill:#756c4d;font-family:"Courier New",monospace}
+      .faint{fill:#938765;font-family:"Courier New",monospace}
+      .red{fill:#9b302f;font-family:"Courier New",monospace}
+      .green{fill:#225b35;font-family:"Courier New",monospace}
       .small{font-size:15px;font-weight:700}
       .tiny{font-size:12px;font-weight:700}
       .micro{font-size:10px;font-weight:700}
-      .heading{font-size:24px;font-weight:900}
-      .name{font-size:20px;font-weight:900}
-      .stamp{font-size:22px;font-weight:900}
+      .heading{font-size:23px;font-weight:900;letter-spacing:1.5px}
+      .title{font-size:31px;font-weight:900;letter-spacing:2px}
+      .name{font-size:18px;font-weight:900;letter-spacing:.8px}
+      .stamp{font-size:21px;font-weight:900;letter-spacing:2px}
+      .watermarkText{fill:#6b5d38;font-family:"Courier New",monospace;font-size:28px;font-weight:900;letter-spacing:5px}
     </style>
   </defs>
-  <rect width="1080" height="1350" fill="#cfc49f"/>
-  <rect x="${PAPER_X + 8}" y="${PAPER_Y + 10}" width="${PAPER_WIDTH}" height="${PAPER_HEIGHT}" fill="#6f653f" opacity="0.32"/>
-  <rect x="${PAPER_X}" y="${PAPER_Y}" width="${PAPER_WIDTH}" height="${PAPER_HEIGHT}" fill="url(#paper)" stroke="#8f8257" stroke-width="2" filter="url(#paperNoise)"/>
-  <rect x="${PAPER_X + 26}" y="${PAPER_Y + 26}" width="${PAPER_WIDTH - 52}" height="${PAPER_HEIGHT - 52}" fill="none" stroke="#82754d" stroke-width="1" opacity="0.55"/>
-  ${tape(178, 30, -1.5)}
-  ${tape(780, 31, 3)}
-  ${stamp(792, 90, "TOP SECRET", -8)}
-  <text x="116" y="116" class="muted tiny">OMNIVERSUS AGENCY // SIM-ID: ${escapeSvg(displayTitle(artifact.reportId).slice(0, 18))} // DATE: REDACTED</text>
-  <text x="116" y="143" class="ink heading">${escapeSvg(artifact.title)}</text>
-  <text x="116" y="166" class="red small">CLEARANCE LEVEL: OMEGA - AUTHORIZED PERSONNEL ONLY</text>
-  <line x1="116" y1="190" x2="964" y2="190" stroke="#3d3422" stroke-width="3"/>
-  ${subjectCard(116, 224, subjectA)}
-  <text x="540" y="290" text-anchor="middle" class="ink heading">VS</text>
-  ${subjectCard(590, 224, subjectB)}
-  <text x="116" y="520" class="muted small">STATISTICAL COMPARISON</text>
-  <line x1="116" y1="536" x2="964" y2="536" stroke="#8b7f56" stroke-width="1.4" stroke-dasharray="5 5"/>
-  ${artifact.metrics.map((metric, index) => metricRow(metric, 568 + index * 34)).join("\n")}
-  <text x="116" y="770" class="muted small">ABILITY INTERACTION LOG</text>
-  <line x1="116" y1="786" x2="964" y2="786" stroke="#8b7f56" stroke-width="1.4" stroke-dasharray="5 5"/>
-  ${artifact.logs.map((log, index) => logRow(log, 824 + index * 54)).join("\n")}
-  <text x="116" y="1011" class="muted small">SIMULATION VERDICT</text>
-  <rect x="116" y="1030" width="848" height="164" fill="none" stroke="#453c28" stroke-width="2"/>
-  <text x="138" y="1072" class="ink heading">SUBJECT ${escapeSvg(winnerSubjectLabel(artifact))} - ${escapeSvg(displayVerdict(artifact.winner))}</text>
-  <text x="138" y="1104" class="muted tiny">DIFFICULTY: ${escapeSvg(displayVerdict(artifact.difficulty))} // CONFIDENCE: ${artifact.confidence}% // OUTCOME: INCAPACITATION</text>
-  <text x="138" y="1140" class="muted tiny">PRIMARY WIN CONDITION:</text>
-  ${svgMultilineText(outcomeLines, 138, 1164, 20, "ink tiny")}
-  ${confidenceBar(432, 1131, 430, artifact.confidence)}
-  <text x="878" y="1143" class="ink tiny">${artifact.confidence}%</text>
-  <text x="540" y="1244" text-anchor="middle" class="muted small">[ REPORT CARD READY FOR SOCIAL TRANSMISSION ]</text>
-  ${stamp(96, 1224, artifact.classification, -5)}
-  <text x="116" y="1280" class="muted tiny">OMNIVERSUS AGENCY // SIMULATION DIVISION</text>
-  <text x="820" y="1280" class="muted tiny">DOC REF:</text>
-  <rect x="894" y="1265" width="92" height="18" fill="#2e2115"/>
-  <text x="904" y="1279" class="red micro">${escapeSvg(artifact.docRef)}</text>
-  <text x="116" y="205" class="muted tiny">${escapeSvg(titleLines.join(" "))}</text>
+  <rect width="1080" height="1350" fill="#bfb38e"/>
+  <rect x="0" y="0" width="1080" height="1350" fill="url(#paper)" opacity="0.22"/>
+  <rect x="${PAPER_X + 14}" y="${PAPER_Y + 16}" width="${PAPER_WIDTH}" height="${PAPER_HEIGHT}" fill="#5e5334" opacity="0.28"/>
+  <rect x="${PAPER_X}" y="${PAPER_Y}" width="${PAPER_WIDTH}" height="${PAPER_HEIGHT}" fill="url(#paper)" stroke="#8b7e55" stroke-width="2" filter="url(#paperNoise)"/>
+  <path d="M ${PAPER_X + 28} ${PAPER_Y + 26} H ${PAPER_X + PAPER_WIDTH - 28} V ${PAPER_Y + PAPER_HEIGHT - 28} H ${PAPER_X + 28} Z" fill="none" stroke="#837550" stroke-width="1" opacity="0.5"/>
+  <path d="M 92 92 H 988 M 92 1256 H 988" stroke="#8c805a" stroke-width="1" stroke-dasharray="7 7" opacity="0.5"/>
+  ${tape(144, 28, -2)}
+  ${tape(806, 33, 2.4)}
+  ${agencyWatermark(540, 720, 1.08, -7, 0.16)}
+  ${agencyWatermark(128, 128, 0.18, 0, 0.52)}
+  <text x="188" y="104" class="muted tiny">OMNIVERSUS INTERVENTION OFFICE // PUBLIC TRANSMISSION ARTIFACT</text>
+  <text x="188" y="134" class="ink title">VERDICT FIELD SHEET</text>
+  <text x="188" y="163" class="red small">SANITIZED EXCERPT // SIMULATION EVIDENCE SUMMARY // NO CANON AUTHORITY IMPLIED</text>
+  <text x="805" y="116" class="muted micro">SIM-ID</text>
+  <rect x="804" y="126" width="160" height="20" fill="#2f2418"/>
+  <text x="814" y="141" class="red micro">${reportSerial}</text>
+  ${stamp(760, 166, artifact.classification, -4)}
+  <line x1="116" y1="196" x2="964" y2="196" stroke="#3d3424" stroke-width="3"/>
+
+  <rect x="116" y="220" width="848" height="106" fill="#d5c99f" opacity="0.62" stroke="#80734d" stroke-width="1.5"/>
+  <text x="138" y="248" class="muted small">TRANSMISSION ABSTRACT</text>
+  ${svgMultilineText(summaryLines, 138, 278, 20, "ink tiny")}
+  <rect x="848" y="238" width="94" height="18" fill="#2f2418"/>
+  <rect x="848" y="264" width="72" height="18" fill="#2f2418"/>
+
+  ${subjectCard(116, 362, subjectA)}
+  ${versusSeal(540, 454)}
+  ${subjectCard(572, 362, subjectB)}
+
+  <text x="116" y="612" class="muted small">CAPABILITY LEDGER</text>
+  <line x1="116" y1="630" x2="964" y2="630" stroke="#837550" stroke-width="1.4"/>
+  ${artifact.metrics.map((metric, index) => metricRow(metric, 656 + index * 32)).join("\n")}
+
+  <text x="116" y="858" class="muted small">DECISIVE CHAIN EXCERPT</text>
+  <line x1="116" y1="876" x2="964" y2="876" stroke="#837550" stroke-width="1.4"/>
+  ${artifact.logs.map((log, index) => logRow(log, 916 + index * 68)).join("\n")}
+
+  <text x="116" y="1110" class="muted small">VERDICT MEMO</text>
+  <rect x="116" y="1130" width="848" height="136" fill="#d5c99f" opacity="0.58" stroke="#453c28" stroke-width="2"/>
+  <text x="138" y="1164" class="ink heading">SUBJECT ${escapeSvg(winnerSubjectLabel(artifact))} PREVAILS // ${escapeSvg(displayVerdict(artifact.winner))}</text>
+  <text x="138" y="1193" class="muted tiny">DIFFICULTY: ${escapeSvg(displayVerdict(artifact.difficulty))} // OUTCOME ROUTE: INCAPACITATION // CONFIDENCE INDEX: ${artifact.confidence}%</text>
+  ${svgMultilineText(outcomeLines, 138, 1220, 18, "ink tiny")}
+  ${confidenceBar(700, 1210, 210, artifact.confidence)}
+  <text x="922" y="1222" class="ink tiny">${artifact.confidence}%</text>
+
+  <text x="540" y="1285" text-anchor="middle" class="muted small">[ PNG ARTIFACT READY FOR SOCIAL TRANSMISSION ]</text>
+  <text x="116" y="1310" class="muted tiny">OMNIVERSUS // SIMULATION DIVISION // DOC REF ${escapeSvg(artifact.docRef)}</text>
+  <text x="805" y="1310" class="muted tiny">EXPORT: SHAREABLE PAPER REPORT</text>
 </svg>`;
 }
 
 function subjectCard(x: number, y: number, subject: ArtifactSubject) {
   return `<g>
-    <rect x="${x}" y="${y}" width="368" height="260" fill="none" stroke="#80744e" stroke-width="1.5"/>
-    <rect x="${x + 24}" y="${y + 24}" width="104" height="132" fill="#c8bd95" stroke="#8a7e57" stroke-width="1.5"/>
-    <rect x="${x + 59}" y="${y + 10}" width="33" height="23" fill="none" stroke="#80744e" stroke-width="1.5"/>
-    <text x="${x + 76}" y="${y + 82}" text-anchor="middle" class="muted tiny">${escapeSvg(subject.initials)}</text>
-    <text x="${x + 50}" y="${y + 103}" class="muted micro">PHOTO</text>
-    <text x="${x + 50}" y="${y + 118}" class="muted micro">ATTACHED</text>
-    <text x="${x + 24}" y="${y + 179}" class="ink name">${escapeSvg(truncate(displayTitle(subject.name), 24))}</text>
-    <text x="${x + 24}" y="${y + 204}" class="muted tiny">TIER: ${escapeSvg(truncate(displayVerdict(subject.tier), 27))}</text>
-    <text x="${x + 24}" y="${y + 225}" class="muted tiny">ORIGIN: ${escapeSvg(truncate(displayVerdict(subject.origin), 25))}</text>
-    <text x="${x + 24}" y="${y + 246}" class="muted tiny">THREAT: ${escapeSvg(truncate(displayVerdict(subject.threat), 25))}</text>
+    <rect x="${x}" y="${y}" width="392" height="202" fill="#d5c99f" opacity="0.44" stroke="#80744e" stroke-width="1.5"/>
+    <path d="M ${x + 18} ${y + 18} H ${x + 112} V ${y + 112} H ${x + 18} Z" fill="none" stroke="#8a7e57" stroke-width="1.5"/>
+    <circle cx="${x + 65}" cy="${y + 65}" r="32" fill="none" stroke="#756a48" stroke-width="2"/>
+    <path d="M ${x + 65} ${y + 37} L ${x + 75} ${y + 65} L ${x + 65} ${y + 93} L ${x + 55} ${y + 65} Z" fill="#756a48" opacity="0.22"/>
+    <text x="${x + 65}" y="${y + 71}" text-anchor="middle" class="ink heading">${escapeSvg(subject.initials)}</text>
+    <text x="${x + 136}" y="${y + 33}" class="muted tiny">SUBJECT ${subject.side} // IDENTITY CHIT</text>
+    <text x="${x + 136}" y="${y + 65}" class="ink name">${escapeSvg(truncate(displayTitle(subject.name), 25))}</text>
+    <text x="${x + 136}" y="${y + 92}" class="muted tiny">TIER: ${escapeSvg(truncate(displayVerdict(subject.tier), 31))}</text>
+    <text x="${x + 136}" y="${y + 115}" class="muted tiny">ORIGIN: ${escapeSvg(truncate(displayVerdict(subject.origin), 30))}</text>
+    <text x="${x + 18}" y="${y + 148}" class="muted micro">PROFILE TRACE</text>
+    ${svgMultilineText(wrapText(subject.profile, 48, 2), x + 18, y + 169, 18, "ink tiny")}
   </g>`;
 }
 
 function metricRow(metric: ArtifactMetric, y: number) {
   return `<g>
-    <text x="116" y="${y + 12}" class="muted tiny">${escapeSvg(truncate(metric.label, 22))}</text>
-    ${metricBar(256, y, metric.aScore, "url(#greenInk)")}
-    <text x="515" y="${y + 12}" text-anchor="end" class="ink tiny">${metric.aScore}</text>
-    <path d="M 540 ${y + 3} L 548 ${y + 17} L 532 ${y + 17} Z" fill="#3b3423"/>
-    ${metricBar(606, y, metric.bScore, "url(#brownInk)")}
-    <text x="900" y="${y + 12}" text-anchor="end" class="ink tiny">${metric.bScore}</text>
-    <text x="922" y="${y + 12}" class="${metric.contested ? "red" : "green"} micro">${escapeSvg(metric.contested ? "CONTESTED" : metric.winner)}</text>
+    <text x="132" y="${y + 12}" class="muted tiny">${escapeSvg(truncate(metric.label, 22))}</text>
+    ${metricBar(304, y, 220, metric.aScore, "url(#greenInk)")}
+    <text x="542" y="${y + 12}" text-anchor="end" class="ink tiny">${metric.aScore}</text>
+    <line x1="560" y1="${y - 4}" x2="560" y2="${y + 20}" stroke="#817550" stroke-width="1"/>
+    ${metricBar(590, y, 220, metric.bScore, "url(#brownInk)")}
+    <text x="828" y="${y + 12}" text-anchor="end" class="ink tiny">${metric.bScore}</text>
+    <text x="854" y="${y + 12}" class="${metric.contested ? "red" : "green"} micro">${escapeSvg(metric.contested ? "CONTESTED" : metric.winner)}</text>
   </g>`;
 }
 
-function metricBar(x: number, y: number, score: number, fill: string) {
-  const width = 286;
+function metricBar(
+  x: number,
+  y: number,
+  width: number,
+  score: number,
+  fill: string,
+) {
   const scoreWidth = Math.round((width * clampScore(score)) / 100);
 
   return `<g>
-    <rect x="${x}" y="${y}" width="${width}" height="16" fill="#b9ae86" stroke="#887b53" stroke-width="1"/>
-    <rect x="${x}" y="${y}" width="${scoreWidth}" height="16" fill="${fill}"/>
-    <path d="${Array.from({ length: 8 }, (_, index) => {
+    <rect x="${x}" y="${y}" width="${width}" height="15" fill="#b9ae86" stroke="#887b53" stroke-width="1"/>
+    <rect x="${x}" y="${y}" width="${scoreWidth}" height="15" fill="${fill}"/>
+    <path d="${Array.from({ length: 7 }, (_, index) => {
       const offset = x + index * 36;
-      return `M ${offset} ${y} V ${y + 16}`;
+      return `M ${offset} ${y} V ${y + 15}`;
     }).join(" ")}" stroke="#3b3423" stroke-opacity="0.18" stroke-width="1"/>
   </g>`;
 }
@@ -444,13 +467,14 @@ function metricBar(x: number, y: number, score: number, fill: string) {
 function logRow(log: ArtifactLog, y: number) {
   const colorClass =
     log.tone === "danger" ? "red" : log.tone === "success" ? "green" : "ink";
-  const lines = wrapText(log.value, 90, 2);
+  const lines = wrapText(log.value, 82, 2);
 
   return `<g>
-    <line x1="116" y1="${y - 20}" x2="116" y2="${y + 24}" stroke="#574b31" stroke-width="2"/>
-    <text x="134" y="${y}" class="ink tiny">${escapeSvg(log.label)} - </text>
-    <text x="${134 + log.label.length * 8 + 26}" y="${y}" class="${colorClass} tiny">${escapeSvg(lines[0] ?? "N/A")}</text>
-    ${lines[1] ? `<text x="134" y="${y + 22}" class="muted tiny">${escapeSvg(lines[1])}</text>` : ""}
+    <rect x="116" y="${y - 28}" width="848" height="62" fill="#d5c99f" opacity="0.34" stroke="#8b7f56" stroke-width="1"/>
+    <line x1="132" y1="${y - 18}" x2="132" y2="${y + 14}" stroke="#574b31" stroke-width="2"/>
+    <text x="150" y="${y - 5}" class="${colorClass} tiny">${escapeSvg(log.label)}</text>
+    <text x="150" y="${y + 15}" class="ink tiny">${escapeSvg(lines[0] ?? "N/A")}</text>
+    ${lines[1] ? `<text x="150" y="${y + 34}" class="muted tiny">${escapeSvg(lines[1])}</text>` : ""}
   </g>`;
 }
 
@@ -463,22 +487,62 @@ function confidenceBar(
   const scoreWidth = Math.round((width * clampScore(confidence)) / 100);
 
   return `<g>
-    <rect x="${x}" y="${y}" width="${width}" height="15" fill="#b9ae86" stroke="#887b53" stroke-width="1"/>
-    <rect x="${x}" y="${y}" width="${scoreWidth}" height="15" fill="#897b54"/>
+    <rect x="${x}" y="${y}" width="${width}" height="14" fill="#b9ae86" stroke="#887b53" stroke-width="1"/>
+    <rect x="${x}" y="${y}" width="${scoreWidth}" height="14" fill="#897b54"/>
   </g>`;
 }
 
 function stamp(x: number, y: number, text: string, rotate: number) {
-  const width = Math.max(156, text.length * 13);
+  const width = Math.max(174, text.length * 12);
 
   return `<g transform="translate(${x} ${y}) rotate(${rotate})">
-    <rect x="0" y="0" width="${width}" height="46" fill="none" stroke="#a3443a" stroke-width="5"/>
-    <text x="${width / 2}" y="31" text-anchor="middle" class="red stamp">${escapeSvg(displayVerdict(text))}</text>
+    <rect x="0" y="0" width="${width}" height="44" fill="none" stroke="#a3443a" stroke-width="3" stroke-dasharray="9 5"/>
+    <rect x="7" y="7" width="${width - 14}" height="30" fill="none" stroke="#a3443a" stroke-width="1.4"/>
+    <text x="${width / 2}" y="29" text-anchor="middle" class="red stamp">${escapeSvg(displayVerdict(text))}</text>
   </g>`;
 }
 
 function tape(x: number, y: number, rotate: number) {
   return `<rect x="${x}" y="${y}" width="86" height="25" fill="#b8aa7b" opacity="0.42" stroke="#8f8257" stroke-width="1" transform="rotate(${rotate} ${x + 43} ${y + 12})"/>`;
+}
+
+function versusSeal(x: number, y: number) {
+  return `<g transform="translate(${x} ${y})">
+    <circle r="43" fill="#d5c99f" stroke="#756a48" stroke-width="2"/>
+    <circle r="30" fill="none" stroke="#756a48" stroke-width="1" stroke-dasharray="4 4"/>
+    <text x="0" y="-4" text-anchor="middle" class="ink heading">VS</text>
+    <text x="0" y="20" text-anchor="middle" class="muted micro">SIM LOCK</text>
+  </g>`;
+}
+
+function agencyWatermark(
+  x: number,
+  y: number,
+  scale: number,
+  rotate: number,
+  opacity: number,
+) {
+  return `<g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale})" opacity="${opacity}">
+    <g fill="none" stroke="#6b5d38" stroke-width="5">
+      <circle r="212"/>
+      <circle r="162"/>
+      <path d="M -188 0 C -118 -84 118 -84 188 0 C 118 84 -118 84 -188 0 Z"/>
+      <circle r="58"/>
+      <circle r="24"/>
+      <path d="M 0 -212 V 212 M -212 0 H 212"/>
+      <path d="M -122 -158 C -48 -52 -48 52 -122 158"/>
+      <path d="M 122 -158 C 48 -52 48 52 122 158"/>
+      <path d="M -162 -92 C -58 -48 58 -48 162 -92"/>
+      <path d="M -162 92 C -58 48 58 48 162 92"/>
+    </g>
+    <g fill="#6b5d38">
+      <path d="M 0 -264 L 12 -232 L 0 -200 L -12 -232 Z"/>
+      <path d="M 0 264 L 12 232 L 0 200 L -12 232 Z"/>
+      <path d="M -264 0 L -232 -12 L -200 0 L -232 12 Z"/>
+      <path d="M 264 0 L 232 -12 L 200 0 L 232 12 Z"/>
+    </g>
+    <text x="0" y="292" text-anchor="middle" class="watermarkText">OMNIVERSUS</text>
+  </g>`;
 }
 
 function svgMultilineText(
