@@ -81,7 +81,33 @@ export default function HologramCardFace({
             "linear-gradient(90deg, transparent, var(--card-accent), transparent)",
         }}
       />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--pulse"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--grain"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--scar"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--bars"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--tear"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-texture home-battle-card-texture--sync"
+        aria-hidden="true"
+      />
       <div className="relative z-10 h-full p-4">{children}</div>
+      <span className="home-battle-card-damage" aria-hidden="true" />
+      <span className="home-battle-card-glitch" aria-hidden="true" />
       {overlay}
     </div>
   );

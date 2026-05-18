@@ -64,6 +64,14 @@ export default function CardImagePlaceholder({
           boxShadow: "0 0 14px var(--card-accent)",
         }}
       />
+      <span
+        className="home-battle-card-media-texture home-battle-card-media-texture--signal"
+        aria-hidden="true"
+      />
+      <span
+        className="home-battle-card-media-texture home-battle-card-media-texture--bars"
+        aria-hidden="true"
+      />
     </div>
   );
 }
