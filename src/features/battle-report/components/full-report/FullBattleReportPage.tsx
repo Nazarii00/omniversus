@@ -13,6 +13,7 @@ import {
   parseLatestBattleReport,
   qualityWarnings,
   readLatestBattleReportText,
+  type BattleReportJson,
 } from "../../model";
 import {
   ArgumentTimeline,
@@ -50,7 +51,7 @@ export default function FullBattleReportPage() {
     [storedReportText],
   );
   const hasStoredReport = Boolean(storedReport);
-  const report = storedReport ?? MOCK_BATTLE_REPORT;
+  const report: BattleReportJson = storedReport ?? MOCK_BATTLE_REPORT;
   const view = useMemo(() => normalizeReport(report), [report]);
 
   const fighters = view.fighters;
@@ -105,11 +106,16 @@ export default function FullBattleReportPage() {
           ]}
           actions={
             <ShareableReportActions
+              abilityInteractions={report.ability_interactions}
               comparison={comparison}
+              dataProvenance={report.data_provenance}
               decisiveChain={decisiveChain}
               hasStoredReport={hasStoredReport}
+              reportMetadata={report.metadata}
+              reportRules={report.rules}
               summary={heroSummary}
               view={view}
+              winConditions={report.win_conditions}
             />
           }
         />

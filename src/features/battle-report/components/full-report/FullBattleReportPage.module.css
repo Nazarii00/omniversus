@@ -254,6 +254,7 @@
 }
 
 .shareReportActions button {
+  width: 4.3rem;
   min-height: 2.05rem;
   border: 1px solid rgba(200, 168, 75, 0.52);
   background: rgba(12, 14, 8, 0.82);
@@ -296,6 +297,237 @@
 }
 
 .shareReportStatus[data-tone="error"] {
+  color: #ffd5cf;
+}
+
+.sharePreviewBackdrop {
+  --primary: #c9ffc8;
+  --secondary: #6b8f6b;
+  --line: rgba(104, 183, 104, 0.3);
+  --amber: #c8a84b;
+  --amber-hot: #ffb340;
+
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    linear-gradient(rgba(2, 5, 3, 0.74), rgba(2, 5, 3, 0.86)),
+    radial-gradient(circle at 50% 0, rgba(200, 168, 75, 0.16), transparent 44%);
+  backdrop-filter: blur(10px);
+}
+
+.sharePreviewDialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(980px, calc(100vw - 24px));
+  max-height: min(92vh, 860px);
+  overflow: hidden;
+  border: 1px solid rgba(200, 168, 75, 0.46);
+  background: rgba(6, 10, 7, 0.96);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 1px rgba(104, 183, 104, 0.08);
+}
+
+.sharePreviewHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 18px 14px;
+}
+
+.sharePreviewHeading {
+  min-width: 0;
+}
+
+.sharePreviewHeading span {
+  display: block;
+  color: var(--amber);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.sharePreviewHeading h2 {
+  margin: 5px 0 0;
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sharePreviewHeading p {
+  margin: 7px 0 0;
+  color: var(--secondary);
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sharePreviewClose {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  background: rgba(10, 14, 9, 0.92);
+  color: var(--secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.sharePreviewClose:hover,
+.sharePreviewClose:focus-visible {
+  border-color: rgba(255, 179, 64, 0.78);
+  color: var(--amber-hot);
+  outline: none;
+}
+
+.sharePreviewBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(286px, 330px);
+  gap: 16px;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.sharePreviewStage {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  border: 1px solid rgba(104, 183, 104, 0.18);
+  background:
+    linear-gradient(45deg, rgba(104, 183, 104, 0.07) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(104, 183, 104, 0.07) 25%, transparent 25%),
+    rgba(4, 7, 5, 0.88);
+  background-position:
+    0 0,
+    0 12px;
+  background-size: 24px 24px;
+  padding: 14px;
+}
+
+.sharePreviewImage {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 66vh;
+  border: 1px solid rgba(232, 214, 155, 0.42);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+.sharePreviewLoading {
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sharePreviewForm {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+}
+
+.sharePreviewLabel {
+  color: var(--amber);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sharePreviewLinkRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.sharePreviewLinkRow input {
+  min-width: 0;
+  height: 2.25rem;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.34);
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0;
+  padding: 0 9px;
+}
+
+.sharePreviewActions {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sharePreviewActions button,
+.sharePreviewLinkRow button {
+  min-height: 2.25rem;
+  border: 1px solid rgba(200, 168, 75, 0.52);
+  background: rgba(12, 14, 8, 0.82);
+  color: var(--amber);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  padding: 0 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sharePreviewActions button:first-child {
+  background: rgba(66, 55, 22, 0.86);
+  color: var(--amber-hot);
+}
+
+.sharePreviewActions button:hover,
+.sharePreviewActions button:focus-visible,
+.sharePreviewLinkRow button:hover,
+.sharePreviewLinkRow button:focus-visible {
+  border-color: rgba(255, 179, 64, 0.86);
+  color: var(--amber-hot);
+  outline: none;
+  box-shadow: 0 0 18px rgba(255, 179, 64, 0.14);
+}
+
+.sharePreviewActions button:disabled,
+.sharePreviewLinkRow button:disabled {
+  cursor: progress;
+  opacity: 0.55;
+}
+
+.sharePreviewStatus {
+  margin: 2px 0 0;
+  color: var(--secondary);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.sharePreviewStatus[data-tone="ok"] {
+  color: var(--primary);
+}
+
+.sharePreviewStatus[data-tone="error"] {
   color: #ffd5cf;
 }
 
@@ -1942,6 +2174,14 @@ a.premiseText:focus-visible {
     text-align: left;
   }
 
+  .sharePreviewBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sharePreviewImage {
+    max-height: 54vh;
+  }
+
   .heroTerminalLabel,
   .heroMetaBlock {
     text-align: left;
@@ -1962,6 +2202,28 @@ a.premiseText:focus-visible {
   .pageShell {
     width: calc(100vw - 8px);
     margin: 4px auto 16px;
+  }
+
+  .sharePreviewBackdrop {
+    padding: 8px;
+  }
+
+  .sharePreviewDialog {
+    width: calc(100vw - 16px);
+    max-height: 94vh;
+  }
+
+  .sharePreviewHeader,
+  .sharePreviewBody {
+    padding: 12px;
+  }
+
+  .sharePreviewHeading p {
+    white-space: normal;
+  }
+
+  .sharePreviewLinkRow {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sectionTabs {
