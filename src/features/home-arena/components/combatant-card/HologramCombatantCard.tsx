@@ -87,17 +87,22 @@ export default function HologramCombatantCard({
               card={card}
               crtImpact={crtImpact}
               crtResetToken={crtResetToken}
+              isEliminated={isEliminated}
             />
             <HologramCombatantBackFace
               card={card}
               crtImpact={crtImpact}
               crtResetToken={crtResetToken}
+              isEliminated={isEliminated}
             />
           </div>
-
-          {isEliminated ? <EliminationStampOverlay /> : null}
         </div>
       </div>
+      {isEliminated ? (
+        <span className="home-battle-elimination-layer" aria-hidden="true">
+          <EliminationStampOverlay />
+        </span>
+      ) : null}
     </button>
   );
 }

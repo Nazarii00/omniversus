@@ -3,6 +3,7 @@ import {
   buildBattleResponseFormat,
   createBattleCompletion,
   getClient,
+  isGeminiStructuredOutputSchemaError,
   resolveBattleModel,
 } from "./providers/gemini/client";
 import { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
@@ -17,7 +18,11 @@ import {
   buildUserPrompt,
   OMNIVERSUS_MASTER_PROMPT,
 } from "./prompts/battlePrompt";
-import { resolveBattleDossierContext } from "./dossier";
+import {
+  resolveBattleDossierContext,
+  type BattleDossierContext,
+  type DossierPortrait,
+} from "./dossier";
 import {
   OmniversusBattleSchema,
   type BattleGenerationMetadata,
@@ -57,6 +62,7 @@ export {
 export {
   resolveBattleDossierContext,
   type BattleDossierContext,
+  type DossierPortrait,
   type DossierFact,
   type FighterDossier,
 } from "./dossier";
@@ -212,19 +218,34 @@ function providerErrorStatus(error: unknown): number | null {
   return null;
 }
 
+function providerErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "";
+}
+
 function providerErrorMessage(error: unknown): string {
   const status = providerErrorStatus(error);
+  const detail = providerErrorDetail(error);
+
+  if (isGeminiStructuredOutputSchemaError(error)) {
+    return detail
+      ? `Gemini rejected the structured output schema: ${detail}`
+      : "Gemini rejected the structured output schema.";
+  }
 
   if (status === 400) {
-    const detail = error instanceof Error ? error.message : "";
-
     return detail
       ? `Gemini rejected the battle generation request: ${detail}`
       : "Gemini rejected the battle generation request.";
   }
 
   if (status === 429) {
-    return "Gemini rate limit or quota was hit. Wait a bit, then retry with the same fighters.";
+    return detail
+      ? `Gemini rate limit or quota was hit: ${detail}`
+      : "Gemini rate limit or quota was hit. Wait a bit, then retry with the same fighters.";
   }
 
   if (status && status >= 500) {
@@ -380,9 +401,30 @@ export async function runBattleAnalysisWithMetadata(
   }
 
   return {
-    result: normalizedParsed.data,
+    result: attachDossierPortraits(normalizedParsed.data, dossierContext),
     generation,
   };
+}
+
+function attachDossierPortraits(
+  result: OmniversusBattle,
+  dossierContext: BattleDossierContext,
+): OmniversusBattle {
+  return {
+    ...result,
+    fighters: result.fighters.map((fighter) => {
+      const portrait = portraitForSide(fighter.side, dossierContext);
+
+      return portrait ? { ...fighter, portrait } : fighter;
+    }),
+  };
+}
+
+function portraitForSide(
+  side: OmniversusBattle["fighters"][number]["side"],
+  dossierContext: BattleDossierContext,
+): DossierPortrait | null {
+  return dossierContext[side].dossier?.portrait ?? null;
 }
 
 export async function runBattleAnalysis(

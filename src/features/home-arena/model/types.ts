@@ -18,6 +18,7 @@ export type ArenaCard = {
   side: ArenaCardSide;
   name: string;
   universe: string;
+  portraitUrl?: string;
   serial: string;
   powerIndex: string;
   stance: string;
@@ -38,4 +39,9 @@ export type CombatantOption = {
   name: string;
   universe: string;
   aliases?: string[];
+  portraitUrl?: string;
+  subjectId?: string;
+  summary?: string;
+  versionId?: string;
+  versionLabel?: string;
 };

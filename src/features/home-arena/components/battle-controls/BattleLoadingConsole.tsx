@@ -40,7 +40,7 @@ const MIN_LINE_MS = 1250;
 const PROGRESS_HOLD_MS = 460;
 const PROGRESS_WIDTH = 13;
 const TICK_MS = 32;
-const VISIBLE_LINE_COUNT = 11;
+const VISIBLE_LINE_COUNT = 6;
 const WAITING_LINE_WINDOW_MS = 3200;
 const MINIMUM_REVEAL_STEP_COUNT = 19;
 
@@ -76,22 +76,22 @@ function buildLoadingSteps(
     { kind: "line", text: "ANALYSIS THREAD RESERVED" },
     { kind: "line", text: "CANON INDEX: aliases and source tags queued" },
     { kind: "progress", label: "CANON_SOURCE_SWEEP", fillMs: 2000 },
-    { kind: "line", text: `DOSSIER_STUB[A]: ${alpha} feats staged` },
-    { kind: "line", text: `DOSSIER_STUB[B]: ${omega} resistances staged` },
+    { kind: "line", text: `DOSSIER_LOOKUP[A]: ${alpha} evidence queued` },
+    { kind: "line", text: `DOSSIER_LOOKUP[B]: ${omega} evidence queued` },
     { kind: "line", text: "STAT_NORMALIZER: AP / speed / durability split" },
     { kind: "line", text: "ABILITY_ROUTER: hax, counters, passives, BFR" },
     { kind: "progress", label: "MATCHUP_MATRIX", fillMs: 2300 },
-    { kind: "line", text: "NARRATIVE[01]: arena entry placeholder" },
-    { kind: "line", text: "NARRATIVE[02]: opening range probe" },
-    { kind: "line", text: "NARRATIVE[03]: first exchange shell" },
-    { kind: "line", text: "NARRATIVE[04]: defense branch seeded" },
-    { kind: "line", text: "NARRATIVE[05]: escalation beat reserved" },
-    { kind: "line", text: "NARRATIVE[06]: counter-route pressure test" },
-    { kind: "line", text: "NARRATIVE[07]: stamina/terrain pass" },
-    { kind: "line", text: "NARRATIVE[08]: decisive interaction slot" },
+    { kind: "line", text: "NARRATIVE_SCHEMA: awaiting model battle states" },
+    { kind: "line", text: "ROUND_EVENTS: opening range probe pending" },
+    { kind: "line", text: "ROUND_EVENTS: first exchange pending" },
+    { kind: "line", text: "ROUND_EVENTS: defense branch pending" },
+    { kind: "line", text: "ROUND_EVENTS: escalation beat pending" },
+    { kind: "line", text: "ROUND_EVENTS: counter-route pressure pending" },
+    { kind: "line", text: "ROUND_EVENTS: stamina/terrain pass pending" },
+    { kind: "line", text: "ROUND_EVENTS: decisive interaction pending" },
     { kind: "progress", label: "ROUND_SCRIPT_SIM", fillMs: 2600 },
     { kind: "line", text: "ANTI_ARGUMENT: losing side best route checked" },
-    { kind: "line", text: "QUALITY_FLAGS: confidence placeholders attached" },
+    { kind: "line", text: "QUALITY_FLAGS: source and inference checks reserved" },
     { kind: "progress", label: "VERDICT_SYNTHESIS", fillMs: 2100 },
     { kind: "line", text: "REPORT SHELL READY; WAITING FOR API RETURN" },
   ];

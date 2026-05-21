@@ -704,6 +704,31 @@ function prepareQualityFlags(value: unknown) {
   };
 }
 
+function prepareAudit(value: unknown) {
+  const audit = asRecord(value);
+
+  return {
+    sources: asString(audit.sources, "Diagnostic schema omitted sources."),
+    data_inputs: asString(
+      audit.data_inputs,
+      "Only compact verdict fields were requested.",
+    ),
+    canon: asString(audit.canon, "Source requires verification."),
+    tier_ap: asString(audit.tier_ap, "Source requires verification."),
+    speed: asString(audit.speed, "Source requires verification."),
+    ability_interactions: asString(
+      audit.ability_interactions,
+      "Not requested in diagnostic schema.",
+    ),
+    resistances: asString(audit.resistances, "Source requires verification."),
+    logical_chains: asString(
+      audit.logical_chains,
+      "Not requested in diagnostic schema.",
+    ),
+    confidence: asString(audit.confidence, "Model-estimated confidence."),
+  };
+}
+
 function prepareUi(value: unknown, verdict: ReturnType<typeof prepareVerdict>) {
   const ui = asRecord(value);
   const winner =
@@ -794,7 +819,7 @@ export function prepareBattleOutput(
       draft.ability_interactions,
     ),
     win_conditions: prepareWinConditions(draft.win_conditions),
-    audit: draft.audit,
+    audit: prepareAudit(draft.audit),
     quality_flags: prepareQualityFlags(draft.quality_flags),
     narrative: prepareNarrative(draft.narrative),
     verdict,

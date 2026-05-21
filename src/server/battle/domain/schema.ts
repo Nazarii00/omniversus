@@ -262,6 +262,11 @@ export const FighterSchema = obj({
     lose_conditions: z.array(z.string()).max(5),
     counters: z.array(z.string()).max(5),
   }),
+  portrait: obj({
+    approved_at: z.string(),
+    data_url: z.string(),
+    source_name: z.string(),
+  }).optional(),
   best_argument: z.string(),
   weakest_argument: z.string(),
 });

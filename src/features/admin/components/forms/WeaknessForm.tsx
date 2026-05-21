@@ -4,6 +4,7 @@ import type { VersionOption } from "../../data/loadAdminData";
 import { enumValues } from "../../lib/enums";
 import { addWeaknessAction } from "../../actions/dossierActions";
 import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
 import {
   EmptyState,
   EvidenceFields,
@@ -15,7 +16,13 @@ import {
   VersionSelect,
 } from "../FormControls";
 
-export function WeaknessForm({ versions }: { versions: VersionOption[] }) {
+export function WeaknessForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
   return (
     <section className={styles.formPanel} id="weakness">
       <div className={styles.sectionHeader}>
@@ -25,8 +32,17 @@ export function WeaknessForm({ versions }: { versions: VersionOption[] }) {
       {!versions.length ? (
         <EmptyState>Create a subject version first.</EmptyState>
       ) : (
-        <form action={addWeaknessAction} className={styles.formGrid}>
-          <VersionSelect versions={versions} />
+        <ActionFeedbackForm
+          action={addWeaknessAction}
+          className={styles.formGrid}
+          pendingMessage="Adding weakness..."
+          resetOnSuccess
+          successMessage="Weakness added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
           <Field label="Name" name="name" required />
           <TextAreaField label="Description" name="description" required />
           <TextAreaField label="Exploitation" name="exploitation" />
@@ -53,7 +69,7 @@ export function WeaknessForm({ versions }: { versions: VersionOption[] }) {
           <div className={styles.formFooter}>
             <SubmitButton>Add weakness</SubmitButton>
           </div>
-        </form>
+        </ActionFeedbackForm>
       )}
     </section>
   );

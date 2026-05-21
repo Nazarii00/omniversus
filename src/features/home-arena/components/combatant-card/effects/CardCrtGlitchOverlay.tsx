@@ -5,6 +5,7 @@ import type { ArenaCardSide, CardCrtGlitchImpact } from "../../../model";
 
 type CardCrtGlitchOverlayProps = {
   impact?: CardCrtGlitchImpact | null;
+  isTerminal?: boolean;
   resetToken?: number;
   side: ArenaCardSide;
 };
@@ -395,6 +396,7 @@ function drawCardCrtGlitch(
 
 export default function CardCrtGlitchOverlay({
   impact,
+  isTerminal = false,
   resetToken = 0,
   side,
 }: CardCrtGlitchOverlayProps) {
@@ -416,7 +418,8 @@ export default function CardCrtGlitchOverlay({
       return;
     }
 
-    hpRef.current = clampHp(impact.hp);
+    const nextHp = clampHp(impact.hp);
+    hpRef.current = isTerminal ? 0 : Math.min(hpRef.current, nextHp);
 
     const impactKey = `${impact.runId}-${impact.act}-${impact.hp}`;
     if (lastImpactKeyRef.current === impactKey) return;
@@ -425,10 +428,10 @@ export default function CardCrtGlitchOverlay({
     seedRef.current =
       (side === "right" ? 91 : 3) + impact.runId * 0.001 + impact.act * 37;
     pulseRef.current = 1;
-  }, [impact, side]);
+  }, [impact, isTerminal, side]);
 
   useEffect(() => {
-    hpRef.current = 100;
+    hpRef.current = isTerminal ? 0 : 100;
     pulseRef.current = 0;
     seedRef.current = side === "right" ? 91 : 3;
     lastImpactKeyRef.current = null;
@@ -444,7 +447,7 @@ export default function CardCrtGlitchOverlay({
 
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
-  }, [resetToken, side]);
+  }, [isTerminal, resetToken, side]);
 
   useEffect(() => {
     const canvasElement = canvasRef.current;

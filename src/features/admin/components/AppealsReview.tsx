@@ -3,6 +3,7 @@ import { UserAppealKind } from "@/generated/prisma/enums";
 import { resolveUserAppealAction } from "../actions/userAppealActions";
 import type { LoadedAppealsData } from "../data/loadAppealsData";
 import styles from "../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "./ActionFeedbackForm";
 import { EmptyState } from "./FormControls";
 
 type Appeal = LoadedAppealsData["pendingInfoAppeals"][number];
@@ -138,7 +139,13 @@ function AppealDecisionForm({ appeal }: { appeal: Appeal }) {
       : "Approve";
 
   return (
-    <form action={resolveUserAppealAction} className={styles.appealForm}>
+    <ActionFeedbackForm
+      action={resolveUserAppealAction}
+      className={styles.appealForm}
+      pendingMessage="Resolving appeal..."
+      refreshOnSuccess
+      successMessage="Appeal resolved."
+    >
       <input name="appealId" type="hidden" value={appeal.id} />
       <label className={`${styles.field} ${styles.wide}`}>
         <span>Resolution note</span>
@@ -166,7 +173,7 @@ function AppealDecisionForm({ appeal }: { appeal: Appeal }) {
           Reject
         </button>
       </div>
-    </form>
+    </ActionFeedbackForm>
   );
 }
 

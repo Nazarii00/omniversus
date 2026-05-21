@@ -12,10 +12,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <nav>
           <a href="/admin#overview">Overview</a>
           <a href="/admin#subjects">Subjects</a>
-          <a href="/admin#subject-version">Subject form</a>
-          <a href="/admin#capability">Capability</a>
-          <a href="/admin#ability">Ability</a>
-          <a href="/admin#condition">Win/Loss</a>
+          <Link href="/admin?mode=add#profile-workflow">Profile builder</Link>
           <a href="/admin#references">References</a>
           <Link href="/admin/appeals">Appeals</Link>
         </nav>

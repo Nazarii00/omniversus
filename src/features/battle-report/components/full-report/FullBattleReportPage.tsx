@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
-import { MOCK_BATTLE_REPORT } from "../../data";
 import {
   buildFindingRecords,
   boolText,
@@ -28,7 +27,20 @@ import {
 } from "./FullBattleReportSections";
 import styles from "./FullBattleReportPage.module.css";
 
+type ReportPortrait = NonNullable<
+  NonNullable<BattleReportJson["fighters"]>[number]["portrait"]
+>;
+
+type PortraitHydrationResponse = {
+  portraits?: Partial<Record<"A" | "B", ReportPortrait>>;
+};
+
 export default function FullBattleReportPage() {
+  const [hydratedReport, setHydratedReport] = useState<{
+    report: BattleReportJson;
+    storageKey: string | null;
+  } | null>(null);
+
   useEffect(() => {
     document.documentElement.classList.add("battle-report-scroll-unlocked");
     document.body.classList.add("battle-report-scroll-unlocked");
@@ -50,39 +62,110 @@ export default function FullBattleReportPage() {
     () => parseLatestBattleReport(storedReportText),
     [storedReportText],
   );
-  const hasStoredReport = Boolean(storedReport);
-  const report: BattleReportJson = storedReport ?? MOCK_BATTLE_REPORT;
-  const view = useMemo(() => normalizeReport(report), [report]);
+  const report =
+    hydratedReport?.storageKey === storedReportText
+      ? hydratedReport.report
+      : storedReport;
+  const view = useMemo(() => (report ? normalizeReport(report) : null), [report]);
 
-  const fighters = view.fighters;
+  useEffect(() => {
+    if (!storedReport || !needsPortraitHydration(storedReport)) return;
+
+    let isCancelled = false;
+
+    void fetch("/api/battle-report/portraits", {
+      body: JSON.stringify({
+        fighters: storedReport.fighters?.map((fighter) => ({
+          name: fighter.name,
+          side: fighter.side,
+        })),
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    })
+      .then((response) =>
+        response.ok
+          ? (response.json() as Promise<PortraitHydrationResponse>)
+          : null,
+      )
+      .then((payload) => {
+        if (isCancelled || !payload?.portraits) return;
+
+        const nextReport = reportWithHydratedPortraits(
+          storedReport,
+          payload.portraits,
+        );
+
+        if (nextReport !== storedReport) {
+          setHydratedReport({
+            report: nextReport,
+            storageKey: storedReportText,
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [storedReport, storedReportText]);
+
+  const fighters = view?.fighters ?? [];
   const fighterA = fighters.find((fighter) => fighter.side === "A");
   const fighterB = fighters.find((fighter) => fighter.side === "B");
-  const chains = useMemo(() => Array.from(view.chainsById.values()), [view]);
-  const claims = useMemo(() => Array.from(view.claimsById.values()), [view]);
-  const comparison = view.comparison.length
+  const chains = useMemo(
+    () => (view ? Array.from(view.chainsById.values()) : []),
+    [view],
+  );
+  const claims = useMemo(
+    () => (view ? Array.from(view.claimsById.values()) : []),
+    [view],
+  );
+  const comparison = view?.comparison.length
     ? view.comparison
-    : comparisonPreview(view);
+    : view
+      ? comparisonPreview(view)
+      : [];
   const decisiveChain =
-    view.decisiveChain ??
+    view?.decisiveChain ??
     chains.find((chain) => chain.chain_type === "WIN_CONDITION") ??
     chains[0] ??
     null;
-  const keyFactors = view.verdict.key_factors?.length
+  const keyFactors = view?.verdict.key_factors?.length
     ? view.verdict.key_factors
-    : view.tags;
-  const filedFindings = buildFindingRecords(
-    keyFactors,
-    comparison,
-    decisiveChain,
-    view.verdict.primary_reason ?? view.chainTeaser,
-  );
-  const warnings = qualityWarnings(report);
-  const winnerLabel = formatSide(view.verdict.winner_side, fighters);
-  const winnerName = view.verdict.winner_name ?? view.winnerName ?? winnerLabel;
+    : (view?.tags ?? []);
+  const filedFindings = view
+    ? buildFindingRecords(
+        keyFactors,
+        comparison,
+        decisiveChain,
+        view.verdict.primary_reason ?? view.chainTeaser,
+      )
+    : [];
+  const warnings = report ? qualityWarnings(report) : [];
+  const winnerLabel = view ? formatSide(view.verdict.winner_side, fighters) : "";
+  const winnerName = view?.verdict.winner_name ?? view?.winnerName ?? winnerLabel;
   const heroSummary =
-    view.verdict.summary_3_sentences ??
-    view.verdict.primary_reason ??
-    view.chainTeaser;
+    view?.verdict.summary_3_sentences ??
+    view?.verdict.primary_reason ??
+    view?.chainTeaser ??
+    "";
+
+  if (!report || !view) {
+    return (
+      <main className={styles.reportScreen}>
+        <div className={styles.screenTexture} aria-hidden="true" />
+        <div className={styles.pageShell}>
+          <section className={styles.noticePanel}>
+            <b>NO LIVE VERDICT FILE FOUND</b>
+            <span>
+              Start a battle from the arena to generate a session report.
+            </span>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.reportScreen}>
@@ -94,7 +177,7 @@ export default function FullBattleReportPage() {
           winner={winnerName}
           difficulty={view.difficulty}
           confidence={view.confidence}
-          status={hasStoredReport ? "SESSION FILED" : "ARCHIVE SAMPLE"}
+          status="SESSION FILED"
           caseId={view.id}
           tags={[
             `CASE TYPE: ${report.metadata?.battle_type ?? "OBJECTIVE"}`,
@@ -110,7 +193,6 @@ export default function FullBattleReportPage() {
               comparison={comparison}
               dataProvenance={report.data_provenance}
               decisiveChain={decisiveChain}
-              hasStoredReport={hasStoredReport}
               reportMetadata={report.metadata}
               reportRules={report.rules}
               summary={heroSummary}
@@ -124,16 +206,6 @@ export default function FullBattleReportPage() {
 
         <div className={styles.terminalBody}>
           <div className={styles.mainFile}>
-            {!hasStoredReport ? (
-              <section className={styles.noticePanel}>
-                <b>NO LIVE VERDICT FILE FOUND</b>
-                <span>
-                  Archive sample loaded under quarantine. Open a battle result
-                  from the arena to replace this dossier with session evidence.
-                </span>
-              </section>
-            ) : null}
-
             <SubjectFaceoff
               fighterA={fighterA}
               fighterB={fighterB}
@@ -189,6 +261,38 @@ export default function FullBattleReportPage() {
       </div>
     </main>
   );
+}
+
+function needsPortraitHydration(report: BattleReportJson) {
+  return Boolean(
+    report.fighters?.some(
+      (fighter) =>
+        (fighter.side === "A" || fighter.side === "B") &&
+        fighter.name &&
+        !fighter.portrait?.data_url,
+    ),
+  );
+}
+
+function reportWithHydratedPortraits(
+  report: BattleReportJson,
+  portraits: PortraitHydrationResponse["portraits"],
+) {
+  if (!report.fighters?.length || !portraits) return report;
+
+  let didHydrate = false;
+  const fighters = report.fighters.map((fighter) => {
+    if (fighter.portrait?.data_url) return fighter;
+    if (fighter.side !== "A" && fighter.side !== "B") return fighter;
+
+    const portrait = portraits[fighter.side];
+    if (!portrait?.data_url) return fighter;
+
+    didHydrate = true;
+    return { ...fighter, portrait };
+  });
+
+  return didHydrate ? { ...report, fighters } : report;
 }
 
 function subscribeToReportStorage(onStoreChange: () => void) {

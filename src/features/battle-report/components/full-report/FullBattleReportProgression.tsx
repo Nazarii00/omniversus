@@ -15,7 +15,7 @@ import {
   type ReportViewModel,
 } from "../../model";
 import { SectionHeading } from "./FullBattleReportSectionHeading";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "./FullBattleReportProgression.module.css";
 
 type BattleProgressionProps = {
   view: ReportViewModel;

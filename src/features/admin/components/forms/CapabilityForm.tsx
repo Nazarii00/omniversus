@@ -8,6 +8,7 @@ import type { VersionOption } from "../../data/loadAdminData";
 import { enumValues } from "../../lib/enums";
 import { addCapabilityAction } from "../../actions/dossierActions";
 import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
 import {
   CheckboxField,
   EmptyState,
@@ -20,7 +21,13 @@ import {
   VersionSelect,
 } from "../FormControls";
 
-export function CapabilityForm({ versions }: { versions: VersionOption[] }) {
+export function CapabilityForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
   return (
     <section className={styles.formPanel} id="capability">
       <div className={styles.sectionHeader}>
@@ -30,8 +37,17 @@ export function CapabilityForm({ versions }: { versions: VersionOption[] }) {
       {!versions.length ? (
         <EmptyState>Create a subject version first.</EmptyState>
       ) : (
-        <form action={addCapabilityAction} className={styles.formGrid}>
-          <VersionSelect versions={versions} />
+        <ActionFeedbackForm
+          action={addCapabilityAction}
+          className={styles.formGrid}
+          pendingMessage="Adding capability..."
+          resetOnSuccess
+          successMessage="Capability added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
           <SelectField
             label="Category"
             name="category"
@@ -62,7 +78,7 @@ export function CapabilityForm({ versions }: { versions: VersionOption[] }) {
           <div className={styles.formFooter}>
             <SubmitButton>Add capability</SubmitButton>
           </div>
-        </form>
+        </ActionFeedbackForm>
       )}
     </section>
   );

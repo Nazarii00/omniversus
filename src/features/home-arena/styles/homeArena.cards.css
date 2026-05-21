@@ -1,0 +1,236 @@
+/* Home arena combatant card and dock styles. */
+
+.home-card-levitate-left {
+  animation: home-card-levitate-left 5.4s ease-in-out infinite;
+}
+
+.home-card-levitate-right {
+  animation: home-card-levitate-right 5.9s ease-in-out infinite;
+}
+
+.home-battle-card {
+  isolation: isolate;
+  overflow: visible;
+  transform-origin: center center;
+}
+
+.home-battle-card-jolt-shell {
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+.home-battle-card-jolt-shell[data-crt-hit-phase="odd"] {
+  animation: home-card-crt-jolt-a 440ms cubic-bezier(0.16, 0.82, 0.18, 1) both;
+  will-change: transform;
+}
+
+.home-battle-card-jolt-shell[data-crt-hit-phase="even"] {
+  animation: home-card-crt-jolt-b 440ms cubic-bezier(0.16, 0.82, 0.18, 1) both;
+  will-change: transform;
+}
+
+.home-battle-card-face {
+  isolation: isolate;
+}
+
+.home-battle-card-crt-glitch {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: saturate(1.22) contrast(1.12);
+  mix-blend-mode: screen;
+  opacity: 0.94;
+  transform: translateZ(12px);
+}
+
+.home-battle-card-media {
+  isolation: isolate;
+}
+
+.home-battle-elimination-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  transform: none;
+  transform-style: flat;
+}
+
+.home-battle-elimination-shadow,
+.home-battle-elimination-press,
+.home-battle-elimination-imprint {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transform: none;
+  transform-style: flat;
+}
+
+.home-battle-elimination-shadow {
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 76, 52, 0.18),
+      transparent 42%
+    ),
+    linear-gradient(rgba(255, 76, 52, 0.06), rgba(0, 0, 0, 0.24));
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: home-battle-elimination-shadow 720ms
+    cubic-bezier(0.12, 0.78, 0.18, 1) 80ms forwards;
+}
+
+.home-battle-elimination-press,
+.home-battle-elimination-imprint {
+  padding: 0;
+}
+
+.home-battle-elimination-press span,
+.home-battle-elimination-imprint span {
+  display: grid;
+  width: 122%;
+  min-width: 17.5rem;
+  aspect-ratio: 3.45 / 1;
+  place-items: center;
+  border: 0.24rem double rgba(255, 78, 48, 0.86);
+  color: rgba(255, 78, 48, 0.96);
+  font-size: clamp(1.4rem, 7.2vw, 2.9rem);
+  font-weight: 950;
+  letter-spacing: 0.075em;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(255, 38, 24, 0.36);
+  transform: translateY(-4%) rotate(-12deg);
+  white-space: nowrap;
+}
+
+.home-battle-elimination-press span {
+  background: transparent;
+  filter: drop-shadow(0 0 14px rgba(255, 78, 48, 0.32));
+  opacity: 0;
+  animation: home-battle-elimination-press 760ms
+    cubic-bezier(0.08, 0.88, 0.14, 1) 40ms forwards;
+}
+
+.home-battle-elimination-imprint span {
+  border-color: rgba(255, 78, 48, 0.58);
+  color: rgba(255, 78, 48, 0.74);
+  opacity: 0;
+  animation: home-battle-elimination-imprint 900ms
+    cubic-bezier(0.12, 0.78, 0.18, 1) 220ms forwards;
+}
+
+.home-battle-card-jolt-shell[data-eliminated="true"]
+  .home-battle-card-face {
+  filter: grayscale(0.86) brightness(0.72) contrast(1.08);
+}
+
+.home-card-dock-scan {
+  animation: home-card-dock-scan 3.8s ease-in-out infinite;
+}
+
+.home-card-dock {
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease,
+    scale 240ms cubic-bezier(0.16, 0.86, 0.2, 1);
+}
+
+.home-card-dock::before,
+.home-card-dock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.home-card-dock::before {
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--card-accent-text) 24%, transparent),
+      transparent 24%
+    ),
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--card-accent) 18%, transparent),
+      transparent
+    );
+  transition: opacity 180ms ease;
+}
+
+.home-card-dock::after {
+  inset: -20% 18%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--card-accent-text) 70%, transparent),
+    transparent
+  );
+  filter: blur(0.4px);
+  mix-blend-mode: screen;
+  transform: translateX(-115%) skewX(-18deg);
+}
+
+.home-combatant-entry[data-state="empty"]:hover .home-card-dock,
+.home-combatant-entry[data-state="empty"]:focus-within .home-card-dock {
+  border-color: color-mix(
+    in srgb,
+    var(--card-accent-text) 76%,
+    var(--card-accent)
+  );
+  filter: saturate(1.45) brightness(1.12);
+  scale: 1.026;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--card-accent-text) 26%, transparent),
+    inset 0 0 42px rgba(0, 0, 0, 0.9),
+    inset 0 0 38px var(--card-accent-soft),
+    0 0 24px var(--card-accent-glow),
+    0 0 52px color-mix(in srgb, var(--card-accent) 20%, transparent),
+    0 18px 58px rgba(0, 0, 0, 0.7);
+}
+
+.home-combatant-entry[data-state="empty"]:hover .home-card-dock::before,
+.home-combatant-entry[data-state="empty"]:focus-within .home-card-dock::before {
+  opacity: 1;
+  animation: home-card-dock-hover-lock 1.6s ease-in-out infinite;
+}
+
+.home-combatant-entry[data-state="empty"]:hover .home-card-dock::after,
+.home-combatant-entry[data-state="empty"]:focus-within .home-card-dock::after {
+  animation: home-card-dock-hover-sweep 1.15s cubic-bezier(0.16, 0.86, 0.2, 1)
+    infinite;
+}
+
+.home-combatant-entry[data-state="empty"]:hover .home-card-dock-scan,
+.home-combatant-entry[data-state="empty"]:focus-within .home-card-dock-scan {
+  opacity: 0.82;
+  border-color: color-mix(
+    in srgb,
+    var(--card-accent-text) 46%,
+    transparent
+  ) !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--card-accent) 20%, transparent),
+      transparent
+    ),
+    rgba(255, 255, 255, 0.035);
+}

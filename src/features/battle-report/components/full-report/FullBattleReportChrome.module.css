@@ -1,0 +1,403 @@
+.backLink,
+.kicker,
+.archiveRibbon,
+.archiveSpine,
+.metaChips,
+.stampHeader,
+.verdictModule,
+.contestationBanner,
+.sectionTabs {
+  font-family: var(--font);
+  text-transform: uppercase;
+}
+
+.hero {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.heroTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  color: var(--secondary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.divisionMark {
+  display: grid;
+  width: 46px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid rgba(104, 183, 104, 0.34);
+  background: rgba(104, 183, 104, 0.07);
+  color: var(--primary);
+  font-size: 0.74rem;
+  box-shadow: inset 0 0 18px rgba(104, 183, 104, 0.1);
+}
+
+.heroMetaBlock {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+}
+
+.heroMetaBlock b {
+  color: var(--secondary);
+  font-size: 0.68rem;
+}
+
+.heroTop .heroMetaBlock:nth-of-type(2) span {
+  color: var(--aged-phosphor);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+}
+
+.heroTop .heroMetaBlock:nth-of-type(2) b {
+  color: rgba(143, 175, 143, 0.78);
+}
+
+.heroTerminalLabel {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--aged-phosphor);
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  padding: 5px 0;
+  text-align: center;
+}
+
+.backLink {
+  justify-self: end;
+  border: 1px solid var(--line);
+  color: var(--primary);
+  padding: 8px 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(340px, 25vw, 410px);
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.heroCopy {
+  min-width: 0;
+  border-top: 1px solid var(--line-soft);
+  padding: 8px 16px 0 0;
+}
+
+.heroCopy h1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(1.9rem, 2.55vw, 2.8rem);
+  font-weight: 950;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  text-wrap: balance;
+  white-space: normal;
+  text-shadow:
+    0 0 8px rgba(201, 255, 200, 0.16),
+    0 0 18px rgba(104, 183, 104, 0.1);
+}
+
+.heroCopy p {
+  max-width: 68rem;
+  margin: 12px 0 0;
+  color: var(--aged-phosphor);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.metaChips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.metaChips span {
+  min-width: 0;
+  border: 1px solid var(--line);
+  color: var(--secondary);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  overflow: hidden;
+  padding: 8px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kicker,
+.archiveRibbon,
+.archiveSpine {
+  display: none;
+}
+
+.verdictModule {
+  position: relative;
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  border: 2px double rgba(200, 168, 75, 0.62);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(200, 168, 75, 0.045) 0,
+      rgba(200, 168, 75, 0.045) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    rgba(10, 13, 7, 0.72);
+  padding: 14px 18px 16px;
+}
+
+.verdictModule::after {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  width: 72px;
+  aspect-ratio: 1;
+  content: "";
+  background: var(--amber-seal-image) center / contain no-repeat;
+  filter: drop-shadow(0 0 10px rgba(200, 168, 75, 0.24));
+  mix-blend-mode: screen;
+  opacity: 0.58;
+}
+
+.stampHeader {
+  display: block;
+  color: var(--amber);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.verdictModule strong {
+  display: block;
+  margin-top: 12px;
+  color: var(--amber);
+  font-size: clamp(1.85rem, 2.75vw, 3.05rem);
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  line-height: 0.94;
+  overflow-wrap: anywhere;
+}
+
+.verdictModule p {
+  margin: 10px 0 0;
+  color: var(--amber);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.verdictModule dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 12px 0 0;
+}
+
+.verdictModule dt {
+  color: var(--amber);
+  font-size: 0.54rem;
+  font-weight: 900;
+}
+
+.verdictModule dd {
+  display: inline-block;
+  margin: 5px 0 0;
+  border: 1px solid rgba(200, 168, 75, 0.48);
+  color: var(--amber);
+  font-size: 0.64rem;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
+.contestationBanner {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  justify-self: end;
+  margin-top: 10px;
+  color: var(--amber);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-align: right;
+}
+
+.contestationBanner::before {
+  width: 24px;
+  height: 24px;
+  content: "";
+  background: var(--amber-seal-image) center / contain no-repeat;
+  filter: drop-shadow(0 0 6px rgba(200, 168, 75, 0.22));
+  mix-blend-mode: screen;
+  opacity: 0.84;
+}
+
+.contestationBanner::after {
+  content: "K.M.";
+  color: rgba(200, 168, 75, 0.72);
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  transform: rotate(-8deg);
+}
+
+.sectionTabsSlot {
+  min-height: var(--tabs-height, auto);
+}
+
+.sectionTabsSlot[data-stuck="true"] {
+  z-index: 30;
+}
+
+.sectionTabs {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1px solid rgba(255, 179, 64, 0.28);
+  border-bottom: 1px solid rgba(255, 179, 64, 0.38);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 179, 64, 0.09) 0,
+      rgba(255, 179, 64, 0.09) 1px,
+      transparent 1px,
+      transparent 9px
+    ),
+    linear-gradient(180deg, rgba(26, 15, 4, 0.96), rgba(8, 8, 5, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 209, 123, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.58),
+    0 10px 22px rgba(0, 0, 0, 0.38);
+}
+
+.sectionTabsSlot[data-stuck="true"] .sectionTabs {
+  position: fixed;
+  top: 0;
+  left: var(--tabs-left);
+  width: var(--tabs-width);
+}
+
+.sectionTabs a {
+  position: relative;
+  border-right: 1px solid rgba(255, 179, 64, 0.22);
+  background: rgba(232, 121, 28, 0.07);
+  color: var(--amber-hot);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  padding: 9px 12px 10px;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: 0 0 12px rgba(255, 179, 64, 0.22);
+}
+
+.sectionTabs a[aria-current="true"],
+.sectionTabs a:hover,
+.sectionTabs a:focus-visible {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(8, 10, 8, 0.1) 0,
+      rgba(8, 10, 8, 0.1) 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    linear-gradient(180deg, rgba(255, 190, 73, 0.9), rgba(232, 121, 28, 0.78));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 224, 150, 0.5),
+    inset 0 -2px 0 rgba(8, 10, 8, 0.42),
+    0 0 18px rgba(255, 151, 35, 0.22);
+  color: var(--bg);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.sectionTabs a[aria-current="true"]::after {
+  position: absolute;
+  right: 8px;
+  bottom: -1px;
+  left: 8px;
+  height: 1px;
+  content: "";
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(8, 10, 8, 0.5) 0,
+    rgba(8, 10, 8, 0.5) 5px,
+    transparent 5px,
+    transparent 9px
+  );
+  opacity: 0.58;
+}
+
+
+@media (max-width: 1100px) {
+  .heroTop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .heroActions {
+    justify-content: flex-start;
+  }
+
+  .heroTerminalLabel,
+  .heroMetaBlock {
+    text-align: left;
+  }
+
+  .metaChips {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .sectionTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .heroCopy h1 {
+    font-size: clamp(1.35rem, 7vw, 2rem);
+    white-space: normal;
+  }
+
+  .heroGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

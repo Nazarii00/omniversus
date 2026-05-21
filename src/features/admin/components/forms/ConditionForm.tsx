@@ -9,6 +9,7 @@ import type { VersionOption } from "../../data/loadAdminData";
 import { enumValues } from "../../lib/enums";
 import { addConditionAction } from "../../actions/dossierActions";
 import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
 import {
   EmptyState,
   EvidenceFields,
@@ -20,7 +21,13 @@ import {
   VersionSelect,
 } from "../FormControls";
 
-export function ConditionForm({ versions }: { versions: VersionOption[] }) {
+export function ConditionForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
   return (
     <section className={styles.formPanel} id="condition">
       <div className={styles.sectionHeader}>
@@ -30,8 +37,17 @@ export function ConditionForm({ versions }: { versions: VersionOption[] }) {
       {!versions.length ? (
         <EmptyState>Create a subject version first.</EmptyState>
       ) : (
-        <form action={addConditionAction} className={styles.formGrid}>
-          <VersionSelect versions={versions} />
+        <ActionFeedbackForm
+          action={addConditionAction}
+          className={styles.formGrid}
+          pendingMessage="Adding condition..."
+          resetOnSuccess
+          successMessage="Condition added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
           <SelectField
             label="Kind"
             name="kind"
@@ -65,7 +81,7 @@ export function ConditionForm({ versions }: { versions: VersionOption[] }) {
           <div className={styles.formFooter}>
             <SubmitButton>Add condition</SubmitButton>
           </div>
-        </form>
+        </ActionFeedbackForm>
       )}
     </section>
   );

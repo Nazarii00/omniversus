@@ -240,6 +240,10 @@
   font-size: 0.82rem;
 }
 
+.tableShell tr[data-selected="true"] td {
+  background: #121712;
+}
+
 .tableShell td strong {
   display: block;
   color: #ffffff;
@@ -252,6 +256,130 @@
   margin: 0.2rem 0 0;
   color: #8c8c8c;
   font-size: 0.76rem;
+}
+
+.subjectTableStack {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.subjectToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.subjectSearch {
+  display: flex;
+  flex: 1 1 24rem;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  min-width: min(100%, 20rem);
+}
+
+.subjectSearch input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  border: 1px solid #2d2d2d;
+  border-radius: 6px;
+  background: #080808;
+  color: #ededed;
+  font-size: 0.84rem;
+  letter-spacing: 0;
+  outline: none;
+  padding: 0.62rem 0.68rem;
+}
+
+.subjectSearch input:focus {
+  border-color: #707070;
+  box-shadow: 0 0 0 1px #707070;
+}
+
+.subjectEditLink,
+.stackLink,
+.tableActionLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.subjectEditLink {
+  display: block;
+}
+
+.subjectEditLink:hover strong,
+.subjectEditLink:focus-visible strong,
+.stackLink:hover,
+.stackLink:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
+  outline: none;
+}
+
+.stackLink {
+  display: block;
+  margin: 0.2rem 0 0;
+  color: #8c8c8c;
+  font-size: 0.76rem;
+}
+
+.tableActionLink {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  color: #ededed;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0.55rem;
+}
+
+.tableActionLink:hover,
+.tableActionLink:focus-visible {
+  border-color: #4a4a4a;
+  background: #171717;
+  color: #ffffff;
+  outline: none;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.pagination a,
+.pagination span,
+.pagination strong {
+  display: inline-flex;
+  min-height: 1.9rem;
+  align-items: center;
+  border: 1px solid #2d2d2d;
+  border-radius: 6px;
+  color: #d4d4d4;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0.62rem;
+  text-decoration: none;
+}
+
+.pagination a:hover,
+.pagination a:focus-visible {
+  border-color: #4a4a4a;
+  background: #171717;
+  color: #ffffff;
+  outline: none;
+}
+
+.pagination span {
+  color: #686868;
 }
 
 .formColumns,
@@ -313,6 +441,24 @@
   box-shadow: 0 0 0 1px #707070;
 }
 
+.field input[type="range"] {
+  min-height: 1.3rem;
+  border: 0;
+  background: transparent;
+  accent-color: #ededed;
+  box-shadow: none;
+  padding: 0;
+}
+
+.field input[type="range"]:focus {
+  box-shadow: none;
+}
+
+.field input[type="range"]:focus-visible {
+  outline: 1px solid #707070;
+  outline-offset: 2px;
+}
+
 .wide,
 .fieldset,
 .formFooter {
@@ -350,6 +496,206 @@
 .formFooter {
   display: flex;
   justify-content: flex-end;
+}
+
+.formGrid[data-pending="true"] .submitButton,
+.formGrid[data-pending="true"] .secondaryButton,
+.appealForm[data-pending="true"] .submitButton,
+.appealForm[data-pending="true"] .secondaryButton {
+  cursor: progress;
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.actionFeedback {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  background: #080808;
+  color: #d0d0d0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.58rem 0.68rem;
+}
+
+.actionFeedback[data-tone="pending"] {
+  border-color: #5c5134;
+  color: #f0dca8;
+}
+
+.actionFeedback[data-tone="success"] {
+  border-color: #31583b;
+  color: #b5f2c2;
+}
+
+.actionFeedback[data-tone="error"] {
+  border-color: #663030;
+  color: #ffb4b4;
+}
+
+.workflowShell {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid #252525;
+  border-radius: 8px;
+  background: #0b0b0b;
+  padding: 1rem;
+}
+
+.workflowHeader,
+.workflowStepHeader,
+.workflowActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.workflowHeader h2,
+.workflowStepHeader h3 {
+  margin: 0.2rem 0 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.workflowHeader > span {
+  display: inline-flex;
+  min-height: 1.6rem;
+  align-items: center;
+  border: 1px solid #333333;
+  border-radius: 999px;
+  color: #d4d4d4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0 0.58rem;
+}
+
+.workflowContext {
+  margin: 0.38rem 0 0;
+  color: #b5f2c2;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.workflowProgress {
+  height: 0.38rem;
+  overflow: hidden;
+  border: 1px solid #292929;
+  border-radius: 999px;
+  background: #070707;
+}
+
+.workflowProgress span {
+  display: block;
+  height: 100%;
+  background: #ededed;
+  transition: width 160ms ease;
+}
+
+.workflowLayout {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.workflowSteps {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflowSteps button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  border: 1px solid #242424;
+  border-radius: 6px;
+  background: #080808;
+  color: #a1a1a1;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.workflowSteps button:hover,
+.workflowSteps button:focus-visible,
+.workflowSteps button[data-active="true"] {
+  border-color: #4a4a4a;
+  background: #121212;
+  color: #ffffff;
+  outline: none;
+}
+
+.workflowSteps button[data-complete="true"] {
+  border-color: #3a5f43;
+}
+
+.workflowSteps span,
+.workflowSteps em,
+.workflowStepHeader span {
+  color: #808080;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.workflowSteps strong {
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflowSteps button[data-complete="true"] em {
+  color: #b5f2c2;
+}
+
+.workflowMain {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.workflowStepHeader {
+  border: 1px solid #242424;
+  border-radius: 7px;
+  background: #080808;
+  padding: 0.85rem;
+}
+
+.workflowStepHeader p {
+  margin: 0.36rem 0 0;
+  color: #a3a3a3;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.workflowPanel {
+  min-width: 0;
+}
+
+.workflowPanel > .formPanel {
+  border-color: #2d2d2d;
+}
+
+.workflowActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.workflowActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .feed {
@@ -592,8 +938,13 @@
 
   .formColumns,
   .columns,
-  .appealColumns {
+  .appealColumns,
+  .workflowLayout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workflowSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -609,6 +960,7 @@
   .metrics,
   .formGrid,
   .fieldset,
+  .workflowSteps,
   .appealMeta {
     grid-template-columns: minmax(0, 1fr);
   }

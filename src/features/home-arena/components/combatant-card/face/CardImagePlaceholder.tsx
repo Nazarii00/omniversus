@@ -2,10 +2,14 @@ import type { ArenaCardTheme } from "../../../model";
 import { cardThemeStyle } from "../../../logic";
 
 type CardImagePlaceholderProps = {
+  alt?: string;
+  imageUrl?: string;
   theme: ArenaCardTheme;
 };
 
 export default function CardImagePlaceholder({
+  alt = "Combatant portrait",
+  imageUrl,
   theme,
 }: CardImagePlaceholderProps) {
   const themeStyle = cardThemeStyle(theme);
@@ -19,6 +23,14 @@ export default function CardImagePlaceholder({
         boxShadow: "inset 0 0 30px var(--card-accent-soft)",
       }}
     >
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Curated admin portrait data URLs are stored in the local database.
+        <img
+          alt={alt}
+          className="absolute inset-0 h-full w-full object-cover opacity-90"
+          src={imageUrl}
+        />
+      ) : null}
       <div
         className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,rgba(255,255,255,0.09),transparent_16%),linear-gradient(180deg,rgba(255,255,255,0.045),transparent_28%,rgba(0,0,0,0.68)),linear-gradient(135deg,rgba(255,255,255,0.03),transparent_38%)]"
         aria-hidden="true"
@@ -41,7 +53,7 @@ export default function CardImagePlaceholder({
         }}
       />
       <div
-        className="absolute left-1/2 top-[17%] h-14 w-14 -translate-x-1/2 rounded-full border bg-white/5"
+        className={`absolute left-1/2 top-[17%] h-14 w-14 -translate-x-1/2 rounded-full border bg-white/5 ${imageUrl ? "hidden" : ""}`}
         aria-hidden="true"
         style={{
           borderColor:
@@ -49,7 +61,7 @@ export default function CardImagePlaceholder({
         }}
       />
       <div
-        className="absolute inset-x-7 bottom-6 h-20 border bg-white/[0.025]"
+        className={`absolute inset-x-7 bottom-6 h-20 border bg-white/[0.025] ${imageUrl ? "hidden" : ""}`}
         aria-hidden="true"
         style={{
           borderColor:

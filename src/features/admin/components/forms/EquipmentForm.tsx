@@ -4,6 +4,7 @@ import type { VersionOption } from "../../data/loadAdminData";
 import { enumValues } from "../../lib/enums";
 import { addEquipmentAction } from "../../actions/dossierActions";
 import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
 import {
   CheckboxField,
   EmptyState,
@@ -15,7 +16,13 @@ import {
   VersionSelect,
 } from "../FormControls";
 
-export function EquipmentForm({ versions }: { versions: VersionOption[] }) {
+export function EquipmentForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
   return (
     <section className={styles.formPanel} id="equipment">
       <div className={styles.sectionHeader}>
@@ -25,8 +32,17 @@ export function EquipmentForm({ versions }: { versions: VersionOption[] }) {
       {!versions.length ? (
         <EmptyState>Create a subject version first.</EmptyState>
       ) : (
-        <form action={addEquipmentAction} className={styles.formGrid}>
-          <VersionSelect versions={versions} />
+        <ActionFeedbackForm
+          action={addEquipmentAction}
+          className={styles.formGrid}
+          pendingMessage="Adding equipment..."
+          resetOnSuccess
+          successMessage="Equipment added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
           <Field label="Name" name="name" required />
           <SelectField
             label="Category"
@@ -48,7 +64,7 @@ export function EquipmentForm({ versions }: { versions: VersionOption[] }) {
           <div className={styles.formFooter}>
             <SubmitButton>Add equipment</SubmitButton>
           </div>
-        </form>
+        </ActionFeedbackForm>
       )}
     </section>
   );

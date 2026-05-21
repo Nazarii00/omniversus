@@ -1,0 +1,199 @@
+.home-report-signal-edges {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.home-report-signal-edge {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(104, 183, 104, 0.2);
+  background: rgba(1, 5, 2, 0.58);
+  padding: 0.58rem 0.62rem 0.78rem;
+  color: rgba(215, 226, 214, 0.72);
+  outline: none;
+  text-align: left;
+}
+
+.home-report-signal-edge,
+.home-report-comparison-row--static,
+.home-report-step-block--static,
+.home-report-chain-callout--static {
+  cursor: default;
+}
+
+.home-report-signal-edge::after {
+  content: "";
+  position: absolute;
+  left: 0.62rem;
+  right: 0.62rem;
+  bottom: 0.36rem;
+  width: var(--edge-strength, 50%);
+  height: 2px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(201, 255, 200, 0.88) 0,
+    rgba(201, 255, 200, 0.88) 7px,
+    transparent 7px,
+    transparent 10px
+  );
+  box-shadow: 0 0 9px rgba(78, 180, 78, 0.28);
+}
+
+.home-report-signal-edge:hover,
+.home-report-signal-edge:focus-visible {
+  border-color: rgba(104, 183, 104, 0.2);
+  color: rgba(215, 226, 214, 0.72);
+}
+
+.home-report-signal-edge span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home-report-chain-callout {
+  display: grid;
+  width: 100%;
+  gap: 0.7rem;
+  color: #d7e2d6;
+  text-align: left;
+  outline: none;
+}
+
+.home-report-chain-callout:hover,
+.home-report-chain-callout:focus-visible {
+  border-color: rgba(201, 255, 200, 0.74);
+  color: #ffffff;
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 255, 200, 0.12),
+    inset 0 0 26px rgba(40, 145, 56, 0.16),
+    0 0 22px rgba(78, 180, 78, 0.18);
+}
+
+.home-report-chain-callout--static:hover,
+.home-report-chain-callout--static:focus-visible {
+  border-color: rgba(104, 183, 104, 0.24);
+  color: #d7e2d6;
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 255, 200, 0.035),
+    inset 0 0 24px rgba(0, 0, 0, 0.62);
+}
+
+.home-report-chain-callout__title {
+  color: #ffffff;
+  font-size: 0.96rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.home-report-chain-callout__text {
+  color: rgba(215, 226, 214, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.home-report-comparison-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(104, 183, 104, 0.2);
+  background: rgba(1, 4, 2, 0.64);
+  padding: 0.52rem 0.58rem;
+  color: rgba(215, 226, 214, 0.72);
+  text-align: left;
+  outline: none;
+}
+
+.home-report-comparison-row:hover,
+.home-report-comparison-row:focus-visible {
+  border-color: rgba(201, 255, 200, 0.58);
+  color: #ffffff;
+}
+
+.home-report-comparison-row--static:hover,
+.home-report-comparison-row--static:focus-visible {
+  border-color: rgba(104, 183, 104, 0.2);
+  color: rgba(215, 226, 214, 0.72);
+}
+
+.home-report-free-beats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: stretch;
+  grid-auto-rows: minmax(max-content, 1fr);
+  gap: 0.58rem;
+  height: 100%;
+  margin-top: 0.58rem;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.42rem;
+  scrollbar-gutter: stable;
+}
+
+.home-report-step-block--static {
+  align-content: start;
+  gap: 0.36rem;
+  height: 100%;
+  min-height: 7.4rem;
+  padding: 0.68rem 0.82rem 0.76rem;
+}
+
+.home-report-step-block--static .home-report-step-block__top,
+.home-report-step-block--static .home-report-step-block__meta {
+  gap: 0.34rem;
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  line-height: 1.22;
+}
+
+.home-report-step-block--static .home-report-step-block__title {
+  display: block;
+  font-size: clamp(0.82rem, 0.9rem, 0.94rem);
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-report-step-block--static .home-report-step-block__log {
+  display: block;
+  overflow: visible;
+  font-size: 0.68rem;
+  line-height: 1.42;
+}
+
+.home-report-step-block--static .home-report-step-block__why {
+  display: block;
+  overflow: visible;
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.home-report-step-block--static .home-report-step-block__meta {
+  margin-top: 0.04rem;
+}
+
+.home-report-comparison-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+

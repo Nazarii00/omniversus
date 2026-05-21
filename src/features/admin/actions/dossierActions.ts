@@ -27,6 +27,7 @@ import {
 } from "@/generated/prisma/enums";
 
 import { createEvidenceLink } from "./evidence";
+import { mergeMetadata } from "../lib/metadata";
 import {
   assertAdminEnabled,
   normalizeAlias,
@@ -71,6 +72,10 @@ export async function saveSubjectVersionAction(formData: FormData) {
   );
 
   await prisma.$transaction(async (tx) => {
+    const existingSubject = await tx.subject.findUnique({
+      where: { slug: subjectSlug },
+      select: { metadata: true },
+    });
     const subject = await tx.subject.upsert({
       where: { slug: subjectSlug },
       update: {
@@ -80,7 +85,9 @@ export async function saveSubjectVersionAction(formData: FormData) {
         originMedium: originMedium as OriginMediumValue,
         originName: optionalString(formData, "originName"),
         summary: optionalString(formData, "subjectSummary"),
-        metadata: { updatedFrom: "admin-panel" },
+        metadata: mergeMetadata(existingSubject?.metadata, {
+          updatedFrom: "admin-panel",
+        }),
       },
       create: {
         slug: subjectSlug,
@@ -100,6 +107,16 @@ export async function saveSubjectVersionAction(formData: FormData) {
         data: { isDefault: false },
       });
     }
+
+    const existingVersion = await tx.subjectVersion.findUnique({
+      where: {
+        subjectId_slug: {
+          subjectId: subject.id,
+          slug: versionSlug,
+        },
+      },
+      select: { metadata: true },
+    });
 
     await tx.subjectVersion.upsert({
       where: {
@@ -131,7 +148,9 @@ export async function saveSubjectVersionAction(formData: FormData) {
           ReviewStatus.REQUIRES_REVIEW,
         ) as ReviewStatusValue,
         provenance: ProvenanceKind.MANUAL_DB,
-        metadata: { updatedFrom: "admin-panel" },
+        metadata: mergeMetadata(existingVersion?.metadata, {
+          updatedFrom: "admin-panel",
+        }),
       },
       create: {
         subjectId: subject.id,
@@ -228,7 +247,6 @@ export async function addCapabilityAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { capabilityId: fact.id });
-  revalidatePath("/admin");
 }
 
 export async function addAbilityAction(formData: FormData) {
@@ -270,7 +288,6 @@ export async function addAbilityAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { abilityId: ability.id });
-  revalidatePath("/admin");
 }
 
 export async function addWeaknessAction(formData: FormData) {
@@ -308,7 +325,6 @@ export async function addWeaknessAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { weaknessId: weakness.id });
-  revalidatePath("/admin");
 }
 
 export async function addConditionAction(formData: FormData) {
@@ -353,7 +369,6 @@ export async function addConditionAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { conditionId: condition.id });
-  revalidatePath("/admin");
 }
 
 export async function addEquipmentAction(formData: FormData) {
@@ -386,5 +401,4 @@ export async function addEquipmentAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { equipmentId: item.id });
-  revalidatePath("/admin");
 }

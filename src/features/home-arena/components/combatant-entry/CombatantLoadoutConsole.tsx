@@ -376,7 +376,7 @@ export default function CombatantLoadoutConsole({
             data-active={activeSide === "left"}
           >
             <span>C:\Omniversus&gt;set {sideLabel("left")}=</span>
-            {renderPromptInput("left", leftInputRef, "Goku")}
+            {renderPromptInput("left", leftInputRef, "Search DB")}
           </label>
 
           <label
@@ -384,7 +384,7 @@ export default function CombatantLoadoutConsole({
             data-active={activeSide === "right"}
           >
             <span>C:\Omniversus&gt;set {sideLabel("right")}=</span>
-            {renderPromptInput("right", rightInputRef, "Superman")}
+            {renderPromptInput("right", rightInputRef, "Search DB")}
           </label>
 
           <div
@@ -416,7 +416,7 @@ export default function CombatantLoadoutConsole({
                 </button>
               ))
             ) : (
-              <p>File Not Found - text input allowed</p>
+              <p>No DB matches - text input allowed</p>
             )}
           </div>
 

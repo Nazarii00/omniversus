@@ -32,12 +32,14 @@ export function TextAreaField({
   name,
   placeholder,
   required = false,
+  defaultValue,
   rows = 3,
 }: {
   label: string;
   name: string;
   placeholder?: string;
   required?: boolean;
+  defaultValue?: string;
   rows?: number;
 }) {
   return (
@@ -47,6 +49,7 @@ export function TextAreaField({
         name={name}
         placeholder={placeholder}
         required={required}
+        defaultValue={defaultValue}
         rows={rows}
       />
     </label>
@@ -79,16 +82,18 @@ export function SelectField({
 }
 
 export function VersionSelect({
+  defaultValue,
   versions,
   label = "Version",
 }: {
+  defaultValue?: string;
   versions: VersionOption[];
   label?: string;
 }) {
   return (
     <label className={`${styles.field} ${styles.wide}`}>
       <span>{label}</span>
-      <select name="versionId" required>
+      <select name="versionId" required defaultValue={defaultValue ?? ""}>
         <option value="">Select version</option>
         {versions.map((version) => (
           <option key={version.id} value={version.id}>
@@ -153,15 +158,17 @@ export function EvidenceFields() {
 }
 
 export function CheckboxField({
+  defaultChecked = false,
   label,
   name,
 }: {
+  defaultChecked?: boolean;
   label: string;
   name: string;
 }) {
   return (
     <label className={styles.checkbox}>
-      <input name={name} type="checkbox" />
+      <input name={name} type="checkbox" defaultChecked={defaultChecked} />
       <span>{label}</span>
     </label>
   );

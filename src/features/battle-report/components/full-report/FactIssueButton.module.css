@@ -1,0 +1,217 @@
+.factIssueControl {
+  position: relative;
+  display: inline-grid;
+  gap: 4px;
+  justify-items: end;
+}
+
+.factIssueButton {
+  display: inline-grid;
+  grid-template-columns: 15px auto;
+  gap: 6px;
+  align-items: center;
+  justify-self: end;
+  min-width: max-content;
+  border: 1px solid rgba(200, 168, 75, 0.34);
+  background: rgba(200, 168, 75, 0.045);
+  color: rgba(200, 168, 75, 0.82);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 5px 7px;
+  text-transform: uppercase;
+}
+
+.factIssueButton:hover,
+.factIssueButton:focus-visible {
+  border-color: rgba(255, 179, 64, 0.74);
+  background: rgba(255, 179, 64, 0.12);
+  color: var(--amber-hot);
+  outline: none;
+  box-shadow: 0 0 12px rgba(255, 179, 64, 0.16);
+}
+
+.factIssueButton[data-active="true"] {
+  border-color: rgba(255, 92, 72, 0.82);
+  background: rgba(255, 92, 72, 0.16);
+  color: #ffd5cf;
+  box-shadow: 0 0 14px rgba(255, 92, 72, 0.18);
+}
+
+.factIssueButton:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.factIssueIcon {
+  position: relative;
+  display: grid;
+  width: 15px;
+  height: 13px;
+  place-items: end center;
+  background: rgba(200, 168, 75, 0.9);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  color: #080a08;
+  line-height: 1;
+}
+
+.factIssueButton[data-active="true"] .factIssueIcon {
+  background: #ff5c48;
+  color: #170000;
+}
+
+.factIssueIcon i {
+  display: block;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 950;
+  transform: translateY(-1px);
+}
+
+.factIssueFiledStatus {
+  color: #ffd5cf;
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.factIssuePanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 80;
+  display: grid;
+  width: min(340px, calc(100vw - 30px));
+  gap: 8px;
+  border: 1px solid rgba(255, 179, 64, 0.5);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 179, 64, 0.055) 0,
+      rgba(255, 179, 64, 0.055) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    rgba(6, 9, 6, 0.98);
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.58),
+    inset 0 0 0 1px rgba(201, 255, 200, 0.05);
+  color: var(--primary);
+  padding: 10px;
+  text-align: left;
+  text-transform: none;
+}
+
+.factIssuePanelTitle {
+  color: var(--amber-hot);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.factIssuePanel p {
+  max-height: 7rem;
+  margin: 0;
+  overflow: auto;
+  color: var(--aged-phosphor);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.factIssuePanel label,
+.factIssuePanelIdentity {
+  display: grid;
+  gap: 5px;
+}
+
+.factIssuePanelIdentity {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.factIssuePanel label span {
+  color: var(--amber);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.factIssuePanel input,
+.factIssuePanel textarea {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(104, 183, 104, 0.24);
+  background: rgba(1, 5, 2, 0.82);
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  outline: none;
+  padding: 7px 8px;
+  resize: vertical;
+  text-transform: none;
+}
+
+.factIssuePanel input:focus,
+.factIssuePanel textarea:focus {
+  border-color: rgba(255, 179, 64, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 179, 64, 0.28);
+}
+
+.factIssuePanel strong {
+  color: #ffd5cf;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.factIssuePanelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.factIssuePrimaryAction,
+.factIssueSecondaryAction {
+  min-height: 1.9rem;
+  border: 1px solid rgba(200, 168, 75, 0.46);
+  color: var(--amber);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  padding: 0 10px;
+  text-transform: uppercase;
+}
+
+.factIssuePrimaryAction {
+  background: rgba(255, 179, 64, 0.18);
+}
+
+.factIssueSecondaryAction {
+  background: rgba(200, 168, 75, 0.045);
+}
+
+.factIssuePrimaryAction:hover,
+.factIssuePrimaryAction:focus-visible,
+.factIssueSecondaryAction:hover,
+.factIssueSecondaryAction:focus-visible {
+  border-color: rgba(255, 179, 64, 0.78);
+  color: var(--amber-hot);
+  outline: none;
+}
+
+.factIssuePrimaryAction:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+

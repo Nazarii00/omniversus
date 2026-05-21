@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const CRT_JOLT_ANIMATION_MS = 620;
+const CRT_JOLT_ANIMATION_MS = 460;
 
 type CrtHitPhase = "odd" | "even";
 

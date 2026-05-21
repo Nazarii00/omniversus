@@ -7,16 +7,19 @@ type HologramCombatantCardFaceProps = {
   card: ArenaCard;
   crtImpact?: CardCrtGlitchImpact | null;
   crtResetToken: number;
+  isEliminated?: boolean;
 };
 
 function CardCrtOverlay({
   card,
   crtImpact,
   crtResetToken,
+  isEliminated = false,
 }: HologramCombatantCardFaceProps) {
   return (
     <CardCrtGlitchOverlay
       impact={crtImpact}
+      isTerminal={isEliminated}
       resetToken={crtResetToken}
       side={card.side}
     />
@@ -27,6 +30,7 @@ export function HologramCombatantFrontFace({
   card,
   crtImpact,
   crtResetToken,
+  isEliminated = false,
 }: HologramCombatantCardFaceProps) {
   return (
     <HologramCardFace
@@ -36,6 +40,7 @@ export function HologramCombatantFrontFace({
           card={card}
           crtImpact={crtImpact}
           crtResetToken={crtResetToken}
+          isEliminated={isEliminated}
         />
       }
     >
@@ -49,7 +54,11 @@ export function HologramCombatantFrontFace({
         </div>
 
         <div className="min-h-0">
-          <CardImagePlaceholder theme={card.theme} />
+          <CardImagePlaceholder
+            alt={`${card.name} approved portrait`}
+            imageUrl={card.portraitUrl}
+            theme={card.theme}
+          />
         </div>
 
         <div className="space-y-1.5 self-end">
@@ -86,6 +95,7 @@ export function HologramCombatantBackFace({
   card,
   crtImpact,
   crtResetToken,
+  isEliminated = false,
 }: HologramCombatantCardFaceProps) {
   return (
     <HologramCardFace
@@ -96,6 +106,7 @@ export function HologramCombatantBackFace({
           card={card}
           crtImpact={crtImpact}
           crtResetToken={crtResetToken}
+          isEliminated={isEliminated}
         />
       }
     >

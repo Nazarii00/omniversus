@@ -131,6 +131,7 @@ export type VersionDossierRecord = FactRecordBase & {
   form: string | null;
   state: string | null;
   isDefault: boolean;
+  metadata: unknown;
   summary: string | null;
   subject: SubjectVersionSubjectRecord;
   capabilities: CapabilityRecord[];

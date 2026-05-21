@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import type { BattleReportJson } from "@/features/battle-report";
 
 import {
-  BATTLE_SHOCK_CUE_COUNT,
-  BATTLE_TIMELINE_MS,
   BATTLE_TIMELINE_STEP_MS,
   battleHpForCue,
+  battleShockCueCountForReport,
+  battleTimelineMsForReport,
   cardCrtImpactForSide,
   eliminatedCardSideForReport,
   type BattleShockCue,
@@ -46,12 +46,15 @@ export default function useBattleTimeline() {
     resetBattleTimeline();
 
     const runId = Date.now();
+    const shockCueCount = battleShockCueCountForReport(report);
+    const timelineMs = battleTimelineMsForReport(report);
+
     setIsBattleTimelineActive(true);
 
-    for (let act = 1; act <= BATTLE_SHOCK_CUE_COUNT; act += 1) {
+    for (let act = 1; act <= shockCueCount; act += 1) {
       const timeoutId = window.setTimeout(
         () => {
-          setBattleShockCue({ act, runId, ...battleHpForCue(act) });
+          setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
         },
         (act - 1) * BATTLE_TIMELINE_STEP_MS,
       );
@@ -63,11 +66,11 @@ export default function useBattleTimeline() {
       setBattleShockCue(null);
       setBattleEliminatedSide(eliminatedCardSideForReport(report));
       setIsBattleTimelineActive(false);
-    }, BATTLE_TIMELINE_MS);
+    }, timelineMs);
 
     battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
 
-    return BATTLE_TIMELINE_MS;
+    return timelineMs;
   }
 
   function skipBattleTimeline() {

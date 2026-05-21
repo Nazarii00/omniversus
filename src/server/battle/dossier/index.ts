@@ -3,6 +3,7 @@ export type {
   BattleDossierContext,
   DossierFact,
   DossierFactCategory,
+  DossierPortrait,
   DossierFactSourceType,
   DossierFactStatus,
   DossierResolutionStatus,

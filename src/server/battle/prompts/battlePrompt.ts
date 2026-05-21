@@ -105,6 +105,35 @@ function assertValidFighterName(value: string, label: string): string {
   return trimmed;
 }
 
+function contextForPrompt(
+  dossierContext: BattleDossierContext | null,
+): BattleDossierContext | null {
+  if (!dossierContext) return null;
+
+  return {
+    ...dossierContext,
+    A: resolutionForPrompt(dossierContext.A),
+    B: resolutionForPrompt(dossierContext.B),
+  };
+}
+
+function resolutionForPrompt(
+  resolution: BattleDossierContext["A"],
+): BattleDossierContext["A"] {
+  if (!resolution.dossier?.portrait) return resolution;
+
+  return {
+    ...resolution,
+    dossier: {
+      ...resolution.dossier,
+      portrait: {
+        ...resolution.dossier.portrait,
+        data_url: "[omitted from model prompt]",
+      },
+    },
+  };
+}
+
 export function buildUserPrompt(
   fighterA: string,
   fighterB: string,
@@ -117,7 +146,7 @@ export function buildUserPrompt(
     a,
     b,
     required_metadata_title: `${a} vs ${b}`,
-    provided_dossiers: dossierContext,
+    provided_dossiers: contextForPrompt(dossierContext),
     options: normalizeOptions(options),
   };
 

@@ -57,3 +57,25 @@ export function findCompletion(options: CombatantOption[], query: string) {
     suffix: option.name.slice(query.length),
   };
 }
+
+export function findExactCombatantOption(
+  options: CombatantOption[],
+  value: string,
+) {
+  const normalizedValue = normalizeSearch(value);
+
+  if (!normalizedValue) return null;
+
+  return (
+    options.find((option) => {
+      const normalizedAliases =
+        option.aliases?.map((alias) => normalizeSearch(alias)) ?? [];
+
+      return (
+        option.id === value ||
+        normalizeSearch(option.name) === normalizedValue ||
+        normalizedAliases.includes(normalizedValue)
+      );
+    }) ?? null
+  );
+}

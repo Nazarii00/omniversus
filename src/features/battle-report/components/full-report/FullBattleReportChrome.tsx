@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import { displayTitle, displayVerdict } from "../../model";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "./FullBattleReportChrome.module.css";
 
 const REPORT_SECTION_TABS = [
   { id: "subjects", label: "Subjects" },

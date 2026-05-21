@@ -13,7 +13,7 @@ import {
   submitReportAppeal,
   type ReportAppealTarget,
 } from "../../api";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "./FactIssueButton.module.css";
 
 export function FactIssueButton({
   active,

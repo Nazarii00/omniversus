@@ -221,11 +221,19 @@ function SubjectDossier({
     <article
       className={styles.subjectDossier}
       data-side={side}
-      data-winner={sideWins}
+      data-winner={sideWins ? "true" : undefined}
     >
       <div className={styles.subjectIdentity}>
         <div className={styles.subjectPortrait} aria-hidden="true">
-          <span>{portraitInitials(fighter?.name ?? side)}</span>
+          {fighter?.portrait?.data_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Curated admin portrait data URLs are already approved assets.
+            <img
+              alt=""
+              src={fighter.portrait.data_url}
+            />
+          ) : (
+            <span>{portraitInitials(fighter?.name ?? side)}</span>
+          )}
         </div>
         <div>
           <span>Subject {side}</span>

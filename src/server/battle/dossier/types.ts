@@ -55,12 +55,19 @@ export type DossierFact = {
   notes?: string;
 };
 
+export type DossierPortrait = {
+  approved_at: string;
+  data_url: string;
+  source_name: string;
+};
+
 export type FighterDossier = {
   fighter_name: string;
   matched_name: string;
   version: string;
   canon_scope: CanonScope | string;
   provenance: DataProvenanceMode;
+  portrait: DossierPortrait | null;
   facts: DossierFact[];
   aliases: string[];
   source_note: string;

@@ -8,6 +8,7 @@ import type { VersionOption } from "../../data/loadAdminData";
 import { enumValues } from "../../lib/enums";
 import { addAbilityAction } from "../../actions/dossierActions";
 import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
 import {
   CheckboxField,
   EmptyState,
@@ -20,7 +21,13 @@ import {
   VersionSelect,
 } from "../FormControls";
 
-export function AbilityForm({ versions }: { versions: VersionOption[] }) {
+export function AbilityForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
   return (
     <section className={styles.formPanel} id="ability">
       <div className={styles.sectionHeader}>
@@ -30,8 +37,17 @@ export function AbilityForm({ versions }: { versions: VersionOption[] }) {
       {!versions.length ? (
         <EmptyState>Create a subject version first.</EmptyState>
       ) : (
-        <form action={addAbilityAction} className={styles.formGrid}>
-          <VersionSelect versions={versions} />
+        <ActionFeedbackForm
+          action={addAbilityAction}
+          className={styles.formGrid}
+          pendingMessage="Adding ability..."
+          resetOnSuccess
+          successMessage="Ability added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
           <Field label="Name" name="name" required />
           <SelectField
             label="Type"
@@ -66,7 +82,7 @@ export function AbilityForm({ versions }: { versions: VersionOption[] }) {
           <div className={styles.formFooter}>
             <SubmitButton>Add ability</SubmitButton>
           </div>
-        </form>
+        </ActionFeedbackForm>
       )}
     </section>
   );
