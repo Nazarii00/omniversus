@@ -9,12 +9,16 @@ import BattleStartButton, {
 const EXECUTED_HOLD_MS = 650;
 
 type BattleControlsProps = {
+  canStart?: boolean;
+  disabledLabel?: string;
   fighterA: string | null;
   fighterB: string | null;
   onBattleStart: () => Promise<void>;
 };
 
 export default function BattleControls({
+  canStart: canStartOverride = true,
+  disabledLabel = "ENTER_2_NAMES",
   fighterA,
   fighterB,
   onBattleStart,
@@ -22,7 +26,6 @@ export default function BattleControls({
   const [buttonState, setButtonState] =
     useState<BattleStartButtonState>("idle");
   const timeoutRefs = useRef<number[]>([]);
-  const canStart = Boolean(fighterA?.trim() && fighterB?.trim());
 
   function clearPendingTimeouts() {
     for (const timeoutId of timeoutRefs.current) {
@@ -47,8 +50,16 @@ export default function BattleControls({
     return clearPendingTimeouts;
   }, []);
 
+  const canStart =
+    Boolean(fighterA?.trim() && fighterB?.trim()) && canStartOverride;
+
   async function startBattle() {
-    if (buttonState === "loading" || !fighterA?.trim() || !fighterB?.trim()) {
+    if (
+      buttonState === "loading" ||
+      !fighterA?.trim() ||
+      !fighterB?.trim() ||
+      !canStartOverride
+    ) {
       return;
     }
 
@@ -71,7 +82,7 @@ export default function BattleControls({
     <BattleStartButton
       state={buttonState}
       disabled={!canStart}
-      disabledLabel="ENTER_2_NAMES"
+      disabledLabel={disabledLabel}
       onStart={startBattle}
     />
   );

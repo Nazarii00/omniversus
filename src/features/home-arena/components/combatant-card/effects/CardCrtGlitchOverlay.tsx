@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArenaCardSide, CardCrtGlitchImpact } from "../../../model";
 
 type CardCrtGlitchOverlayProps = {
@@ -400,6 +400,7 @@ export default function CardCrtGlitchOverlay({
   resetToken = 0,
   side,
 }: CardCrtGlitchOverlayProps) {
+  const [drawToken, setDrawToken] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const hpRef = useRef(100);
   const pulseRef = useRef(0);
@@ -428,6 +429,7 @@ export default function CardCrtGlitchOverlay({
     seedRef.current =
       (side === "right" ? 91 : 3) + impact.runId * 0.001 + impact.act * 37;
     pulseRef.current = 1;
+    setDrawToken((current) => current + 1);
   }, [impact, isTerminal, side]);
 
   useEffect(() => {
@@ -447,6 +449,7 @@ export default function CardCrtGlitchOverlay({
 
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
+    setDrawToken((current) => current + 1);
   }, [isTerminal, resetToken, side]);
 
   useEffect(() => {
@@ -463,6 +466,10 @@ export default function CardCrtGlitchOverlay({
     let lastWidth = 0;
     let lastHeight = 0;
     let lastRatio = 0;
+
+    function hasActiveGlitch() {
+      return isTerminal || hpRef.current < 99.5 || pulseRef.current > 0.01;
+    }
 
     function draw() {
       frameRef.current += 1;
@@ -495,7 +502,11 @@ export default function CardCrtGlitchOverlay({
         ratio,
       );
 
-      animationFrame = window.requestAnimationFrame(draw);
+      if (hasActiveGlitch()) {
+        animationFrame = window.requestAnimationFrame(draw);
+      } else {
+        animationFrame = 0;
+      }
     }
 
     draw();
@@ -503,7 +514,7 @@ export default function CardCrtGlitchOverlay({
     return () => {
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [side]);
+  }, [drawToken, isTerminal, side]);
 
   return (
     <canvas

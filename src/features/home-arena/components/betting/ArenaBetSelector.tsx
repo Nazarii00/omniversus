@@ -1,26 +1,43 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import type { KeyboardEvent } from "react";
 import { betThemeStyle } from "../../logic";
-import type { ArenaCard } from "../../model";
+import type { ArenaBetDraft, ArenaCard, ArenaCardSide } from "../../model";
 
 type ArenaBetSelectorProps = {
+  bet: ArenaBetDraft;
+  disabled?: boolean;
   leftCard: ArenaCard;
+  maxReputation: number;
+  onBetChange: (bet: ArenaBetDraft) => void;
   rightCard: ArenaCard;
 };
 
 export default function ArenaBetSelector({
+  bet,
+  disabled = false,
   leftCard,
+  maxReputation,
+  onBetChange,
   rightCard,
 }: ArenaBetSelectorProps) {
-  const [selectedId, setSelectedId] = useState(leftCard.id);
-  const [betAmounts, setBetAmounts] = useState<Record<string, string>>({});
   const cards = [leftCard, rightCard];
+  const amount = parseBetAmount(bet.amountText);
+  const hasWagerOverflow = amount > maxReputation;
 
-  function handleZoneKeyDown(event: KeyboardEvent<HTMLDivElement>, id: string) {
+  function selectSide(side: ArenaCardSide) {
+    if (disabled) return;
+
+    onBetChange({ ...bet, side });
+  }
+
+  function handleZoneKeyDown(
+    event: KeyboardEvent<HTMLDivElement>,
+    side: ArenaCardSide,
+  ) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setSelectedId(id);
+      selectSide(side);
     }
   }
 
@@ -32,7 +49,7 @@ export default function ArenaBetSelector({
 
       <div className="grid grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_1.5rem_minmax(0,1fr)]">
         {cards.map((card) => {
-          const isSelected = selectedId === card.id;
+          const isSelected = bet.side === card.side;
           const columnClass =
             card.side === "left" ? "col-start-1" : "col-start-3";
           const themeStyle = betThemeStyle(card.theme);
@@ -41,12 +58,14 @@ export default function ArenaBetSelector({
             <div
               key={card.id}
               role="button"
-              tabIndex={0}
+              tabIndex={disabled ? -1 : 0}
+              aria-disabled={disabled}
               aria-pressed={isSelected}
               className={`${columnClass} home-bet-choice relative h-32 cursor-pointer overflow-hidden px-4 py-4 text-left outline-none transition-[border-color,box-shadow,filter,opacity] duration-150 sm:h-36 sm:px-5`}
+              data-locked={disabled ? "true" : undefined}
               data-selected={isSelected}
-              onClick={() => setSelectedId(card.id)}
-              onKeyDown={(event) => handleZoneKeyDown(event, card.id)}
+              onClick={() => selectSide(card.side)}
+              onKeyDown={(event) => handleZoneKeyDown(event, card.side)}
               style={themeStyle}
             >
               <span
@@ -90,13 +109,17 @@ export default function ArenaBetSelector({
                       type="number"
                       inputMode="numeric"
                       min="0"
+                      max={maxReputation}
                       placeholder="0"
-                      value={betAmounts[card.id] ?? ""}
+                      value={bet.amountText}
+                      disabled={disabled}
                       onChange={(event) =>
-                        setBetAmounts((current) => ({
-                          ...current,
-                          [card.id]: event.target.value,
-                        }))
+                        onBetChange({
+                          ...bet,
+                          amountText: normalizeBetAmountText(
+                            event.target.value,
+                          ),
+                        })
                       }
                       onClick={(event) => event.stopPropagation()}
                       onKeyDown={(event) => event.stopPropagation()}
@@ -117,6 +140,31 @@ export default function ArenaBetSelector({
           );
         })}
       </div>
+
+      <p
+        className="home-bet-status mt-2 text-center text-[0.55rem] font-semibold uppercase tracking-[0.16em]"
+        data-warning={hasWagerOverflow ? "true" : undefined}
+      >
+        {hasWagerOverflow
+          ? `INSUFFICIENT_REPUTATION / MAX ${maxReputation}`
+          : `STAKE ${amount} REP / CREDIT COST 1`}
+      </p>
     </div>
   );
+}
+
+function normalizeBetAmountText(value: string) {
+  const normalized = value.replace(/\D/g, "").slice(0, 6);
+
+  if (!normalized) return "";
+
+  return Math.floor(Number(normalized)).toString();
+}
+
+function parseBetAmount(value: string) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+
+  return Math.floor(amount);
 }

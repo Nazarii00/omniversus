@@ -1,4 +1,18 @@
 export {
+  BATTLE_CREDIT_COST,
+  CREDIT_TOP_UP_AMOUNT,
+  DEFAULT_ARENA_BET,
+  DEFAULT_ARENA_WALLET,
+  applyArenaBetSettlement,
+  lockArenaBet,
+  parseArenaBetAmount,
+  readStoredArenaWallet,
+  refundArenaLockedBet,
+  settleArenaBet,
+  topUpArenaWallet,
+  writeStoredArenaWallet,
+} from "./betting";
+export {
   BATTLE_TIMELINE_STEP_MS,
   battleShockCueCountForReport,
   battleHpForCue,

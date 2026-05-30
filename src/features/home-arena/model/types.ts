@@ -28,6 +28,26 @@ export type ArenaCard = {
   metrics: ArenaCardMetric[];
 };
 
+export type ArenaBetDraft = {
+  amountText: string;
+  side: ArenaCardSide;
+};
+
+export type ArenaLockedBet = {
+  amount: number;
+  side: ArenaCardSide;
+};
+
+export type ArenaBetSettlement = {
+  payout: number;
+  status: string;
+};
+
+export type ArenaWallet = {
+  credits: number;
+  reputation: number;
+};
+
 export type CardCrtGlitchImpact = {
   act: number;
   hp: number;

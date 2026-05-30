@@ -7,7 +7,7 @@ export {
   getBattleLoadingSequenceMs,
   type BattleStartButtonState,
 } from "./battle-controls";
-export { ArenaBetSelector } from "./betting";
+export { ArenaBalancePanel, ArenaBetSelector } from "./betting";
 export { HologramCombatantCard } from "./combatant-card";
 export { CombatantDeck } from "./combatant-deck";
 export { CombatantEntrySlot, CombatantLoadoutConsole } from "./combatant-entry";

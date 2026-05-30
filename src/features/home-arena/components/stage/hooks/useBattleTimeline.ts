@@ -15,8 +15,14 @@ import {
 } from "../../../logic";
 import type { ArenaCardSide } from "../../../model";
 
+type BattleTimelineRun = {
+  report: BattleReportJson | null | undefined;
+  resolve: () => void;
+};
+
 export default function useBattleTimeline() {
   const battleTimelineTimeoutsRef = useRef<number[]>([]);
+  const battleTimelineRunRef = useRef<BattleTimelineRun | null>(null);
   const [battleShockCue, setBattleShockCue] = useState<BattleShockCue | null>(
     null,
   );
@@ -24,7 +30,6 @@ export default function useBattleTimeline() {
     useState<ArenaCardSide | null>(null);
   const [battleGlitchResetToken, setBattleGlitchResetToken] = useState(0);
   const [isBattleTimelineActive, setIsBattleTimelineActive] = useState(false);
-  const [battleSkipToken, setBattleSkipToken] = useState(0);
 
   function clearBattleTimelineTimeouts() {
     for (const timeoutId of battleTimelineTimeoutsRef.current) {
@@ -34,12 +39,21 @@ export default function useBattleTimeline() {
     battleTimelineTimeoutsRef.current = [];
   }
 
+  function resolveBattleTimelineRun() {
+    const run = battleTimelineRunRef.current;
+    if (!run) return;
+
+    battleTimelineRunRef.current = null;
+    run.resolve();
+  }
+
   function resetBattleTimeline() {
     setBattleShockCue(null);
     setBattleEliminatedSide(null);
     setBattleGlitchResetToken((current) => current + 1);
     setIsBattleTimelineActive(false);
     clearBattleTimelineTimeouts();
+    resolveBattleTimelineRun();
   }
 
   function startBattleTimeline(report: BattleReportJson | null | undefined) {
@@ -51,45 +65,53 @@ export default function useBattleTimeline() {
 
     setIsBattleTimelineActive(true);
 
-    for (let act = 1; act <= shockCueCount; act += 1) {
-      const timeoutId = window.setTimeout(
-        () => {
-          setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
-        },
-        (act - 1) * BATTLE_TIMELINE_STEP_MS,
-      );
+    return new Promise<void>((resolve) => {
+      battleTimelineRunRef.current = { report, resolve };
 
-      battleTimelineTimeoutsRef.current.push(timeoutId);
-    }
+      for (let act = 1; act <= shockCueCount; act += 1) {
+        const timeoutId = window.setTimeout(
+          () => {
+            setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
+          },
+          (act - 1) * BATTLE_TIMELINE_STEP_MS,
+        );
 
-    const cleanupTimeoutId = window.setTimeout(() => {
-      setBattleShockCue(null);
-      setBattleEliminatedSide(eliminatedCardSideForReport(report));
-      setIsBattleTimelineActive(false);
-    }, timelineMs);
+        battleTimelineTimeoutsRef.current.push(timeoutId);
+      }
 
-    battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
+      const cleanupTimeoutId = window.setTimeout(() => {
+        clearBattleTimelineTimeouts();
+        setBattleShockCue(null);
+        setBattleEliminatedSide(eliminatedCardSideForReport(report));
+        setIsBattleTimelineActive(false);
+        resolveBattleTimelineRun();
+      }, timelineMs);
 
-    return timelineMs;
+      battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
+    });
   }
 
   function skipBattleTimeline() {
+    const report = battleTimelineRunRef.current?.report;
+
     clearBattleTimelineTimeouts();
     setBattleShockCue(null);
-    setBattleEliminatedSide(null);
+    setBattleEliminatedSide(eliminatedCardSideForReport(report));
     setIsBattleTimelineActive(false);
-    setBattleSkipToken((current) => current + 1);
+    resolveBattleTimelineRun();
   }
 
   useEffect(() => {
-    return clearBattleTimelineTimeouts;
+    return () => {
+      clearBattleTimelineTimeouts();
+      resolveBattleTimelineRun();
+    };
   }, []);
 
   return {
     battleEliminatedSide,
     battleGlitchResetToken,
     battleShockCue,
-    battleSkipToken,
     isBattleTimelineActive,
     leftCrtImpact: cardCrtImpactForSide(battleShockCue, "left"),
     resetBattleTimeline,

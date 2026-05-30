@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { ArenaCard, CardCrtGlitchImpact } from "../../model";
 import { entryThemeStyle } from "../../logic";
 import { CardDockSlot } from "../combatant-card/chrome";
@@ -15,7 +16,7 @@ type CombatantEntrySlotProps = {
   onOpenConsole: () => void;
 };
 
-export default function CombatantEntrySlot({
+function CombatantEntrySlot({
   card,
   crtImpact = null,
   crtResetToken = 0,
@@ -54,3 +55,5 @@ export default function CombatantEntrySlot({
     </div>
   );
 }
+
+export default memo(CombatantEntrySlot);

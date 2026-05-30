@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   BattleResultPanel,
@@ -12,18 +12,35 @@ import {
 
 import { arenaCards } from "../../data";
 import {
+  BATTLE_CREDIT_COST,
+  CREDIT_TOP_UP_AMOUNT,
+  DEFAULT_ARENA_BET,
+  applyArenaBetSettlement,
   eliminatedCardSideForReport,
   findExactCombatantOption,
+  lockArenaBet,
   makeCombatantCard,
+  parseArenaBetAmount,
+  readStoredArenaWallet,
+  refundArenaLockedBet,
+  settleArenaBet,
+  topUpArenaWallet,
+  writeStoredArenaWallet,
 } from "../../logic";
-import type { ArenaCard, ArenaCardSide, CombatantOption } from "../../model";
+import type {
+  ArenaBetDraft,
+  ArenaCard,
+  ArenaCardSide,
+  ArenaWallet,
+  CombatantOption,
+} from "../../model";
 import { ArenaVersusMark } from "../arena";
 import {
   BattleControls,
   BattleLoadingConsole,
   BattleReportButton,
 } from "../battle-controls";
-import { ArenaBetSelector } from "../betting";
+import { ArenaBalancePanel, ArenaBetSelector } from "../betting";
 import { CombatantDeck } from "../combatant-deck";
 import {
   CombatantEntrySlot,
@@ -92,12 +109,17 @@ export default function HomeArenaStage({
   const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
   const [loadoutFocusSide, setLoadoutFocusSide] =
     useState<ArenaCardSide>("left");
+  const [arenaWallet, setArenaWallet] = useState<ArenaWallet>(
+    readStoredArenaWallet,
+  );
+  const [arenaBet, setArenaBet] =
+    useState<ArenaBetDraft>(DEFAULT_ARENA_BET);
+  const [bettingStatus, setBettingStatus] = useState("BETTING_READY");
   const hasRunPersistenceEffect = useRef(false);
   const {
     battleEliminatedSide,
     battleGlitchResetToken,
     battleShockCue,
-    battleSkipToken,
     isBattleTimelineActive,
     leftCrtImpact,
     resetBattleTimeline,
@@ -123,6 +145,20 @@ export default function HomeArenaStage({
     battleEliminatedSide ?? persistedEliminatedSide;
   const isBattleLoadingVisible =
     (isBattleRequestActive || isBattleTimelineActive) && !isReportOpen;
+  const isArenaLocked = isBattleRequestActive || isBattleTimelineActive;
+  const betAmount = parseArenaBetAmount(arenaBet.amountText);
+  const hasSelectedCombatants = Boolean(leftCard?.name && rightCard?.name);
+  const hasBattleCredit = arenaWallet.credits >= BATTLE_CREDIT_COST;
+  const hasBetReputation = betAmount <= arenaWallet.reputation;
+  const canExecuteBattle =
+    hasSelectedCombatants && hasBattleCredit && hasBetReputation;
+  const battleDisabledLabel = !hasSelectedCombatants
+    ? "ENTER_2_NAMES"
+    : !hasBattleCredit
+    ? "NO_CREDITS"
+    : !hasBetReputation
+      ? "LOW_REPUTATION"
+      : "ENTER_2_NAMES";
 
   useEffect(() => {
     if (!hasRunPersistenceEffect.current) {
@@ -153,14 +189,28 @@ export default function HomeArenaStage({
     storedArenaStateText,
   ]);
 
+  useEffect(() => {
+    writeStoredArenaWallet(arenaWallet);
+  }, [arenaWallet]);
+
   function openReport() {
     setIsReportOpen(true);
   }
 
-  function openLoadoutConsole(side: ArenaCardSide) {
-    setLoadoutFocusSide(side);
+  const openLeftLoadoutConsole = useCallback(() => {
+    setLoadoutFocusSide("left");
     setIsLoadoutConsoleOpen(true);
-  }
+  }, []);
+
+  const openRightLoadoutConsole = useCallback(() => {
+    setLoadoutFocusSide("right");
+    setIsLoadoutConsoleOpen(true);
+  }, []);
+
+  const topUpArenaCredits = useCallback(() => {
+    setArenaWallet(topUpArenaWallet);
+    setBettingStatus(`CREDITS +${CREDIT_TOP_UP_AMOUNT}`);
+  }, []);
 
   function resetBattleState() {
     setIsReportOpen(false);
@@ -173,9 +223,18 @@ export default function HomeArenaStage({
   }
 
   async function handleBattleStart() {
-    if (!leftCard?.name || !rightCard?.name) {
+    if (!leftCard?.name || !rightCard?.name || isArenaLocked) {
       return;
     }
+
+    const lockResult = lockArenaBet(arenaWallet, arenaBet);
+
+    if (!lockResult.ok) {
+      setBattleError(lockResult.message);
+      throw new Error(lockResult.message);
+    }
+
+    const { lockedBet } = lockResult;
 
     setIsReportOpen(false);
     setIsReportReady(false);
@@ -183,6 +242,8 @@ export default function HomeArenaStage({
     setBattleError("");
     setIsBattleRequestActive(true);
     setIsLoadoutConsoleOpen(false);
+    setBettingStatus(lockResult.status);
+    setArenaWallet(lockResult.wallet);
     resetBattleTimeline();
     clearLatestBattleReport();
 
@@ -191,13 +252,19 @@ export default function HomeArenaStage({
         fighterA: leftCard.name,
         fighterB: rightCard.name,
       });
-      const timelineMs = startBattleTimeline(report);
+      const timelineFinished = startBattleTimeline(report);
 
       setBattleReport(report);
-      await wait(timelineMs);
+      await timelineFinished;
+      const settlement = settleArenaBet(report, lockedBet);
+
+      setArenaWallet((current) => applyArenaBetSettlement(current, settlement));
+      setBettingStatus(settlement.status);
       setIsReportReady(true);
       setReportSerial((current) => (current ?? reportSerial) + 1);
     } catch (error) {
+      setArenaWallet((current) => refundArenaLockedBet(current, lockedBet));
+      setBettingStatus("STAKE_REFUNDED");
       setBattleReport(null);
       setIsReportReady(false);
       setBattleError(readBattleErrorMessage(error));
@@ -212,6 +279,8 @@ export default function HomeArenaStage({
   function resetSelection() {
     setLeftCard(null);
     setRightCard(null);
+    setArenaBet(DEFAULT_ARENA_BET);
+    setBettingStatus("BETTING_READY");
     setIsLoadoutConsoleOpen(false);
     clearStoredHomeArenaState();
     resetBattleState();
@@ -232,6 +301,8 @@ export default function HomeArenaStage({
         findExactCombatantOption(arenaCombatantOptions, right),
       ),
     );
+    setArenaBet(DEFAULT_ARENA_BET);
+    setBettingStatus("BETTING_READY");
     setIsLoadoutConsoleOpen(false);
     resetBattleState();
   }
@@ -266,6 +337,7 @@ export default function HomeArenaStage({
       ) : null}
 
       {((isReportReady && battleReport) || leftCard || rightCard) &&
+      !isArenaLocked &&
       !isReportOpen ? (
         <div
           className="home-arena-top-actions"
@@ -284,6 +356,16 @@ export default function HomeArenaStage({
         </div>
       ) : null}
 
+      {!isReportOpen ? (
+        <ArenaBalancePanel
+          credits={arenaWallet.credits}
+          isLocked={isArenaLocked}
+          onTopUpCredits={topUpArenaCredits}
+          reputation={arenaWallet.reputation}
+          status={bettingStatus}
+        />
+      ) : null}
+
       <div className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center">
         <div className="home-arena-combat-zone w-full">
           <div className="home-arena-setup-grid grid w-full grid-cols-1 justify-items-center gap-7 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:items-center sm:gap-10 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:gap-12">
@@ -295,7 +377,7 @@ export default function HomeArenaStage({
                 isEliminated={displayedEliminatedSide === "left"}
                 template={leftTemplate}
                 label="ALPHA_SLOT"
-                onOpenConsole={() => openLoadoutConsole("left")}
+                onOpenConsole={openLeftLoadoutConsole}
               />
             </div>
 
@@ -309,7 +391,7 @@ export default function HomeArenaStage({
                 isEliminated={displayedEliminatedSide === "right"}
                 template={rightTemplate}
                 label="OMEGA_SLOT"
-                onOpenConsole={() => openLoadoutConsole("right")}
+                onOpenConsole={openRightLoadoutConsole}
               />
             </div>
           </div>
@@ -350,14 +432,22 @@ export default function HomeArenaStage({
             </p>
           ) : null}
           {leftCard && rightCard ? (
-            <ArenaBetSelector leftCard={leftCard} rightCard={rightCard} />
+            <ArenaBetSelector
+              bet={arenaBet}
+              disabled={isArenaLocked}
+              leftCard={leftCard}
+              maxReputation={arenaWallet.reputation}
+              onBetChange={setArenaBet}
+              rightCard={rightCard}
+            />
           ) : (
             <p className="mb-3 text-center text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-[#d7e2d6]/62">
               LOAD_TWO_COMBATANTS_TO_ENABLE_BATTLE
             </p>
           )}
           <BattleControls
-            key={battleSkipToken}
+            canStart={canExecuteBattle}
+            disabledLabel={battleDisabledLabel}
             fighterA={leftCard?.name ?? null}
             fighterB={rightCard?.name ?? null}
             onBattleStart={handleBattleStart}
@@ -366,12 +456,6 @@ export default function HomeArenaStage({
       </div>
     </section>
   );
-}
-
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
 }
 
 function readBattleErrorMessage(error: unknown) {

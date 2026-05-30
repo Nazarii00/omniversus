@@ -61,6 +61,8 @@ export function writeStoredHomeArenaState(state: StoredHomeArenaState) {
 
   if (!hasArenaState) {
     try {
+      if (!storage.getItem(HOME_ARENA_STORAGE_KEY)) return;
+
       storage.removeItem(HOME_ARENA_STORAGE_KEY);
       emitHomeArenaStorageChange();
     } catch {
@@ -70,7 +72,11 @@ export function writeStoredHomeArenaState(state: StoredHomeArenaState) {
   }
 
   try {
-    storage.setItem(HOME_ARENA_STORAGE_KEY, JSON.stringify(state));
+    const nextStateText = JSON.stringify(state);
+
+    if (storage.getItem(HOME_ARENA_STORAGE_KEY) === nextStateText) return;
+
+    storage.setItem(HOME_ARENA_STORAGE_KEY, nextStateText);
     emitHomeArenaStorageChange();
   } catch {
     // Ignore blocked storage; the current React state remains usable.
