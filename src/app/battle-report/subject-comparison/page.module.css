@@ -1,0 +1,60 @@
+.page {
+  min-height: 100vh;
+  background: #080a08;
+  padding: 2rem 1.5rem;
+  color: #c9ffc8;
+  font-family: inherit;
+  text-transform: uppercase;
+}
+
+.document {
+  max-width: 56rem;
+  margin: 0 auto;
+  border: 1px solid rgba(104, 183, 104, 0.35);
+  background: #070b07;
+  padding: 1.5rem;
+}
+
+.eyebrow {
+  color: #c8a84b;
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.title {
+  margin: 0.75rem 0 0;
+  color: #c9ffc8;
+  font-size: 1.875rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.summary {
+  max-width: 42rem;
+  margin: 1rem 0 0;
+  color: #8faf8f;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+}
+
+.backLink {
+  display: inline-block;
+  margin-top: 2rem;
+  border: 1px solid rgba(200, 168, 75, 0.6);
+  padding: 0.5rem 1rem;
+  color: #c8a84b;
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+}
+
+.backLink:hover,
+.backLink:focus-visible {
+  border-color: rgba(200, 168, 75, 0.9);
+  color: #f0cf70;
+  outline: none;
+}

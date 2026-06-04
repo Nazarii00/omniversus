@@ -1,0 +1,96 @@
+.home-battle-result-panel__typing {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.home-battle-result-panel__typing-char {
+  position: relative;
+  display: inline-block;
+  opacity: 1;
+  white-space: pre;
+}
+
+.home-battle-result-panel[data-intro="play"]
+  .home-battle-result-panel__typing-char {
+  opacity: 0;
+  animation: home-report-heading-char 145ms steps(2, end) var(--char-delay, 0ms)
+    forwards;
+}
+
+.home-battle-result-panel[data-intro="play"]
+  .home-battle-result-panel__typing-char::before {
+  content: attr(data-char);
+  position: absolute;
+  inset: 0;
+  color: rgba(255, 255, 255, 0.74);
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.68),
+    0 0 18px rgba(201, 255, 200, 0.58),
+    0 0 30px rgba(78, 180, 78, 0.34);
+  opacity: 0;
+  pointer-events: none;
+  animation: home-report-heading-phosphor 520ms ease-out var(--char-delay, 0ms)
+    both;
+}
+
+.home-battle-result-panel[data-intro="play"]
+  .home-battle-result-panel__typing-char::after {
+  content: "";
+  position: absolute;
+  right: -0.11em;
+  top: -0.06em;
+  bottom: -0.08em;
+  width: 0.15em;
+  min-width: 3px;
+  background: #ffffff;
+  border-radius: 1px;
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.92),
+    0 0 18px rgba(201, 255, 200, 0.62),
+    0 0 28px rgba(78, 180, 78, 0.36);
+  opacity: 0;
+  pointer-events: none;
+  animation: home-report-heading-caret 150ms linear var(--char-delay, 0ms) both;
+}
+
+.home-battle-result-panel[data-intro="play"]
+  .home-battle-result-panel__typing-char[data-space="true"]::before {
+  content: none;
+}
+
+.home-battle-result-panel__section,
+.home-battle-result-panel__metric,
+.home-battle-result-panel__step,
+.home-battle-result-panel__confidence {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(104, 183, 104, 0.24);
+  background: rgba(1, 2, 1, 0.54);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.56);
+}
+
+.home-battle-result-panel[data-intro="play"] .home-battle-result-panel__section,
+.home-battle-result-panel[data-intro="play"] .home-battle-result-panel__metric,
+.home-battle-result-panel[data-intro="play"] .home-battle-result-panel__step,
+.home-battle-result-panel[data-intro="play"]
+  .home-battle-result-panel__confidence,
+.home-battle-result-panel[data-intro="play"] .home-report-flow {
+  transform-origin: left top;
+  will-change: clip-path, opacity, transform;
+  animation: home-report-block-diagonal 640ms cubic-bezier(0.17, 0.82, 0.18, 1)
+    var(--report-block-delay, 0ms) both;
+}
+
+.home-battle-result-panel__section {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.home-battle-result-panel__metric,
+.home-battle-result-panel__step {
+  padding: 1rem;
+}
+

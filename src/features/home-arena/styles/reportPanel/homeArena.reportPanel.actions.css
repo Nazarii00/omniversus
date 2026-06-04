@@ -1,0 +1,125 @@
+/* Home arena report button and result-panel styles. */
+
+.home-arena-top-actions {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 80;
+  display: grid;
+  justify-items: end;
+  gap: 0.55rem;
+}
+
+.home-report-button {
+  isolation: isolate;
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(5, 18, 9, 0.96), rgba(1, 3, 2, 0.98)), #010201;
+  color: #c9ffc8;
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 255, 200, 0.08),
+    inset 0 0 24px rgba(40, 145, 56, 0.18),
+    0 0 20px rgba(78, 180, 78, 0.22),
+    0 12px 32px rgba(0, 0, 0, 0.54);
+  clip-path: inset(0);
+  will-change: clip-path, opacity;
+  animation: home-report-button-shell 1.18s cubic-bezier(0.16, 0.9, 0.18, 1)
+    both;
+}
+
+.home-report-button::before,
+.home-report-button::after {
+  content: "";
+  position: absolute;
+  inset: 0.28rem;
+  z-index: 0;
+  border: 1px solid rgba(104, 183, 104, 0.34);
+  pointer-events: none;
+}
+
+.home-report-button::after {
+  inset: 0;
+  border-color: rgba(201, 255, 200, 0.18);
+  box-shadow: inset 0 0 18px rgba(104, 183, 104, 0.1);
+}
+
+.home-report-button__line {
+  position: absolute;
+  left: 50%;
+  top: 0.36rem;
+  bottom: 0.36rem;
+  z-index: 2;
+  width: 2px;
+  background: #c9ffc8;
+  box-shadow:
+    0 0 10px rgba(201, 255, 200, 0.82),
+    0 0 22px rgba(78, 180, 78, 0.42);
+  transform-origin: center center;
+  animation: home-report-button-line 1.1s ease-out both;
+}
+
+.home-report-button__label {
+  position: relative;
+  z-index: 3;
+  text-shadow:
+    0 0 8px rgba(201, 255, 200, 0.36),
+    0 0 18px rgba(78, 180, 78, 0.18);
+  animation: home-report-button-label 1.22s ease-out both;
+}
+
+.home-report-button:hover,
+.home-report-button:focus-visible {
+  background: rgba(1, 2, 1, 0.92);
+  color: #c9ffc8;
+  border-color: #68b768;
+  box-shadow:
+    inset 0 0 0 1px rgba(26, 58, 26, 0.88),
+    0 0 24px rgba(78, 180, 78, 0.2),
+    0 0.7rem 1.8rem rgba(0, 0, 0, 0.54);
+}
+
+.home-battle-result-panel__actions {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: end;
+}
+
+.home-full-report-link {
+  position: relative;
+  width: 100%;
+  min-width: 11rem;
+  border: 1px solid rgba(139, 172, 130, 0.52);
+  background: rgba(1, 4, 2, 0.78);
+  padding: 0.7rem 0.82rem;
+  color: rgba(215, 226, 214, 0.86);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  outline: none;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(215, 226, 214, 0.045);
+}
+
+.home-full-report-link::before {
+  content: ">";
+  margin-right: 0.45rem;
+  color: rgba(201, 255, 200, 0.74);
+}
+
+.home-full-report-link:hover,
+.home-full-report-link:focus-visible {
+  border-color: rgba(215, 226, 214, 0.84);
+  color: #ffffff;
+  background: rgba(8, 18, 9, 0.92);
+}
+
+@media (min-width: 640px) {
+  .home-arena-top-actions {
+    top: 1.5rem;
+    right: 1.5rem;
+    gap: 0.65rem;
+  }
+}
+

@@ -1,11 +1,9 @@
 import {
   type BattleCompletionResult,
-  buildBattleResponseFormat,
-  createBattleCompletion,
-  getClient,
-  resolveBattleModel,
-} from "./providers/gemini/client";
-import { coerceBattleDraft } from "./pipeline/coerce";
+  type ChatCompletionRequest,
+} from "./providers/openaiCompatible";
+import { resolveBattleProvider, type BattleProvider } from "./providers";
+import { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 import {
   DEFAULT_MAX_COMPLETION_TOKENS,
   DEFAULT_TEMPERATURE,
@@ -17,6 +15,11 @@ import {
   buildUserPrompt,
   OMNIVERSUS_MASTER_PROMPT,
 } from "./prompts/battlePrompt";
+import {
+  resolveBattleDossierContext,
+  type BattleDossierContext,
+  type DossierPortrait,
+} from "./dossier";
 import {
   OmniversusBattleSchema,
   type BattleGenerationMetadata,
@@ -31,16 +34,31 @@ export type {
   RunBattleAnalysisOptions,
 } from "./domain/schema";
 export { OmniversusBattleSchema } from "./domain/schema";
-export {
-  buildGeminiResponseFormat,
-  createBattleCompletion,
-  getClient,
-} from "./providers/gemini/client";
-export { coerceBattleDraft } from "./pipeline/coerce";
+export { resolveBattleProvider } from "./providers";
+export { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
-export { enforceBusinessCaps, normalizeBattleResult } from "./pipeline/normalize";
+export {
+  completeBattleRunRecord,
+  createBattleRunRecord,
+  failBattleRunRecord,
+  type BattleRunHandle,
+} from "./runs";
+export {
+  enforceBusinessCaps,
+  normalizeBattleResult,
+} from "./pipeline/normalize";
 export { BATTLE_MODEL_CONFIG } from "./config/model";
-export { buildUserPrompt, OMNIVERSUS_MASTER_PROMPT } from "./prompts/battlePrompt";
+export {
+  buildUserPrompt,
+  OMNIVERSUS_MASTER_PROMPT,
+} from "./prompts/battlePrompt";
+export {
+  resolveBattleDossierContext,
+  type BattleDossierContext,
+  type DossierPortrait,
+  type DossierFact,
+  type FighterDossier,
+} from "./dossier";
 
 type RunBattleAnalysisWithMetadataResult = {
   result: OmniversusBattle;
@@ -144,8 +162,8 @@ function buildGenerationMetadata(
   const requestId = (completion as { _request_id?: unknown })._request_id;
 
   return {
-    provider: "gemini",
-    api: "openai-compatible-chat-completions",
+    provider: completionResult.provider,
+    api: completionResult.api,
     requested_model: request.model,
     model: completion.model ?? null,
     thinking_level: request.reasoningEffort,
@@ -180,13 +198,68 @@ function buildGenerationMetadata(
   };
 }
 
+function providerErrorStatus(error: unknown): number | null {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  return null;
+}
+
+function providerErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "";
+}
+
+function providerErrorMessage(
+  error: unknown,
+  provider: BattleProvider,
+): string {
+  const status = providerErrorStatus(error);
+  const detail = providerErrorDetail(error);
+  const providerLabel = provider.label;
+
+  if (provider.isStructuredOutputSchemaError(error)) {
+    return detail
+      ? `${providerLabel} rejected the structured output schema: ${detail}`
+      : `${providerLabel} rejected the structured output schema.`;
+  }
+
+  if (status === 400) {
+    return detail
+      ? `${providerLabel} rejected the battle generation request: ${detail}`
+      : `${providerLabel} rejected the battle generation request.`;
+  }
+
+  if (status === 429) {
+    return detail
+      ? `${providerLabel} rate limit or quota was hit: ${detail}`
+      : `${providerLabel} rate limit or quota was hit. Wait a bit, then retry with the same fighters.`;
+  }
+
+  if (status && status >= 500) {
+    return `${providerLabel} provider is temporarily unavailable. Retry the battle request shortly.`;
+  }
+
+  if (error instanceof Error) return error.message;
+  return `${providerLabel} provider request failed`;
+}
+
 export async function runBattleAnalysisWithMetadata(
   fighterA: string,
   fighterB: string,
   options: RunBattleAnalysisOptions = {},
 ): Promise<RunBattleAnalysisWithMetadataResult> {
-  const client = getClient();
-  const model = resolveBattleModel(options.model);
+  const provider = resolveBattleProvider();
+  const model = provider.resolveBattleModel(options.model);
   const reasoningEffort = options.thinkingLevel ?? DEFAULT_THINKING_LEVEL;
   const temperature = normalizeTemperature(options.temperature);
   const topP = normalizeTopP(options.topP);
@@ -194,8 +267,13 @@ export async function runBattleAnalysisWithMetadata(
     options.maxCompletionTokens,
   );
   const startedAtMs = Date.now();
+  const dossierContext = await resolveBattleDossierContext(
+    fighterA,
+    fighterB,
+    options,
+  );
 
-  const completionRequest: Parameters<typeof createBattleCompletion>[1] = {
+  const completionRequest: ChatCompletionRequest = {
     model,
     reasoning_effort: reasoningEffort,
     temperature,
@@ -205,15 +283,25 @@ export async function runBattleAnalysisWithMetadata(
       : {}),
     messages: [
       { role: "system", content: OMNIVERSUS_MASTER_PROMPT },
-      { role: "user", content: buildUserPrompt(fighterA, fighterB, options) },
+      {
+        role: "user",
+        content: buildUserPrompt(fighterA, fighterB, options, dossierContext),
+      },
     ],
-    response_format: buildBattleResponseFormat(),
+    response_format: provider.buildBattleResponseFormat(),
   };
 
-  const completionResult = await createBattleCompletion(
-    client,
-    completionRequest,
-  );
+  let completionResult: BattleCompletionResult;
+
+  try {
+    completionResult =
+      await provider.createBattleCompletion(completionRequest);
+  } catch (error) {
+    throw new BattleAnalysisError(providerErrorMessage(error, provider), {
+      status: providerErrorStatus(error) ?? 502,
+    });
+  }
+
   const completion = completionResult.completion;
   const requestMetadata = {
     model,
@@ -277,17 +365,17 @@ export async function runBattleAnalysisWithMetadata(
     }
   }
 
-  const coerced = coerceBattleDraft(raw, {
+  const prepared = prepareBattleOutput(raw, {
     fighterA,
     fighterB,
-    characterAVersion: options.characterAVersion,
-    characterBVersion: options.characterBVersion,
+    outputLanguage: options.outputLanguage,
+    speedEqualized: options.speedEqualized,
   });
-  const parsed = OmniversusBattleSchema.safeParse(coerced);
+  const parsed = OmniversusBattleSchema.safeParse(prepared);
 
   if (!parsed.success) {
     throw new BattleAnalysisError(
-      `Battle JSON validation failed: ${parsed.error.message}`,
+      `Battle JSON contract validation failed: ${parsed.error.message}`,
       {
         status: 502,
         generation,
@@ -296,10 +384,45 @@ export async function runBattleAnalysisWithMetadata(
     );
   }
 
+  const normalized = normalizeBattleResult(parsed.data);
+  const normalizedParsed = OmniversusBattleSchema.safeParse(normalized);
+
+  if (!normalizedParsed.success) {
+    throw new BattleAnalysisError(
+      `Battle JSON semantic validation failed: ${normalizedParsed.error.message}`,
+      {
+        status: 502,
+        generation,
+        validationIssues: normalizedParsed.error.issues,
+      },
+    );
+  }
+
   return {
-    result: normalizeBattleResult(parsed.data),
+    result: attachDossierPortraits(normalizedParsed.data, dossierContext),
     generation,
   };
+}
+
+function attachDossierPortraits(
+  result: OmniversusBattle,
+  dossierContext: BattleDossierContext,
+): OmniversusBattle {
+  return {
+    ...result,
+    fighters: result.fighters.map((fighter) => {
+      const portrait = portraitForSide(fighter.side, dossierContext);
+
+      return portrait ? { ...fighter, portrait } : fighter;
+    }),
+  };
+}
+
+function portraitForSide(
+  side: OmniversusBattle["fighters"][number]["side"],
+  dossierContext: BattleDossierContext,
+): DossierPortrait | null {
+  return dossierContext[side].dossier?.portrait ?? null;
 }
 
 export async function runBattleAnalysis(

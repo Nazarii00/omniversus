@@ -1,11 +1,11 @@
 import type { ThinkingLevel } from "../domain/schema";
 
 export const BATTLE_MODEL_CONFIG = {
-  model: "gemini-3-flash-preview",
+  model: "gemini-3.5-flash",
   thinkingLevel: "high" satisfies ThinkingLevel,
   temperature: 1,
   topP: null,
-  maxCompletionTokens: 10000,
+  maxCompletionTokens: 16000,
   responseFormat: "json_schema",
 } as const;
 

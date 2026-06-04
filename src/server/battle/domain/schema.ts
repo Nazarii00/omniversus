@@ -13,6 +13,7 @@ export type CanonScope =
   | "CUSTOM";
 export type OutputLanguage = "en" | "uk";
 export type ThinkingLevel = "low" | "medium" | "high";
+export type BattleGenerationProvider = "gemini" | "vertex-ai";
 export type DataProvenanceMode =
   | "MANUAL"
   | "EXTRACTED_FANDOM"
@@ -20,6 +21,7 @@ export type DataProvenanceMode =
   | "MIXED"
   | "MODEL_INFERRED"
   | "UNKNOWN";
+
 export type RunBattleAnalysisOptions = {
   model?: string;
   temperature?: number;
@@ -54,7 +56,7 @@ export type BattleGenerationUsage = {
 };
 
 export type BattleGenerationMetadata = {
-  provider: "gemini";
+  provider: BattleGenerationProvider;
   api: "openai-compatible-chat-completions";
   requested_model: string;
   model: string | null;
@@ -79,7 +81,7 @@ export type BattleGenerationMetadata = {
   };
 };
 
-export const SCHEMA_VERSION = "omniversus.logic.v1";
+export const SCHEMA_VERSION = "omniversus.logic.v2";
 
 const obj = <T extends z.ZodRawShape>(shape: T) => z.object(shape).strict();
 
@@ -134,6 +136,14 @@ export const RuleImpact = z.enum([
   "IMPORTANT",
   "MATCH_DECIDING",
 ]);
+
+export const TierStat = z.enum(["AP", "DURABILITY", "SPEED"]);
+export const OperationalTierClass = z.enum([
+  "CONSISTENT",
+  "HIGH_END",
+  "UNKNOWN",
+]);
+export const EffectiveStatus = z.enum(["YES", "NO", "UNCLEAR"]);
 
 export const SourceSchema = obj({
   type: z.enum([
@@ -253,8 +263,27 @@ export const FighterSchema = obj({
     lose_conditions: z.array(z.string()).max(5),
     counters: z.array(z.string()).max(5),
   }),
+  portrait: obj({
+    approved_at: z.string(),
+    data_url: z.string(),
+    source_name: z.string(),
+  }).optional(),
   best_argument: z.string(),
   weakest_argument: z.string(),
+});
+
+export const TierSanitizationSchema = obj({
+  side: Side,
+  stat: TierStat,
+  consistent_tier: z.string(),
+  high_end_tier: z.string(),
+  highball_tier: z.string(),
+  rejected_tiers: z.array(z.string()).max(5),
+  operational_tier_used: z.string(),
+  operational_tier_class: OperationalTierClass,
+  basis_claim_ids: z.array(z.string()),
+  warning: z.string(),
+  contested: z.boolean(),
 });
 
 export const ComparisonSchema = obj({
@@ -311,7 +340,7 @@ export const AbilityInteractionSchema = obj({
   resistance_basis: z.string(),
   structurally_similar_resistance: z.string(),
   deliverable: z.boolean(),
-  effective: z.boolean().nullable(),
+  effective: EffectiveStatus,
   relevance_to_win_condition: z.string(),
   reason: z.string(),
   counterplay: z.string(),
@@ -423,7 +452,9 @@ export const QualityFlagsSchema = obj({
   has_confidence_cap: z.boolean(),
   has_data_input_warning: z.boolean(),
   has_chain_gap: z.boolean(),
+  active_warnings: z.array(z.string()).max(6),
   most_fragile_assumption: z.string(),
+  confidence_cap_reason: z.string(),
 });
 
 export const NarrativeStepSchema = obj({
@@ -438,6 +469,13 @@ export const NarrativeStepSchema = obj({
   contested: z.boolean(),
 });
 
+export const ConfidenceBand = z.enum([
+  "DOMINANT_80_100",
+  "CONFIDENT_65_79",
+  "CONTESTED_50_64",
+  "INDETERMINATE_1_49",
+]);
+
 export const VerdictSchema = obj({
   winner_side: SideResult,
   winner_name: z.string(),
@@ -451,33 +489,13 @@ export const VerdictSchema = obj({
     "INCONCLUSIVE",
   ]),
   confidence_score: z.number().int().min(1).max(100),
-  confidence_band: z.enum([
-    "DOMINANT_80_100",
-    "CONFIDENT_65_79",
-    "CONTESTED_50_64",
-    "INDETERMINATE_1_49",
-  ]),
+  confidence_band: ConfidenceBand,
   data_confidence_score: z.number().int().min(1).max(100),
-  data_confidence_band: z.enum([
-    "DOMINANT_80_100",
-    "CONFIDENT_65_79",
-    "CONTESTED_50_64",
-    "INDETERMINATE_1_49",
-  ]),
+  data_confidence_band: ConfidenceBand,
   verdict_confidence_given_data_score: z.number().int().min(1).max(100),
-  verdict_confidence_given_data_band: z.enum([
-    "DOMINANT_80_100",
-    "CONFIDENT_65_79",
-    "CONTESTED_50_64",
-    "INDETERMINATE_1_49",
-  ]),
+  verdict_confidence_given_data_band: ConfidenceBand,
   verdict_confidence_robustness_score: z.number().int().min(1).max(100),
-  verdict_confidence_robustness_band: z.enum([
-    "DOMINANT_80_100",
-    "CONFIDENT_65_79",
-    "CONTESTED_50_64",
-    "INDETERMINATE_1_49",
-  ]),
+  verdict_confidence_robustness_band: ConfidenceBand,
   confidence_explanation: z.string(),
   primary_reason: z.string(),
   decisive_chain_id: z.string(),
@@ -528,6 +546,7 @@ export const OmniversusBattleSchema = obj({
   stat_model: StatModelSchema,
 
   fighters: z.array(FighterSchema).length(2),
+  tier_sanitization: z.array(TierSanitizationSchema).length(6),
   claims: z.array(ClaimSchema).min(2).max(14),
   argument_chains: z.array(ArgumentChainSchema).min(2).max(8),
   comparison: z.array(ComparisonSchema).min(3).max(10),

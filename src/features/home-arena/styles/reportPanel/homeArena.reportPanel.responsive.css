@@ -1,0 +1,97 @@
+@media (max-width: 767px) {
+  .home-arena-combat-zone {
+    height: auto;
+    max-height: none;
+  }
+
+  .home-arena-stage[data-view="report"] .home-arena-combat-zone {
+    height: 88vh;
+    max-height: 88vh;
+  }
+
+  .home-arena-report-layout {
+    grid-template-columns: minmax(4.75rem, 5.75rem) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.15rem;
+  }
+
+  .home-combatant-deck {
+    width: min(20vw, 5.75rem);
+    justify-self: start;
+    margin-left: 0;
+    transform: translateX(-0.35rem);
+  }
+
+  .home-combatant-deck__hint {
+    left: -0.18rem;
+    right: -0.45rem;
+    top: calc(100% + 1.25rem);
+    padding: 0.4rem 0.34rem;
+    font-size: 0.56rem;
+  }
+
+  .home-battle-result-panel {
+    height: 100%;
+  }
+
+  .home-report-terminal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(22rem, 58vh) auto;
+    overflow-y: auto;
+  }
+
+  .home-report-terminal-grid--free {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .home-report-free-column--acts {
+    grid-template-rows: auto auto;
+  }
+
+  .home-report-free-column--graphs {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .home-battle-result-panel__body {
+    gap: 0.7rem;
+  }
+
+  .home-battle-result-panel__body > .home-report-signal-deck {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-report-flow {
+    min-height: 22rem;
+  }
+
+  .home-report-flow--free {
+    min-height: 0;
+  }
+
+  .home-report-free-beats {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .home-report-radar__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-report-sidebar {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .home-report-modal {
+    width: min(94vw, 42rem);
+    max-height: 86vh;
+  }
+
+  .home-report-modal__rows p {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.28rem;
+  }
+}

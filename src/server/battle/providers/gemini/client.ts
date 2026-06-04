@@ -1,28 +1,19 @@
 import OpenAI from "openai";
-import type { ParsedChatCompletion } from "openai/resources/chat/completions";
 
-import {
-  GeminiBattleOutputJsonSchema,
-  type GeminiBattleOutput,
-} from "./outputSchema";
 import { DEFAULT_MODEL } from "../../config/model";
+import {
+  buildOpenAiCompatibleBattleResponseFormat,
+  createOpenAiCompatibleBattleCompletion,
+  isOpenAiCompatibleStructuredOutputSchemaError,
+  type BattleCompletionResult,
+  type ChatCompletionRequest,
+} from "../openaiCompatible";
+import type { BattleProvider } from "../types";
 
 export { DEFAULT_MODEL } from "../../config/model";
 
 declare const process: {
   env: Record<string, string | undefined>;
-};
-
-type ChatCompletionRequest = OpenAI.Chat.ChatCompletionCreateParamsNonStreaming;
-type ChatCompletionResponse = ParsedChatCompletion<GeminiBattleOutput>;
-type ResponseFormatType = NonNullable<
-  ChatCompletionRequest["response_format"]
->["type"];
-
-export type BattleCompletionResult = {
-  completion: ChatCompletionResponse;
-  responseFormat: ResponseFormatType | null;
-  responseFormatFallbackUsed: boolean;
 };
 
 const GEMINI_OPENAI_BASE_URL =
@@ -40,41 +31,38 @@ export function getClient(): OpenAI {
 
   return cachedClient;
 }
+
 export function resolveBattleModel(model?: string): string {
   return model ?? DEFAULT_MODEL;
 }
 
 export function buildGeminiResponseFormat(): ChatCompletionRequest["response_format"] {
-  return {
-    type: "json_schema",
-    json_schema: {
-      name: "omniversus_battle",
-      strict: true,
-      schema: GeminiBattleOutputJsonSchema as Record<string, unknown>,
-    },
-  };
+  return buildOpenAiCompatibleBattleResponseFormat();
 }
 
 export function buildBattleResponseFormat(): ChatCompletionRequest["response_format"] {
   return buildGeminiResponseFormat();
 }
 
-async function createChatCompletion(
-  client: OpenAI,
-  request: ChatCompletionRequest,
-) {
-  return (await client.chat.completions.parse(
-    request,
-  )) as ChatCompletionResponse;
-}
-
 export async function createBattleCompletion(
-  client: OpenAI,
   request: ChatCompletionRequest,
 ): Promise<BattleCompletionResult> {
-  return {
-    completion: await createChatCompletion(client, request),
-    responseFormat: request.response_format?.type ?? null,
-    responseFormatFallbackUsed: false,
-  };
+  return createOpenAiCompatibleBattleCompletion(
+    getClient(),
+    request,
+    "gemini",
+  );
 }
+
+export function isGeminiStructuredOutputSchemaError(error: unknown): boolean {
+  return isOpenAiCompatibleStructuredOutputSchemaError(error);
+}
+
+export const geminiBattleProvider: BattleProvider = {
+  id: "gemini",
+  label: "Gemini API",
+  buildBattleResponseFormat,
+  createBattleCompletion,
+  isStructuredOutputSchemaError: isGeminiStructuredOutputSchemaError,
+  resolveBattleModel,
+};
