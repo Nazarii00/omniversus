@@ -95,6 +95,7 @@ export type BattleReportJson = Partial<
 > & {
   id?: string;
   battle_run_id?: string | null;
+  cached?: boolean;
   status?: string;
   headline?: string;
   generation?: BattleGenerationMetadata;

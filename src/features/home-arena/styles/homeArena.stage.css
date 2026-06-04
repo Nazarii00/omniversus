@@ -44,6 +44,65 @@
   position: relative;
 }
 
+.home-battle-opener {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-battle-opener__shade,
+.home-battle-opener__scan,
+.home-battle-opener__line {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-battle-opener__shade {
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.08) 0%,
+      rgba(0, 0, 0, 0.34) 48%,
+      rgba(0, 0, 0, 0.88) 100%
+    ),
+    linear-gradient(180deg, rgba(1, 8, 3, 0.28), rgba(0, 0, 0, 0.72));
+  animation: home-battle-opener-shade 680ms cubic-bezier(0.16, 0.78, 0.18, 1)
+    both;
+}
+
+.home-battle-opener__scan {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 0.8rem,
+      rgba(201, 255, 200, 0.055) 0.84rem 0.9rem,
+      transparent 0.94rem 1.6rem
+    ),
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(104, 183, 104, 0.1),
+      transparent
+    );
+  mix-blend-mode: screen;
+  animation: home-battle-opener-scan 680ms steps(8, end) both;
+}
+
+.home-battle-opener__line {
+  inset: 50% -10% auto;
+  height: 2px;
+  background: rgba(201, 255, 200, 0.92);
+  box-shadow:
+    0 0 16px rgba(201, 255, 200, 0.72),
+    0 0 42px rgba(78, 180, 78, 0.5);
+  transform-origin: center center;
+  animation: home-battle-opener-line 680ms cubic-bezier(0.15, 0.84, 0.14, 1)
+    both;
+}
+
 .home-battle-impact {
   --impact-black: 0.32;
   --impact-edge: 0.42;

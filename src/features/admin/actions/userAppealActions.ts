@@ -75,20 +75,29 @@ export async function resolveUserAppealAction(formData: FormData) {
     }
 
     if (appeal.kind === UserAppealKind.SUBJECT_REQUEST) {
-      const displayName = appeal.subjectName.trim();
+      const formSubjectName = optionalString(formData, "subjectName");
+      const formSummary = optionalString(formData, "summary");
+      const formPhotoUrl = optionalString(formData, "photoUrl");
+
+      const displayName = formSubjectName || appeal.subjectName.trim();
       const subjectSlug = fallbackSlug(displayName, appeal.id);
       const versionSlug = "primary-canon";
+      
+      const summaryText = formSummary || appealBodyText(appeal);
+      
+      const subjectMetadata = {
+        ...baseMetadata,
+        updatedFromUserAppealId: appeal.id,
+        ...(formPhotoUrl ? { photoUrl: formPhotoUrl } : {}),
+      };
 
       const subject = await tx.subject.upsert({
         where: { slug: subjectSlug },
         update: {
           displayName,
           canonicalName: displayName,
-          summary: appealBodyText(appeal),
-          metadata: {
-            ...baseMetadata,
-            updatedFromUserAppealId: appeal.id,
-          },
+          summary: summaryText,
+          metadata: subjectMetadata,
         },
         create: {
           slug: subjectSlug,
@@ -96,9 +105,9 @@ export async function resolveUserAppealAction(formData: FormData) {
           canonicalName: displayName,
           kind: SubjectKind.FICTIONAL_CHARACTER,
           originMedium: OriginMedium.UNKNOWN,
-          summary: appealBodyText(appeal),
+          summary: summaryText,
           metadata: {
-            ...baseMetadata,
+            ...subjectMetadata,
             createdFromUserAppealId: appeal.id,
           },
         },
@@ -122,7 +131,7 @@ export async function resolveUserAppealAction(formData: FormData) {
           },
         },
         update: {
-          summary: appealBodyText(appeal),
+          summary: summaryText,
           metadata: {
             ...baseMetadata,
             updatedFromUserAppealId: appeal.id,
@@ -134,7 +143,7 @@ export async function resolveUserAppealAction(formData: FormData) {
           label: "Primary canon",
           canonScope: CanonScope.PRIMARY_CANON,
           isDefault: !existingDefault,
-          summary: appealBodyText(appeal),
+          summary: summaryText,
           confidenceBand: ConfidenceBand.LOW,
           confidenceScore: 35,
           status: ReviewStatus.REQUIRES_REVIEW,

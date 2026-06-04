@@ -140,6 +140,67 @@
   }
 }
 
+@keyframes home-battle-opener-shade {
+  0% {
+    opacity: 0;
+    filter: blur(0) brightness(1);
+  }
+
+  22% {
+    opacity: 0.82;
+    filter: blur(0.2px) brightness(0.72);
+  }
+
+  68% {
+    opacity: 0.74;
+    filter: blur(0.4px) brightness(0.58);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(0) brightness(1);
+  }
+}
+
+@keyframes home-battle-opener-scan {
+  0% {
+    opacity: 0;
+    transform: translateY(-24%);
+  }
+
+  18%,
+  72% {
+    opacity: 0.72;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(24%);
+  }
+}
+
+@keyframes home-battle-opener-line {
+  0% {
+    opacity: 0;
+    transform: translateY(-42vh) scaleX(0.24);
+  }
+
+  18% {
+    opacity: 0.9;
+    transform: translateY(-9vh) scaleX(0.82);
+  }
+
+  48% {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(38vh) scaleX(0.36);
+  }
+}
+
 @keyframes home-battle-impact-pressure {
   0% {
     opacity: 0;

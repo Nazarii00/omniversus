@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { BattleRunStatus } from "@/generated/prisma/enums";
 import { getPrisma } from "@/server/db/prisma";
 
+import { buildBattleCacheKey } from "./cache";
 import type {
   BattleGenerationMetadata,
   OmniversusBattle,
@@ -59,10 +60,12 @@ export async function createBattleRunRecord({
 
   try {
     const requestedGeneration = resolveRequestedGeneration(options);
+    const cacheKey = buildBattleCacheKey(fighterA, fighterB, options);
     const run = await prisma.battleRun.create({
       data: {
         fighterAName: fighterA,
         fighterBName: fighterB,
+        cacheKey,
         status: BattleRunStatus.PENDING,
         requestedModel: requestedGeneration.model,
         requestPayload: toInputJson({

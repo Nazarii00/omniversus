@@ -1,84 +1,137 @@
-import Image from "next/image";
+"use client";
 
-const CREDIT_MARK_ASSET = "/assets/home-arena/arena-credit.png";
+import { useState } from "react";
 
-type ArenaBalancePanelProps = {
-  credits: number;
-  isLocked?: boolean;
-  onTopUpCredits: () => void;
-  reputation: number;
-  status?: string;
+export type WalletWidgetProps = {
+  cr: number;
+  rp: number;
+  username: string;
+  rank: number;
+  status: string;
+  onOpenProfile: () => void;
+  onTopUp?: () => void;
 };
 
 export default function ArenaBalancePanel({
-  credits,
-  isLocked = false,
-  onTopUpCredits,
-  reputation,
-  status = "BETTING_READY",
-}: ArenaBalancePanelProps) {
+  cr,
+  rp,
+  username,
+  rank,
+  status,
+  onOpenProfile,
+  onTopUp,
+}: WalletWidgetProps) {
+  const [isMax, setIsMax] = useState(false);
+
+  const crDisplay = String(cr).padStart(4, "0");
+  const rpDisplay = String(rp).padStart(8, "0");
+
   return (
-    <aside className="home-balance-terminal" aria-label="Arena balance">
-      <div className="home-balance-terminal__titlebar">
-        <span>WALLET.DAT</span>
-        <span>LOCAL</span>
-      </div>
+    <aside
+      className="wallet-widget"
+      aria-label="Wallet display"
+      data-state={isMax ? "max" : "min"}
+    >
+      {!isMax ? (
+        <button
+          type="button"
+          className="wallet-widget__min"
+          onClick={() => setIsMax(true)}
+          aria-label="Expand wallet"
+          aria-expanded="false"
+        >
+          <div className="wallet-widget__row">
+            <span>CR</span>
+            <span className="wallet-widget__value">{crDisplay}</span>
+          </div>
+          <div className="wallet-widget__row">
+            <span>RP</span>
+            <span className="wallet-widget__value">{rpDisplay}</span>
+          </div>
+        </button>
+      ) : (
+        <div className="wallet-widget__max">
+          <div className="wallet-widget__header">
+            <span className="wallet-widget__username">{username}</span>
+            <span className="wallet-widget__rank">
+              RANK #{String(rank).padStart(4, "0")}
+            </span>
+            <button
+              type="button"
+              className="wallet-widget__close-header"
+              onClick={() => setIsMax(false)}
+              aria-label="Collapse wallet"
+              title="Close (MIN)"
+            >
+              [x]
+            </button>
+          </div>
 
-      <div className="home-balance-terminal__screen">
-        <div className="home-balance-terminal__credit-visual" aria-hidden="true">
-          <Image
-            alt=""
-            className="home-balance-terminal__credit-image"
-            height={512}
-            priority={false}
-            sizes="(max-width: 900px) 96px, 112px"
-            src={CREDIT_MARK_ASSET}
-            width={512}
-          />
-        </div>
+          <div className="wallet-widget__divider" />
 
-        <div className="home-balance-terminal__row home-balance-terminal__row--credits">
-          <span>
-            <Image
-              alt=""
-              aria-hidden="true"
-              className="home-balance-terminal__credit-glyph"
-              height={24}
-              src={CREDIT_MARK_ASSET}
-              width={24}
-            />
-            CREDITS
-          </span>
-          <strong>{credits.toString().padStart(4, "0")}</strong>
-        </div>
-        <div className="home-balance-terminal__row">
-          <span>REPUTATION</span>
-          <strong>{reputation.toString().padStart(4, "0")}</strong>
-        </div>
-        <div className="home-balance-terminal__status">{status}</div>
-        <div className="home-balance-terminal__actions">
+          <div className="wallet-widget__section">
+            <div className="wallet-widget__asset">
+              <div className="wallet-widget__asset-main">
+                <span className="wallet-widget__label">CR</span>
+                <span className="wallet-widget__dots">
+                  .......................
+                </span>
+                <span className="wallet-widget__value">{crDisplay}</span>
+              </div>
+              <div className="wallet-widget__asset-info">
+                <span className="wallet-widget__sublabel">
+                  ARCADE / VOLATILE
+                </span>
+                <span className="wallet-widget__info-dots">...........</span>
+                <span className="wallet-widget__meta">REFILLABLE_BP</span>
+              </div>
+              {onTopUp && (
+                <button
+                  type="button"
+                  onClick={onTopUp}
+                  className="mt-2 w-full border border-[var(--bet-accent)] bg-black px-2 py-1 text-center text-[0.6rem] font-bold tracking-widest text-[var(--bet-accent)] transition-colors hover:bg-[var(--bet-accent)] hover:text-black"
+                >
+                  [+] REFILL CREDITS
+                </button>
+              )}
+            </div>
+
+            <div className="wallet-widget__asset">
+              <div className="wallet-widget__asset-main">
+                <span className="wallet-widget__label">RP</span>
+                <span className="wallet-widget__dots">
+                  .......................
+                </span>
+                <span className="wallet-widget__value">{rpDisplay}</span>
+              </div>
+              <div className="wallet-widget__asset-info">
+                <span className="wallet-widget__sublabel">RANKED / LOCK</span>
+                <span className="wallet-widget__info-dots">...........</span>
+                <span className="wallet-widget__meta">EARNED_ONLY</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="wallet-widget__status">
+            <span className="wallet-widget__status-label">STATUS</span>
+            <span className="wallet-widget__status-value">{status}</span>
+          </div>
+
+          <div className="wallet-widget__divider" />
+
           <button
             type="button"
-            className="home-balance-terminal__topup"
-            aria-label="Top up credits"
-            disabled={isLocked}
-            onClick={onTopUpCredits}
+            className="wallet-widget__profile-button"
+            onClick={onOpenProfile}
+            aria-label="Open profile"
           >
-            <span className="home-balance-terminal__topup-label">
-              <Image
-                alt=""
-                aria-hidden="true"
-                className="home-balance-terminal__topup-glyph"
-                height={24}
-                src={CREDIT_MARK_ASSET}
-                width={24}
-              />
-              CREDIT_REFILL
+            <span className="wallet-widget__profile-label">
+              &gt; OPEN_PROFILE
             </span>
-            <span aria-hidden="true">[+]</span>
+            <span className="wallet-widget__profile-action">[→]</span>
           </button>
         </div>
-      </div>
+      )}
     </aside>
   );
 }
