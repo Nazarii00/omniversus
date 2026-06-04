@@ -4,12 +4,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import { BattleRunStatus } from "@/generated/prisma/enums";
 import { getPrisma } from "@/server/db/prisma";
 
-import { BATTLE_MODEL_CONFIG } from "./config/model";
 import type {
   BattleGenerationMetadata,
   OmniversusBattle,
   RunBattleAnalysisOptions,
 } from "./domain/schema";
+import { resolveBattleProvider } from "./providers";
 
 export type BattleRunHandle = {
   id: string;
@@ -40,6 +40,15 @@ function logPersistenceError(action: string, error: unknown) {
   console.error(`[BATTLE_RUNS] ${action} failed`, error);
 }
 
+function resolveRequestedGeneration(options: RunBattleAnalysisOptions) {
+  const provider = resolveBattleProvider();
+
+  return {
+    provider: provider.id,
+    model: provider.resolveBattleModel(options.model),
+  };
+}
+
 export async function createBattleRunRecord({
   fighterA,
   fighterB,
@@ -49,14 +58,16 @@ export async function createBattleRunRecord({
   if (!prisma) return null;
 
   try {
+    const requestedGeneration = resolveRequestedGeneration(options);
     const run = await prisma.battleRun.create({
       data: {
         fighterAName: fighterA,
         fighterBName: fighterB,
         status: BattleRunStatus.PENDING,
-        requestedModel: BATTLE_MODEL_CONFIG.model,
+        requestedModel: requestedGeneration.model,
         requestPayload: toInputJson({
           source: "api/battle",
+          provider: requestedGeneration.provider,
           fighterA,
           fighterB,
           options,
@@ -114,12 +125,13 @@ export async function failBattleRunRecord(
   if (!prisma) return;
 
   try {
+    const requestedGeneration = resolveRequestedGeneration({});
     await prisma.battleRun.update({
       where: { id: run.id },
       data: {
         status: BattleRunStatus.FAILED,
         requestedModel:
-          generation?.requested_model ?? BATTLE_MODEL_CONFIG.model,
+          generation?.requested_model ?? requestedGeneration.model,
         resolvedModel: generation?.model ?? null,
         errorMessage,
         resultPayload: toInputJson({

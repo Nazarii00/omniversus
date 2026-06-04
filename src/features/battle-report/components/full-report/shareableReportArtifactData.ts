@@ -9,8 +9,9 @@ import {
   type ReportViewModel,
 } from "../../model";
 
-type ReportWinCondition =
-  NonNullable<BattleReportJson["win_conditions"]>[number];
+type ReportWinCondition = NonNullable<
+  BattleReportJson["win_conditions"]
+>[number];
 
 export type ShareableReportActionsProps = {
   abilityInteractions?: BattleReportJson["ability_interactions"];
@@ -58,10 +59,14 @@ export type ShareableArtifact = {
   assumptions: ArtifactAssumption[];
   classification: string;
   confidence: number;
+  dataConfidence: number;
+  robustnessConfidence: number;
+  confidenceBand: string;
   difficulty: string;
   docRef: string;
   logs: ArtifactLog[];
   metrics: ArtifactMetric[];
+  missionParams: ArtifactAssumption[];
   outcome: string;
   reportId: string;
   summary: string;
@@ -69,6 +74,20 @@ export type ShareableArtifact = {
   title: string;
   winner: string;
   winnerSide: string | undefined;
+  threatAnalysis: {
+    winCondition: string;
+    winProbability: string;
+    counterRoute: string;
+    counterStatus: string;
+    reversalCondition: string;
+    reversalProbability: string;
+  };
+  battleType: string;
+  cardVariant: string;
+  caseName: string;
+  battleTypeLabel: string;
+  speedLabel: string;
+  arenaLabel: string;
 };
 
 export function buildShareableArtifact({
@@ -130,14 +149,47 @@ export function buildShareableArtifact({
     },
   ];
 
+  const missionParams = buildMissionParams({
+    reportMetadata,
+    reportRules,
+  });
+
+  const threatAnalysis = buildThreatAnalysis({
+    view,
+    decisiveChain,
+    winConditions,
+  });
+
   return {
     assumptions: buildArtifactAssumptions({
       dataProvenance,
       reportMetadata,
       reportRules,
     }),
+    battleType: reportMetadata?.battle_type ?? "OBJECTIVE",
+    cardVariant:
+      view.tags?.find((t) =>
+        [
+          "STOMP",
+          "CLOSE_MATCH",
+          "CONTROVERSIAL",
+          "SUBJECTIVE",
+          "INCONCLUSIVE",
+        ].includes(t),
+      ) ?? "CLOSE_MATCH",
+    caseName: `${subjects[0].name} v. ${subjects[1].name}`,
     classification: "PUBLIC REDACTION",
     confidence: view.confidence,
+    confidenceBand:
+      view.verdict.confidence_band ??
+      (view.confidence >= 80
+        ? "DOMINANT_80_100"
+        : view.confidence >= 65
+          ? "CONFIDENT_65_79"
+          : view.confidence >= 50
+            ? "CONTESTED_50_64"
+            : "INDETERMINATE_1_49"),
+    dataConfidence: view.dataConfidence,
     difficulty: view.difficulty,
     docRef: docRef(view.id),
     logs: logs.map((log) => ({
@@ -151,17 +203,23 @@ export function buildShareableArtifact({
       fighters: view.fighters,
       view,
     }),
+    missionParams,
     outcome:
       view.verdict.primary_reason ??
       decisiveChain?.conclusion ??
       decisiveWinCondition?.method ??
       view.chainTeaser,
     reportId: view.id,
+    robustnessConfidence: view.robustnessConfidence,
     summary,
     subjects,
+    threatAnalysis,
     title: "OMNIVERSUS CLASSIFIED DOSSIER",
     winner,
     winnerSide: view.verdict.winner_side,
+    battleTypeLabel: shortBattleLabel(reportMetadata, reportRules),
+    speedLabel: shortSpeedLabel(reportMetadata, reportRules),
+    arenaLabel: shortArenaLabel(reportRules),
   };
 }
 
@@ -193,6 +251,104 @@ function buildSubject(
     profile: valueText(profile),
     side,
     tier: valueText(fighter?.tier?.rating),
+  };
+}
+
+function buildMissionParams({
+  reportMetadata,
+  reportRules,
+}: Pick<
+  ShareableReportActionsProps,
+  "reportMetadata" | "reportRules"
+>): ArtifactAssumption[] {
+  const params: ArtifactAssumption[] = [];
+
+  const location = reportRules?.location;
+  if (location && location !== "N/A") {
+    params.push({ label: "LOCATION", value: location });
+  }
+
+  const distance = reportRules?.starting_distance;
+  if (distance && distance !== "N/A") {
+    params.push({ label: "DISTANCE", value: distance });
+  }
+
+  const prep = reportRules?.prep_time;
+  if (prep && prep !== "N/A") {
+    params.push({ label: "PREP", value: prep });
+  }
+
+  const knowledge = reportRules?.prior_knowledge;
+  if (knowledge && knowledge !== "N/A") {
+    params.push({ label: "KNOWLEDGE", value: knowledge });
+  }
+
+  const equipment = reportRules?.equipment;
+  if (equipment && equipment !== "N/A") {
+    params.push({ label: "EQUIPMENT", value: equipment });
+  }
+
+  const verseEq = reportRules?.verse_equalization;
+  if (verseEq && verseEq !== "N/A") {
+    params.push({ label: "VERSE EQ", value: verseEq });
+  }
+
+  const speedEq =
+    reportMetadata?.speed_equalized ?? reportRules?.speed_equalized;
+  params.push({
+    label: "SPEED",
+    value:
+      speedEq === true
+        ? "Equalized"
+        : speedEq === false
+          ? "Not Equalized"
+          : "Provisional",
+  });
+
+  return params.length ? params : [{ label: "RULES", value: "Standard" }];
+}
+
+function buildThreatAnalysis({
+  view,
+  decisiveChain,
+  winConditions,
+}: {
+  view: ReportViewModel;
+  decisiveChain: ReportArgumentChain | null;
+  winConditions: BattleReportJson["win_conditions"];
+}) {
+  const winnerSide = view.verdict.winner_side;
+  const decisiveWinCondition = pickWinCondition(winConditions, winnerSide);
+  const opposingWinCondition = pickOpposingWinCondition(
+    winConditions,
+    winnerSide,
+  );
+
+  return {
+    winCondition:
+      decisiveWinCondition?.method ??
+      decisiveChain?.conclusion ??
+      view.verdict.primary_reason ??
+      view.chainTeaser,
+    winProbability: decisiveWinCondition?.probability ?? "HIGH",
+    counterRoute:
+      view.verdict.why_not_other_side ??
+      view.verdict.loser_best_argument ??
+      opposingWinCondition?.blocked_by ??
+      "No viable counter-route identified.",
+    counterStatus:
+      opposingWinCondition?.blocked_by || view.verdict.why_not_other_side
+        ? "NEUTRALIZED"
+        : "UNRESOLVED",
+    reversalCondition:
+      view.verdict.flip_condition ??
+      decisiveChain?.breaks_if ??
+      decisiveWinCondition?.blocked_by ??
+      "No reversal condition identified.",
+    reversalProbability:
+      decisiveWinCondition?.blocked_by || view.verdict.flip_condition
+        ? "LOW"
+        : "VERY_LOW",
   };
 }
 
@@ -282,9 +438,7 @@ function buildArtifactMetrics({
 
     return {
       assessment:
-        margin === "N/A"
-          ? winner
-          : `${winner} / ${displayVerdict(margin)}`,
+        margin === "N/A" ? winner : `${winner} / ${displayVerdict(margin)}`,
       contested: Boolean(row.contested),
       countermeasure: valueText(row.reason),
       label: displayVerdict(row.category),
@@ -386,7 +540,9 @@ function pickWinCondition(
   const normalizedSide = side?.toUpperCase();
 
   if (normalizedSide === "A" || normalizedSide === "B") {
-    return winConditions?.find((condition) => condition.side === normalizedSide);
+    return winConditions?.find(
+      (condition) => condition.side === normalizedSide,
+    );
   }
 
   return winConditions?.[0];
@@ -458,6 +614,46 @@ function speedAssumption(speedEqualized: boolean | undefined) {
   }
 
   return "Speed policy not filed; route timing should be treated as provisional.";
+}
+
+function shortBattleLabel(
+  reportMetadata: BattleReportJson["metadata"],
+  reportRules: BattleReportJson["rules"],
+) {
+  const battleType = reportMetadata?.battle_type ?? "OBJECTIVE";
+  const canonScope = reportMetadata?.canon_scope ?? reportRules?.assumption_set;
+  const result = canonScope && canonScope !== "N/A" ? canonScope : battleType;
+
+  return String(result).slice(0, 30);
+}
+
+function shortSpeedLabel(
+  reportMetadata: BattleReportJson["metadata"],
+  reportRules: BattleReportJson["rules"],
+) {
+  const speedEq =
+    reportMetadata?.speed_equalized ?? reportRules?.speed_equalized;
+
+  if (speedEq === true) return "Speed Equalized";
+  if (speedEq === false) return "Not Equalized";
+
+  return "Provisional";
+}
+
+function shortArenaLabel(reportRules: BattleReportJson["rules"]) {
+  const parts: string[] = [];
+
+  if (reportRules?.location && reportRules.location !== "N/A") {
+    parts.push(reportRules.location);
+  }
+  if (
+    reportRules?.starting_distance &&
+    reportRules.starting_distance !== "N/A"
+  ) {
+    parts.push(reportRules.starting_distance);
+  }
+
+  return parts.length ? parts.join(", ") : "Standard";
 }
 
 function docRef(reportId: string) {

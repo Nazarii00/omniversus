@@ -13,6 +13,7 @@ export type CanonScope =
   | "CUSTOM";
 export type OutputLanguage = "en" | "uk";
 export type ThinkingLevel = "low" | "medium" | "high";
+export type BattleGenerationProvider = "gemini" | "vertex-ai";
 export type DataProvenanceMode =
   | "MANUAL"
   | "EXTRACTED_FANDOM"
@@ -55,7 +56,7 @@ export type BattleGenerationUsage = {
 };
 
 export type BattleGenerationMetadata = {
-  provider: "gemini";
+  provider: BattleGenerationProvider;
   api: "openai-compatible-chat-completions";
   requested_model: string;
   model: string | null;

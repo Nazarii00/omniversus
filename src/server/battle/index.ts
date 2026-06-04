@@ -1,11 +1,8 @@
 import {
   type BattleCompletionResult,
-  buildBattleResponseFormat,
-  createBattleCompletion,
-  getClient,
-  isGeminiStructuredOutputSchemaError,
-  resolveBattleModel,
-} from "./providers/gemini/client";
+  type ChatCompletionRequest,
+} from "./providers/openaiCompatible";
+import { resolveBattleProvider, type BattleProvider } from "./providers";
 import { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 import {
   DEFAULT_MAX_COMPLETION_TOKENS,
@@ -37,11 +34,7 @@ export type {
   RunBattleAnalysisOptions,
 } from "./domain/schema";
 export { OmniversusBattleSchema } from "./domain/schema";
-export {
-  buildGeminiResponseFormat,
-  createBattleCompletion,
-  getClient,
-} from "./providers/gemini/client";
+export { resolveBattleProvider } from "./providers";
 export { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
 export { mapGeminiBattleOutput } from "./pipeline/mapGeminiOutput";
 export {
@@ -169,7 +162,7 @@ function buildGenerationMetadata(
   const requestId = (completion as { _request_id?: unknown })._request_id;
 
   return {
-    provider: "gemini",
+    provider: completionResult.provider,
     api: completionResult.api,
     requested_model: request.model,
     model: completion.model ?? null,
@@ -226,34 +219,38 @@ function providerErrorDetail(error: unknown): string {
   return "";
 }
 
-function providerErrorMessage(error: unknown): string {
+function providerErrorMessage(
+  error: unknown,
+  provider: BattleProvider,
+): string {
   const status = providerErrorStatus(error);
   const detail = providerErrorDetail(error);
+  const providerLabel = provider.label;
 
-  if (isGeminiStructuredOutputSchemaError(error)) {
+  if (provider.isStructuredOutputSchemaError(error)) {
     return detail
-      ? `Gemini rejected the structured output schema: ${detail}`
-      : "Gemini rejected the structured output schema.";
+      ? `${providerLabel} rejected the structured output schema: ${detail}`
+      : `${providerLabel} rejected the structured output schema.`;
   }
 
   if (status === 400) {
     return detail
-      ? `Gemini rejected the battle generation request: ${detail}`
-      : "Gemini rejected the battle generation request.";
+      ? `${providerLabel} rejected the battle generation request: ${detail}`
+      : `${providerLabel} rejected the battle generation request.`;
   }
 
   if (status === 429) {
     return detail
-      ? `Gemini rate limit or quota was hit: ${detail}`
-      : "Gemini rate limit or quota was hit. Wait a bit, then retry with the same fighters.";
+      ? `${providerLabel} rate limit or quota was hit: ${detail}`
+      : `${providerLabel} rate limit or quota was hit. Wait a bit, then retry with the same fighters.`;
   }
 
   if (status && status >= 500) {
-    return "Gemini provider is temporarily unavailable. Retry the battle request shortly.";
+    return `${providerLabel} provider is temporarily unavailable. Retry the battle request shortly.`;
   }
 
   if (error instanceof Error) return error.message;
-  return "Gemini provider request failed";
+  return `${providerLabel} provider request failed`;
 }
 
 export async function runBattleAnalysisWithMetadata(
@@ -261,8 +258,8 @@ export async function runBattleAnalysisWithMetadata(
   fighterB: string,
   options: RunBattleAnalysisOptions = {},
 ): Promise<RunBattleAnalysisWithMetadataResult> {
-  const client = getClient();
-  const model = resolveBattleModel(options.model);
+  const provider = resolveBattleProvider();
+  const model = provider.resolveBattleModel(options.model);
   const reasoningEffort = options.thinkingLevel ?? DEFAULT_THINKING_LEVEL;
   const temperature = normalizeTemperature(options.temperature);
   const topP = normalizeTopP(options.topP);
@@ -276,7 +273,7 @@ export async function runBattleAnalysisWithMetadata(
     options,
   );
 
-  const completionRequest: Parameters<typeof createBattleCompletion>[1] = {
+  const completionRequest: ChatCompletionRequest = {
     model,
     reasoning_effort: reasoningEffort,
     temperature,
@@ -291,15 +288,16 @@ export async function runBattleAnalysisWithMetadata(
         content: buildUserPrompt(fighterA, fighterB, options, dossierContext),
       },
     ],
-    response_format: buildBattleResponseFormat(),
+    response_format: provider.buildBattleResponseFormat(),
   };
 
   let completionResult: BattleCompletionResult;
 
   try {
-    completionResult = await createBattleCompletion(client, completionRequest);
+    completionResult =
+      await provider.createBattleCompletion(completionRequest);
   } catch (error) {
-    throw new BattleAnalysisError(providerErrorMessage(error), {
+    throw new BattleAnalysisError(providerErrorMessage(error, provider), {
       status: providerErrorStatus(error) ?? 502,
     });
   }

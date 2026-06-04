@@ -15,8 +15,7 @@ const ARTIFACT_WIDTH = 1080;
 const ARTIFACT_HEIGHT = 1350;
 const MAX_SHARE_LINES = 4;
 const CLASSIFIED_PAPER_ASSET = "/assets/battle-report/classified-paper.png";
-const DECLASSIFIED_STAMP_ASSET =
-  "/assets/battle-report/declassified-stamp.png";
+const DECLASSIFIED_STAMP_ASSET = "/assets/battle-report/declassified-stamp.png";
 const EVIDENCE_PHOTO_FRAME_ASSET =
   "/assets/battle-report/evidence-photo-frame.png";
 const MASKING_TAPE_ASSET = "/assets/battle-report/masking-tape.png";
@@ -38,13 +37,28 @@ export function renderShareableReportSvg(
   const subjectA = artifact.subjects[0];
   const subjectB = artifact.subjects[1];
   const reportSerial = escapeSvg(displayTitle(artifact.reportId).slice(0, 22));
-  const outcome = truncate(certifiedOutcome(artifact), 38);
+  const outcome = certifiedOutcome(artifact);
   const reasonLines = wrapText(
     artifact.summary === "N/A" ? artifact.outcome : artifact.summary,
-    68,
-    2,
+    92,
+    4,
   );
   const status = artifact.classification;
+
+  // Dynamic layout: compute interaction table height first
+  const interactionMetrics = artifact.metrics.length
+    ? artifact.metrics.slice(0, 4)
+    : [];
+  let interactionLineCount = 0;
+  for (let i = 0; i < interactionMetrics.length; i++) {
+    const { lineCount } = interactionTableRowStat(interactionMetrics[i]);
+    interactionLineCount += lineCount;
+  }
+  const interactionH = interactionMetrics.length
+    ? 44 + interactionLineCount * 14 + (interactionMetrics.length - 1) * 8 + 10
+    : 54;
+
+  const keyFindingsY = 774 + interactionH + 8;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${ARTIFACT_WIDTH}" height="${ARTIFACT_HEIGHT}" viewBox="0 0 ${ARTIFACT_WIDTH} ${ARTIFACT_HEIGHT}" role="img" aria-label="${escapeSvg(`${subjectA.name} versus ${subjectB.name} paper simulation report`)}">
@@ -84,21 +98,18 @@ export function renderShareableReportSvg(
   ${declassifiedStamp(704, 126, 300, 108, assets.stamp, -6)}
 
   <line x1="58" y1="196" x2="1022" y2="196" stroke="#211a14" stroke-width="1.5"/>
-  ${memoField(62, 224, "ANALYST:", "O.A.B. SYNTHETIC DESK")}
-  ${memoField(62, 249, "DIVISION:", "INTERACTION ANALYTICS")}
-  ${memoField(62, 274, "BRANCH:", "STRATEGIC ASSESSMENT")}
-  ${memoField(362, 224, "DATE:", "SESSION FILE")}
-  ${memoField(362, 249, "DOC TYPE:", "INTERACTION ASSESSMENT")}
-  ${memoField(362, 274, "PAGES:", "1 OF 1")}
+  ${memoField(62, 224, "BATTLE:", artifact.battleTypeLabel)}
+  ${memoField(62, 249, "SPEED:", artifact.speedLabel)}
+  ${memoField(62, 274, "ARENA:", artifact.arenaLabel)}
   ${memoField(650, 224, "ROUTING CODE:", `OV-${artifact.docRef}`)}
   ${memoField(650, 249, "SIM ID:", reportSerial)}
   ${memoField(650, 274, "CONFIDENCE:", `${clampScore(artifact.confidence)} / 100`)}
 
   <rect x="58" y="300" width="964" height="158" fill="none" stroke="#211a14" stroke-width="1.5"/>
   <text x="72" y="328" class="section">PRIMARY ASSESSMENT</text>
-  <text x="540" y="374" text-anchor="middle" class="outcome">${escapeSvg(outcome)}</text>
-  <text x="188" y="414" class="mono body">Reason:</text>
-  ${svgMultilineText(reasonLines, 260, 414, 23, "mono body")}
+  <text x="540" y="345" text-anchor="middle" class="outcome">${escapeSvg(outcome)}</text>
+  <text x="82" y="376" class="mono body">Reason:</text>
+  ${svgMultilineText(reasonLines, 154, 376, 23, "mono body")}
 
   <rect x="58" y="458" width="964" height="302" fill="none" stroke="#211a14" stroke-width="1.5"/>
   <line x1="540" y1="458" x2="540" y2="760" stroke="#211a14" stroke-width="1.2"/>
@@ -108,14 +119,39 @@ export function renderShareableReportSvg(
   ${subjectDossier(586, 492, subjectB, "B")}
 
   ${interactionTable(58, 774, artifact)}
-  ${assumptionsTable(58, 966, artifact)}
-  ${keyFindings(58, 1142, artifact)}
+  ${keyFindings(58, keyFindingsY, artifact)}
 
   <text x="62" y="1288" class="mono tiny">STANDARD ENCOUNTER // NO PREP UNLESS FILED // CANON-NEUTRAL INTERPRETATION // SOURCE RECORD RETAINED ON REPORT PAGE</text>
   <rect x="890" y="1262" width="132" height="42" fill="none" stroke="#211a14" stroke-width="1.1"/>
   <text x="956" y="1280" text-anchor="middle" class="mono tiny">O.A.B. FORM-IA-9</text>
   <text x="956" y="1298" text-anchor="middle" class="mono tiny">REV. 3.7.2</text>
 </svg>`;
+}
+
+function assumptionsMemoFields(
+  x: number,
+  y: number,
+  artifact: ShareableArtifact,
+) {
+  const rows = artifact.assumptions.slice(0, 3);
+  const fields: string[] = [];
+
+  for (let i = 0; i < rows.length && i < 3; i++) {
+    const row = rows[i];
+    const label = `${displayVerdict(row.label)}:`;
+    fields.push(
+      `<text x="${x}" y="${y + i * 25}" class="mono tiny"><tspan font-weight="900">${escapeSvg(label)}</tspan> ${escapeSvg(truncate(displayVerdict(row.value), 44))}</text>`,
+    );
+  }
+
+  // Fill remaining slots if assumptions < 3
+  while (fields.length < 3) {
+    fields.push(
+      `<text x="${x}" y="${y + fields.length * 25}" class="mono tiny">—</text>`,
+    );
+  }
+
+  return fields.join("\n");
 }
 
 function memoField(x: number, y: number, label: string, value: string) {
@@ -141,11 +177,6 @@ function subjectDossier(
   side: "A" | "B",
 ) {
   const profileLines = wrapText(subject.profile, side === "A" ? 26 : 24, 2);
-  const constraintLines = wrapText(
-    subject.constraint,
-    side === "A" ? 26 : 24,
-    2,
-  );
 
   return `<g>
     <text x="${x}" y="${y}" class="section">SUBJECT ${side} DOSSIER</text>
@@ -154,8 +185,6 @@ function subjectDossier(
     <text x="${x}" y="${y + 94}" class="mono body">Threat Class: ${escapeSvg(truncate(displayVerdict(subject.tier), 20))}</text>
     <text x="${x}" y="${y + 122}" class="mono body">Primary Route:</text>
     ${svgMultilineText(profileLines, x, y + 146, 21, "mono body")}
-    <text x="${x}" y="${y + 204}" class="mono body">Known Constraint:</text>
-    ${svgMultilineText(constraintLines, x, y + 226, 19, "mono body")}
   </g>`;
 }
 
@@ -216,71 +245,144 @@ function tapeStrip(
   return `<image href="${escapeSvg(tape)}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="none" opacity="0.88" transform="rotate(${rotate} ${x + width / 2} ${y + height / 2})"/>`;
 }
 
+function interactionTableRowStat(metric: ArtifactMetric): {
+  lineCount: number;
+} {
+  let count = 1; // label line
+  count += wrapText(displayVerdict(metric.assessment), 96, 4).length;
+  if (metric.countermeasure && metric.countermeasure !== "N/A") {
+    count += wrapText(metric.countermeasure, 92, 3).length;
+  }
+  return { lineCount: count };
+}
+
 function interactionTable(x: number, y: number, artifact: ShareableArtifact) {
   const rows = artifact.metrics.length ? artifact.metrics : [];
 
-  return `<g>
-    <rect x="${x}" y="${y}" width="964" height="176" fill="none" stroke="#211a14" stroke-width="1.5"/>
+  if (!rows.length) {
+    return `<g>
+    <rect x="${x}" y="${y}" width="964" height="54" fill="none" stroke="#211a14" stroke-width="1.5"/>
     <text x="${x + 20}" y="${y + 24}" class="section">ABILITY INTERACTION ASSESSMENT</text>
     <line x1="${x}" y1="${y + 32}" x2="${x + 964}" y2="${y + 32}" stroke="#211a14" stroke-width="1"/>
-    <line x1="${x + 250}" y1="${y + 32}" x2="${x + 250}" y2="${y + 176}" stroke="#211a14" stroke-width="1"/>
-    <line x1="${x + 520}" y1="${y + 32}" x2="${x + 520}" y2="${y + 176}" stroke="#211a14" stroke-width="1"/>
-    <line x1="${x + 790}" y1="${y + 32}" x2="${x + 790}" y2="${y + 176}" stroke="#211a14" stroke-width="1"/>
-    <text x="${x + 44}" y="${y + 57}" class="mono body">Interaction Node</text>
-    <text x="${x + 292}" y="${y + 57}" class="mono body">Assessment</text>
-    <text x="${x + 558}" y="${y + 57}" class="mono body">Resistance / Counter</text>
-    <text x="${x + 820}" y="${y + 57}" class="mono body">Verdict Weight</text>
-    ${rows.map((metric, index) => interactionTableRow(x, y + 80 + index * 23, metric, index)).join("\n")}
+    <text x="${x + 20}" y="${y + 50}" class="mono tiny">No interaction data filed.</text>
+  </g>`;
+  }
+
+  const rowSvgs: string[] = [];
+  let lineY = y + 46;
+
+  for (let i = 0; i < rows.length && i < 4; i++) {
+    const result = interactionTableRow(rows[i], i, lineY);
+    rowSvgs.push(result.svg);
+    lineY += result.lineCount * 14 + 8;
+  }
+
+  const h = lineY - y + 10;
+
+  return `<g>
+    <rect x="${x}" y="${y}" width="964" height="${h}" fill="none" stroke="#211a14" stroke-width="1.5"/>
+    <text x="${x + 20}" y="${y + 24}" class="section">ABILITY INTERACTION ASSESSMENT</text>
+    <line x1="${x}" y1="${y + 32}" x2="${x + 964}" y2="${y + 32}" stroke="#211a14" stroke-width="1"/>
+    ${rowSvgs.join("\n")}
   </g>`;
 }
 
 function interactionTableRow(
-  x: number,
-  y: number,
   metric: ArtifactMetric,
   index: number,
-) {
-  return `<g>
-    <line x1="${x}" y1="${y - 19}" x2="${x + 964}" y2="${y - 19}" stroke="#211a14" stroke-width="0.8" opacity="0.7"/>
-    <text x="${x + 20}" y="${y}" class="mono tiny">R-${String(index + 1).padStart(2, "0")} ${escapeSvg(truncate(metric.label, 25))}</text>
-    <text x="${x + 292}" y="${y}" class="mono tiny">${escapeSvg(truncate(displayVerdict(metric.assessment), 27))}</text>
-    <text x="${x + 558}" y="${y}" class="mono tiny">${escapeSvg(truncate(metric.countermeasure, 25))}</text>
-    <text x="${x + 858}" y="${y}" text-anchor="middle" class="mono tiny">${escapeSvg(truncate(displayVerdict(metric.weight), 17))}</text>
-  </g>`;
+  startY: number,
+): { lineCount: number; svg: string } {
+  const parts: string[] = [];
+  let cy = startY;
+
+  const labelText = `${index + 1}. ${displayVerdict(metric.label)} // ${displayVerdict(metric.weight)}`;
+  parts.push(
+    `<text x="78" y="${cy}" class="mono tiny"><tspan font-weight="900">${escapeSvg(labelText)}</tspan></text>`,
+  );
+  cy += 14;
+
+  const assessmentLines = wrapText(displayVerdict(metric.assessment), 96, 4);
+  for (const line of assessmentLines) {
+    parts.push(
+      `<text x="98" y="${cy}" class="mono tiny">${escapeSvg(line)}</text>`,
+    );
+    cy += 14;
+  }
+
+  if (metric.countermeasure && metric.countermeasure !== "N/A") {
+    const counterLines = wrapText(metric.countermeasure, 92, 3);
+    for (const line of counterLines) {
+      parts.push(
+        `<text x="98" y="${cy}" class="mono muted">${escapeSvg(line)}</text>`,
+      );
+      cy += 14;
+    }
+  }
+
+  return {
+    lineCount: (cy - startY) / 14,
+    svg: parts.join("\n"),
+  };
 }
 
-function assumptionsTable(
-  x: number,
-  y: number,
-  artifact: ShareableArtifact,
-) {
+function assumptionsTable(x: number, y: number, artifact: ShareableArtifact) {
   const rows = artifact.assumptions.slice(0, 6);
+  const perRow = Math.ceil(rows.length / 3);
+  const line1 = rows.slice(0, perRow);
+  const line2 = rows.slice(perRow, perRow * 2);
+  const line3 = rows.slice(perRow * 2);
+
+  const line1Text = line1
+    .map((row) => `${displayVerdict(row.label)}: ${displayVerdict(row.value)}`)
+    .join("  |  ");
+  const line2Text = line2
+    .map((row) => `${displayVerdict(row.label)}: ${displayVerdict(row.value)}`)
+    .join("  |  ");
+  const line3Text = line3
+    .map((row) => `${displayVerdict(row.label)}: ${displayVerdict(row.value)}`)
+    .join("  |  ");
 
   return `<g>
-    <rect x="${x}" y="${y}" width="964" height="160" fill="none" stroke="#211a14" stroke-width="1.5"/>
-    <text x="${x + 20}" y="${y + 25}" class="section">ENGAGEMENT ASSUMPTIONS</text>
-    <line x1="${x}" y1="${y + 34}" x2="${x + 964}" y2="${y + 34}" stroke="#211a14" stroke-width="1"/>
-    <line x1="${x + 378}" y1="${y + 34}" x2="${x + 378}" y2="${y + 160}" stroke="#211a14" stroke-width="1"/>
-    ${rows.map((row, index) => assumptionRow(x, y + 52 + index * 18, row, index)).join("\n")}
-  </g>`;
-}
-
-function assumptionRow(x: number, y: number, row: ArtifactAssumption, index: number) {
-  return `<g>
-    <line x1="${x}" y1="${y - 17}" x2="${x + 964}" y2="${y - 17}" stroke="#211a14" stroke-width="0.65" opacity="0.7"/>
-    <text x="${x + 20}" y="${y}" class="mono tiny">${index + 1}.</text>
-    <text x="${x + 44}" y="${y}" class="mono tiny">${escapeSvg(truncate(displayVerdict(row.label), 34))}</text>
-    <text x="${x + 396}" y="${y}" class="mono tiny">${escapeSvg(truncate(row.value, 74))}</text>
+    <rect x="${x}" y="${y}" width="964" height="58" fill="none" stroke="#211a14" stroke-width="1.5"/>
+    <text x="${x + 20}" y="${y + 17}" class="mono tiny">${escapeSvg(line1Text)}</text>
+    <text x="${x + 20}" y="${y + 33}" class="mono tiny">${escapeSvg(line2Text)}</text>
+    <text x="${x + 20}" y="${y + 49}" class="mono tiny">${escapeSvg(line3Text)}</text>
   </g>`;
 }
 
 function keyFindings(x: number, y: number, artifact: ShareableArtifact) {
   const findings = artifact.logs.slice(0, 3);
 
+  const textParts: string[] = [];
+  let cy = y + 46;
+
+  for (let i = 0; i < findings.length; i++) {
+    const finding = findings[i];
+    const label = `${i + 1}. ${displayVerdict(finding.label)}:`;
+    const lines = wrapText(finding.value, 92, 6);
+    const firstLine = lines.length ? escapeSvg(lines[0]) : "N/A";
+
+    textParts.push(
+      `<text x="${x + 22}" y="${cy}" class="mono tiny"><tspan font-weight="900">${escapeSvg(label)}</tspan> ${firstLine}</text>`,
+    );
+    cy += 16;
+
+    for (let j = 1; j < lines.length; j++) {
+      textParts.push(
+        `<text x="${x + 42}" y="${cy}" class="mono tiny">${escapeSvg(lines[j])}</text>`,
+      );
+      cy += 14;
+    }
+    cy += 4;
+  }
+
+  const h = cy - y + 12;
+
   return `<g>
-    <rect x="${x}" y="${y}" width="964" height="100" fill="none" stroke="#211a14" stroke-width="1.5"/>
+    <rect x="${x}" y="${y}" width="964" height="${h}" fill="none" stroke="#211a14" stroke-width="1.5"/>
     <text x="${x + 20}" y="${y + 25}" class="section">KEY FINDINGS</text>
-    ${findings.map((finding, index) => `<text x="${x + 22}" y="${y + 50 + index * 18}" class="mono tiny">${index + 1}. ${escapeSvg(displayVerdict(finding.label))}: ${escapeSvg(truncate(finding.value, 92))}</text>`).join("\n")}
+    <line x1="${x}" y1="${y + 34}" x2="${x + 964}" y2="${y + 34}" stroke="#211a14" stroke-width="1"/>
+    ${textParts.join("\n")}
   </g>`;
 }
 
@@ -435,7 +537,9 @@ export function canShareFile(file: File) {
 }
 
 export function canUseNativeShare() {
-  return typeof navigator !== "undefined" && typeof navigator.share === "function";
+  return (
+    typeof navigator !== "undefined" && typeof navigator.share === "function"
+  );
 }
 
 export async function copyText(text: string) {
@@ -551,12 +655,6 @@ function wrapText(text: unknown, maxChars: number, maxLines: number) {
   if (currentLine && lines.length < maxLines) lines.push(currentLine);
 
   if (lines.length > maxLines) return lines.slice(0, maxLines);
-
-  const hadOverflow = words.join(" ").length > lines.join(" ").length;
-  if (hadOverflow && lines.length) {
-    lines[lines.length - 1] =
-      `${lines[lines.length - 1].slice(0, maxChars - 3)}...`;
-  }
 
   return lines.length ? lines : ["N/A"];
 }
