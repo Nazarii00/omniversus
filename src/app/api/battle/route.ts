@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   BattleAnalysisError,
+  buildBattleCacheKey,
   completeBattleRunRecord,
   createBattleRunRecord,
   failBattleRunRecord,
+  findCachedBattleResult,
+  orientBattleResultForRequest,
   runBattleAnalysisWithMetadata,
   type RunBattleAnalysisOptions,
 } from "@/server/battle";
@@ -29,6 +32,13 @@ function readString(
   }
 
   return null;
+}
+
+function readBoolean(
+  body: Record<string, unknown>,
+  key: string,
+): boolean {
+  return body[key] === true;
 }
 
 function readOptions(body: Record<string, unknown>): RunBattleAnalysisOptions {
@@ -104,6 +114,30 @@ export async function POST(request: NextRequest) {
   }
 
   const options = readOptions(body);
+  const forceRefresh = readBoolean(body, "forceRefresh");
+
+  // --- Cache-first lookup ---------------------------------------------------
+  if (!forceRefresh) {
+    const cacheKey = buildBattleCacheKey(fighterA, fighterB, options);
+    const cached = await findCachedBattleResult(cacheKey);
+
+    if (cached) {
+      const result = orientBattleResultForRequest(
+        cached.result,
+        fighterA,
+        fighterB,
+      );
+
+      return NextResponse.json({
+        ...result,
+        generation: cached.generation,
+        battle_run_id: cached.battleRunId,
+        cached: true,
+      });
+    }
+  }
+
+  // --- Fresh battle ---------------------------------------------------------
   const battleRun = await createBattleRunRecord({
     fighterA,
     fighterB,
@@ -123,6 +157,7 @@ export async function POST(request: NextRequest) {
       ...result,
       generation,
       battle_run_id: battleRun?.id ?? null,
+      cached: false,
     });
   } catch (error) {
     console.error(error);

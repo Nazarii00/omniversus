@@ -63,6 +63,7 @@ function appealContext(appeal: Appeal) {
   const side = stringValue(target?.side);
   const chainId = stringValue(target?.chainId);
   const claimId = stringValue(target?.claimId);
+  const photoUrl = stringValue(metadata?.photoUrl);
 
   return {
     reportLabel:
@@ -90,6 +91,7 @@ function appealContext(appeal: Appeal) {
             .join(" / ")
         : null,
     targetText,
+    photoUrl,
   };
 }
 
@@ -147,6 +149,38 @@ function AppealDecisionForm({ appeal }: { appeal: Appeal }) {
       successMessage="Appeal resolved."
     >
       <input name="appealId" type="hidden" value={appeal.id} />
+      
+      {appeal.kind === UserAppealKind.SUBJECT_REQUEST ? (
+        <>
+          <label className={`${styles.field} ${styles.wide}`}>
+            <span>Subject Name</span>
+            <input 
+              name="subjectName" 
+              type="text" 
+              defaultValue={appeal.subjectName} 
+              required 
+            />
+          </label>
+          <label className={`${styles.field} ${styles.wide}`}>
+            <span>Summary & Details</span>
+            <textarea 
+              name="summary" 
+              defaultValue={appeal.proposedText ? `${appeal.proposedText}\n\n${appeal.body}` : appeal.body} 
+              rows={4} 
+              required
+            />
+          </label>
+          <label className={`${styles.field} ${styles.wide}`}>
+            <span>Photo URL</span>
+            <input 
+              name="photoUrl" 
+              type="url" 
+              defaultValue={appealContext(appeal).photoUrl || ""} 
+            />
+          </label>
+        </>
+      ) : null}
+
       <label className={`${styles.field} ${styles.wide}`}>
         <span>Resolution note</span>
         <textarea
@@ -208,6 +242,15 @@ function AppealCard({ appeal }: { appeal: Appeal }) {
       </dl>
 
       <AppealContext appeal={appeal} />
+
+      {appealContext(appeal).photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={appealContext(appeal).photoUrl as string}
+          alt={`Reference for ${appeal.subjectName}`}
+          style={{ width: "100%", maxHeight: 300, objectFit: "contain", margin: "1rem 0", borderRadius: 4, backgroundColor: "var(--color-bg-subtle)" }}
+        />
+      ) : null}
 
       <p className={styles.appealBody}>{appeal.body}</p>
 

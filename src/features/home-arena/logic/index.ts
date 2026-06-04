@@ -13,6 +13,7 @@ export {
   writeStoredArenaWallet,
 } from "./betting";
 export {
+  BATTLE_TIMELINE_OPENER_MS,
   BATTLE_TIMELINE_STEP_MS,
   battleShockCueCountForReport,
   battleHpForCue,

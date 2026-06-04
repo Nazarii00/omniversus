@@ -4,6 +4,7 @@ import type { ArenaCardSide, CardCrtGlitchImpact } from "../model";
 
 export const BATTLE_TIMELINE_STEP_MS = 1150;
 export const BATTLE_SHOCK_PULSE_MS = 520;
+export const BATTLE_TIMELINE_OPENER_MS = 680;
 
 export type BattleShockCue = {
   act: number;

@@ -6,6 +6,7 @@ import type { BattleReportJson } from "@/features/battle-report";
 
 import {
   BATTLE_TIMELINE_STEP_MS,
+  BATTLE_TIMELINE_OPENER_MS,
   battleHpForCue,
   battleShockCueCountForReport,
   battleTimelineMsForReport,
@@ -29,6 +30,7 @@ export default function useBattleTimeline() {
   const [battleEliminatedSide, setBattleEliminatedSide] =
     useState<ArenaCardSide | null>(null);
   const [battleGlitchResetToken, setBattleGlitchResetToken] = useState(0);
+  const [isBattleOpenerActive, setIsBattleOpenerActive] = useState(false);
   const [isBattleTimelineActive, setIsBattleTimelineActive] = useState(false);
 
   function clearBattleTimelineTimeouts() {
@@ -51,6 +53,7 @@ export default function useBattleTimeline() {
     setBattleShockCue(null);
     setBattleEliminatedSide(null);
     setBattleGlitchResetToken((current) => current + 1);
+    setIsBattleOpenerActive(false);
     setIsBattleTimelineActive(false);
     clearBattleTimelineTimeouts();
     resolveBattleTimelineRun();
@@ -64,16 +67,23 @@ export default function useBattleTimeline() {
     const timelineMs = battleTimelineMsForReport(report);
 
     setIsBattleTimelineActive(true);
+    setIsBattleOpenerActive(true);
 
     return new Promise<void>((resolve) => {
       battleTimelineRunRef.current = { report, resolve };
+
+      const openerTimeoutId = window.setTimeout(() => {
+        setIsBattleOpenerActive(false);
+      }, BATTLE_TIMELINE_OPENER_MS);
+
+      battleTimelineTimeoutsRef.current.push(openerTimeoutId);
 
       for (let act = 1; act <= shockCueCount; act += 1) {
         const timeoutId = window.setTimeout(
           () => {
             setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
           },
-          (act - 1) * BATTLE_TIMELINE_STEP_MS,
+          BATTLE_TIMELINE_OPENER_MS + (act - 1) * BATTLE_TIMELINE_STEP_MS,
         );
 
         battleTimelineTimeoutsRef.current.push(timeoutId);
@@ -83,9 +93,10 @@ export default function useBattleTimeline() {
         clearBattleTimelineTimeouts();
         setBattleShockCue(null);
         setBattleEliminatedSide(eliminatedCardSideForReport(report));
+        setIsBattleOpenerActive(false);
         setIsBattleTimelineActive(false);
         resolveBattleTimelineRun();
-      }, timelineMs);
+      }, BATTLE_TIMELINE_OPENER_MS + timelineMs);
 
       battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
     });
@@ -97,6 +108,7 @@ export default function useBattleTimeline() {
     clearBattleTimelineTimeouts();
     setBattleShockCue(null);
     setBattleEliminatedSide(eliminatedCardSideForReport(report));
+    setIsBattleOpenerActive(false);
     setIsBattleTimelineActive(false);
     resolveBattleTimelineRun();
   }
@@ -112,6 +124,7 @@ export default function useBattleTimeline() {
     battleEliminatedSide,
     battleGlitchResetToken,
     battleShockCue,
+    isBattleOpenerActive,
     isBattleTimelineActive,
     leftCrtImpact: cardCrtImpactForSide(battleShockCue, "left"),
     resetBattleTimeline,

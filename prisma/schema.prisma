@@ -854,6 +854,7 @@ model BattleRun {
   scenarioId      String?         @db.Uuid
   fighterAName    String
   fighterBName    String
+  cacheKey        String?
   status          BattleRunStatus @default(PENDING)
   requestedModel  String?
   resolvedModel   String?
@@ -871,5 +872,6 @@ model BattleRun {
   @@index([scenarioId])
   @@index([status])
   @@index([createdAt])
+  @@index([cacheKey, status])
   @@map("battle_runs")
 }

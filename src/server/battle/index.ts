@@ -44,6 +44,12 @@ export {
   type BattleRunHandle,
 } from "./runs";
 export {
+  buildBattleCacheKey,
+  findCachedBattleResult,
+  type CachedBattleResult,
+} from "./cache";
+export { orientBattleResultForRequest } from "./cacheOrientation";
+export {
   enforceBusinessCaps,
   normalizeBattleResult,
 } from "./pipeline/normalize";

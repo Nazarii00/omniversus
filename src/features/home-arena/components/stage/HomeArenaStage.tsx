@@ -54,6 +54,7 @@ type HomeArenaStageProps = {
 };
 
 const EMPTY_COMBATANT_OPTIONS: CombatantOption[] = [];
+const BATTLE_LOADING_CONSOLE_DELAY_MS = 520;
 
 export default function HomeArenaStage({
   combatantOptions,
@@ -106,20 +107,22 @@ export default function HomeArenaStage({
   const [reportSerialState, setReportSerial] = useState<number | undefined>();
   const [battleError, setBattleError] = useState("");
   const [isBattleRequestActive, setIsBattleRequestActive] = useState(false);
+  const [isBattleLoadingConsoleVisible, setIsBattleLoadingConsoleVisible] =
+    useState(false);
   const [isLoadoutConsoleOpen, setIsLoadoutConsoleOpen] = useState(false);
   const [loadoutFocusSide, setLoadoutFocusSide] =
     useState<ArenaCardSide>("left");
   const [arenaWallet, setArenaWallet] = useState<ArenaWallet>(
     readStoredArenaWallet,
   );
-  const [arenaBet, setArenaBet] =
-    useState<ArenaBetDraft>(DEFAULT_ARENA_BET);
+  const [arenaBet, setArenaBet] = useState<ArenaBetDraft>(DEFAULT_ARENA_BET);
   const [bettingStatus, setBettingStatus] = useState("BETTING_READY");
   const hasRunPersistenceEffect = useRef(false);
   const {
     battleEliminatedSide,
     battleGlitchResetToken,
     battleShockCue,
+    isBattleOpenerActive,
     isBattleTimelineActive,
     leftCrtImpact,
     resetBattleTimeline,
@@ -143,8 +146,15 @@ export default function HomeArenaStage({
   );
   const displayedEliminatedSide =
     battleEliminatedSide ?? persistedEliminatedSide;
-  const isBattleLoadingVisible =
+  const battleImpactPhase = battleShockCue
+    ? battleShockCue.act % 2 === 0
+      ? "even"
+      : "odd"
+    : undefined;
+  const isBattleSequenceActive =
     (isBattleRequestActive || isBattleTimelineActive) && !isReportOpen;
+  const isBattleLoadingVisible =
+    isBattleLoadingConsoleVisible && !isReportOpen;
   const isArenaLocked = isBattleRequestActive || isBattleTimelineActive;
   const betAmount = parseArenaBetAmount(arenaBet.amountText);
   const hasSelectedCombatants = Boolean(leftCard?.name && rightCard?.name);
@@ -155,10 +165,10 @@ export default function HomeArenaStage({
   const battleDisabledLabel = !hasSelectedCombatants
     ? "ENTER_2_NAMES"
     : !hasBattleCredit
-    ? "NO_CREDITS"
-    : !hasBetReputation
-      ? "LOW_REPUTATION"
-      : "ENTER_2_NAMES";
+      ? "NO_CREDITS"
+      : !hasBetReputation
+        ? "LOW_REPUTATION"
+        : "ENTER_2_NAMES";
 
   useEffect(() => {
     if (!hasRunPersistenceEffect.current) {
@@ -218,6 +228,7 @@ export default function HomeArenaStage({
     setBattleReport(null);
     setBattleError("");
     setIsBattleRequestActive(false);
+    setIsBattleLoadingConsoleVisible(false);
     resetBattleTimeline();
     clearLatestBattleReport();
   }
@@ -241,17 +252,37 @@ export default function HomeArenaStage({
     setBattleReport(null);
     setBattleError("");
     setIsBattleRequestActive(true);
+    setIsBattleLoadingConsoleVisible(false);
     setIsLoadoutConsoleOpen(false);
     setBettingStatus(lockResult.status);
     setArenaWallet(lockResult.wallet);
     resetBattleTimeline();
     clearLatestBattleReport();
 
+    let requestSettled = false;
+    let loadingConsoleTimeoutId: number | null = window.setTimeout(() => {
+      if (!requestSettled) {
+        setIsBattleLoadingConsoleVisible(true);
+      }
+    }, BATTLE_LOADING_CONSOLE_DELAY_MS);
+
+    function clearLoadingConsoleDelay() {
+      if (loadingConsoleTimeoutId === null) return;
+
+      window.clearTimeout(loadingConsoleTimeoutId);
+      loadingConsoleTimeoutId = null;
+    }
+
     try {
       const report = await requestBattleReport({
         fighterA: leftCard.name,
         fighterB: rightCard.name,
       });
+      requestSettled = true;
+      clearLoadingConsoleDelay();
+      setIsBattleRequestActive(false);
+      setIsBattleLoadingConsoleVisible(report.cached !== true);
+
       const timelineFinished = startBattleTimeline(report);
 
       setBattleReport(report);
@@ -268,11 +299,15 @@ export default function HomeArenaStage({
       setBattleReport(null);
       setIsReportReady(false);
       setBattleError(readBattleErrorMessage(error));
+      setIsBattleLoadingConsoleVisible(false);
       resetBattleTimeline();
       clearLatestBattleReport();
       throw error;
     } finally {
+      requestSettled = true;
+      clearLoadingConsoleDelay();
       setIsBattleRequestActive(false);
+      setIsBattleLoadingConsoleVisible(false);
     }
   }
 
@@ -310,9 +345,18 @@ export default function HomeArenaStage({
   return (
     <section
       className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
-      data-battle-loading={isBattleLoadingVisible ? "true" : undefined}
+      data-battle-loading={isBattleSequenceActive ? "true" : undefined}
+      data-battle-opener={isBattleOpenerActive ? "true" : undefined}
       data-view={isReportOpen ? "report" : "setup"}
     >
+      {isBattleOpenerActive ? (
+        <span aria-hidden="true" className="home-battle-opener">
+          <span className="home-battle-opener__shade" />
+          <span className="home-battle-opener__scan" />
+          <span className="home-battle-opener__line" />
+        </span>
+      ) : null}
+
       {battleShockCue ? (
         <span
           key={`${battleShockCue.runId}-${battleShockCue.act}`}
@@ -326,7 +370,7 @@ export default function HomeArenaStage({
         </span>
       ) : null}
 
-      {isBattleTimelineActive && !isReportOpen ? (
+      {isBattleTimelineActive && !isBattleOpenerActive && !isReportOpen ? (
         <button
           type="button"
           className="home-battle-skip"
@@ -358,15 +402,24 @@ export default function HomeArenaStage({
 
       {!isReportOpen ? (
         <ArenaBalancePanel
-          credits={arenaWallet.credits}
-          isLocked={isArenaLocked}
-          onTopUpCredits={topUpArenaCredits}
-          reputation={arenaWallet.reputation}
+          cr={arenaWallet.credits}
+          rp={arenaWallet.reputation}
+          username="PLAYER_001"
+          rank={214}
           status={bettingStatus}
+          onOpenProfile={() => {
+            // TODO: Navigate to profile page
+            console.log("Open profile");
+          }}
+          onTopUp={topUpArenaCredits}
         />
       ) : null}
 
-      <div className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center">
+      <div
+        className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center"
+        data-impact-act={battleShockCue?.act}
+        data-impact-phase={battleImpactPhase}
+      >
         <div className="home-arena-combat-zone w-full">
           <div className="home-arena-setup-grid grid w-full grid-cols-1 justify-items-center gap-7 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:items-center sm:gap-10 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:gap-12">
             <div className="sm:justify-self-end">
