@@ -53,8 +53,15 @@ export function RegisterForm() {
   async function handleOAuth(provider: "google" | "discord" | "twitter") {
     setOAuthPending(provider);
     try {
-      await signInWithProviderAction(provider);
-    } catch {
+      const result = await signInWithProviderAction(provider);
+      if (result.error) {
+        console.error(`[RegisterForm] OAuth ${provider} error:`, result.error);
+        setOAuthPending(null);
+      } else if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (err) {
+      console.error(`[RegisterForm] OAuth ${provider} error:`, err);
       setOAuthPending(null);
     }
   }

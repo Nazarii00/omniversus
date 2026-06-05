@@ -58,8 +58,7 @@ export async function signUpAction(
       });
 
       if (!existing) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (prisma.profile as any).create({
+        await prisma.profile.create({
           data: {
             supabaseId: data.user.id,
             username,
@@ -78,22 +77,30 @@ export async function signUpAction(
 
 export async function signInWithProviderAction(
   provider: "google" | "discord" | "twitter",
-) {
+): Promise<{ error: string | null; url?: string }> {
   const supabase = await createServerSupabaseClient();
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const redirectTo = `${siteUrl}/auth/callback`;
+
+  console.log(`[OAuth] Starting ${provider} sign in, redirectTo:`, redirectTo);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo,
     },
   });
 
   if (error) {
+    console.error(`[OAuth] ${provider} sign in error:`, error.message);
     return { error: error.message };
   }
 
+  console.log(`[OAuth] ${provider} got URL:`, data.url);
+
   if (data.url) {
-    redirect(data.url);
+    return { error: null, url: data.url };
   }
 
   return { error: "No redirect URL returned" };
