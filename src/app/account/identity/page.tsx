@@ -1,5 +1,8 @@
 import { getCurrentUser, signOutAction } from "@/features/user-account";
-import { getUserProfile, getUserBattles } from "@/lib/profile";
+import {
+  getUserProfile,
+  getUserBattles,
+} from "@/features/user-account/server/profile-data";
 import { getPrisma } from "@/server/db/prisma";
 import styles from "./page.module.css";
 

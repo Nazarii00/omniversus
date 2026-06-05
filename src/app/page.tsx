@@ -1,4 +1,4 @@
-import CRTBackgroundWrapper from "@/components/background/CRTBackgroundWrapper";
+import CRTBackgroundWrapper from "@/components/ui/background/CRTBackgroundWrapper";
 import { loadHomeArenaCombatants } from "@/features/home-arena/data/loadHomeArenaData";
 import { HomeArenaStage } from "@/features/home-arena";
 

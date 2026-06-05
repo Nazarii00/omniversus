@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/features/user-account";
-import { getUserBattles } from "@/lib/profile";
-import BattleHistory from "@/components/profile/BattleHistory";
+import { getUserBattles } from "@/features/user-account/server/profile-data";
+import BattleHistory from "@/features/user-account/components/battle-history";
 
 export default async function ArchivePage() {
   const user = await getCurrentUser();

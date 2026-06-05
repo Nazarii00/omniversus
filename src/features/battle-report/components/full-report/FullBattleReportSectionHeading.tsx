@@ -1,4 +1,4 @@
-import styles from "./FullBattleReportPage.module.css";
+import styles from "../../styles/FullBattleReportPage.module.css";
 
 export function SectionHeading({
   eyebrow,
