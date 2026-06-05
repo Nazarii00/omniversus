@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMNIVERSUS — VHS Battle Archive</title>
+<style>
+  /* ============================================================
+     RESET & BASE
+     ============================================================ */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    min-height: 100%;
+    background: #0a0b07;
+  }
+
+  body {
+    min-height: 100vh;
+    background: #0a0b07;
+    color: #a8ff78;
+    font-family: "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono", "Courier New", monospace;
+    font-feature-settings: "tnum" 1, "zero" 1;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* Full-page CRT scanlines */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.08) 0px,
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  /* ============================================================
+     ARCHIVE CONTAINER
+     ============================================================ */
+  .archive {
+    width: 100%;
+    max-width: 800px;
+  }
+
+  /* ============================================================
+     ARCHIVE HEADER
+     ============================================================ */
+  .archive__header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .archive__label {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    color: #4a6a3a;
+    border: 1px solid #4a6a3a;
+    padding: 0.2rem 0.8rem;
+    border-radius: 2px;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .archive__title {
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: #a8ff78;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(168, 255, 120, 0.3);
+  }
+
+  /* ============================================================
+     MONTH SECTION
+     ============================================================ */
+  .month {
+    margin-bottom: 2.5rem;
+  }
+
+  .month__label {
+    font-size: 0.65rem;
+    color: #4a6a3a;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-left: 0.25rem;
+  }
+
+  .month__label span {
+    color: #a8ff78;
+  }
+
+  /* ============================================================
+     CASSETTE ROW
+     ============================================================ */
+  .cassette-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding: 0.25rem;
+  }
+
+  /* ============================================================
+     CASSETTE 3D SCENE
+     ============================================================ */
+  .cassette-scene {
+    perspective: 500px;
+    width: 72px;
+    height: 108px;
+    flex-shrink: 0;
+  }
+
+  /* ============================================================
+     CASSETTE WRAPPER (preserve-3d)
+     ============================================================ */
+  .cassette {
+    position: relative;
+    width: 72px;
+    height: 108px;
+    transform-style: preserve-3d;
+    transform: rotateX(2deg) rotateY(-8deg);
+    transition: transform 0.25s ease, filter 0.25s ease;
+    cursor: default;
+  }
+
+  .cassette-scene:hover .cassette {
+    transform: rotateX(2deg) rotateY(-8deg) translateY(-8px);
+  }
+
+  /* ============================================================
+     CASSETTE FACE BASE
+     ============================================================ */
+  .cassette__face {
+    position: absolute;
+    backface-visibility: hidden;
+  }
+
+  /* ============================================================
+     FRONT FACE
+     ============================================================ */
+  .cassette__front {
+    width: 72px;
+    height: 108px;
+    top: 0;
+    left: 0;
+    transform: translateZ(4px);
+    border: 1px solid rgba(168, 255, 120, 0.25);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- Front face body fill --- */
+  .cassette__front::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* ============================================================
+     RESULT DOT (top-right)
+     ============================================================ */
+  .cassette__dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    z-index: 5;
+  }
+
+  /* ============================================================
+     TOP-FACE STRIP (visible at top of front)
+     ============================================================ */
+  .cassette__top-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    z-index: 1;
+  }
+
+  /* ============================================================
+     REEL ILLUSTRATION AREA
+     ============================================================ */
+  .cassette__reel-area {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 2;
+  }
+
+  /* --- Individual reel --- */
+  .cassette__reel {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #050805;
+    box-shadow:
+      inset 0 0 4px rgba(0, 0, 0, 0.9),
+      0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+
+  /* Reel hub */
+  .cassette__reel::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    transform: translate(-50%, -50%);
+  }
+
+  /* Wound tape arc */
+  .cassette__reel::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-top-color: transparent;
+    border-left-color: transparent;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  /* ============================================================
+     TAPE GUIDE CHANNEL (U-shape at bottom center)
+     ============================================================ */
+  .cassette__tape-guide {
+    position: absolute;
+    bottom: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 8px;
+    border-left: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-right: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    z-index: 3;
+  }
+
+  /* ============================================================
+     LABEL STICKER
+     ============================================================ */
+  .cassette__label {
+    position: relative;
+    z-index: 3;
+    height: 40px;
+    background: #0c1a09;
+    border: 1px solid rgba(168, 255, 120, 0.2);
+    border-radius: 0 0 3px 3px;
+    margin: 0 3px 3px 3px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 4px;
+    overflow: hidden;
+  }
+
+  .cassette__label-vs {
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    color: #a8ff78;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cassette__label-meta {
+    font-size: 6px;
+    color: #4a6a3a;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+  }
+
+  .cassette__label-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+  }
+
+  /* ============================================================
+     CRT SCANLINES ON FRONT FACE
+     ============================================================ */
+  .cassette__scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.12) 0px,
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    border-radius: 3px;
+  }
+
+  /* ============================================================
+     SIDE FACE (right side, 8px wide)
+     ============================================================ */
+  .cassette__side {
+    width: 8px;
+    height: 108px;
+    top: 0;
+    left: 72px;
+    transform: rotateY(90deg) translateZ(-68px);
+    transform-origin: left center;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* ============================================================
+     TOP FACE (5px tall, full width)
+     ============================================================ */
+  .cassette__top {
+    width: 72px;
+    height: 5px;
+    top: 0;
+    left: 0;
+    transform: rotateX(-90deg) translateZ(-5px);
+    transform-origin: center top;
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* ============================================================
+     RESULT STATE: WIN (green)
+     ============================================================ */
+  .cassette--win .cassette__front { border-color: rgba(74, 158, 40, 0.4); }
+  .cassette--win .cassette__front::before { background: #0d1f0a; }
+  .cassette--win .cassette__top-strip { background: #1e4016; }
+  .cassette--win .cassette__side { background: #162e10; }
+  .cassette--win .cassette__top { background: #1e4016; }
+  .cassette--win .cassette__dot { background: #6abf3e; box-shadow: 0 0 6px rgba(106, 191, 62, 0.75); }
+  .cassette--win .cassette__label { border-color: rgba(74, 158, 40, 0.3); }
+  .cassette--win .cassette__label-bar { background: #4a9e28; }
+
+  .cassette-scene:hover .cassette--win .cassette__front {
+    border-color: rgba(106, 191, 62, 0.7);
+  }
+
+  /* ============================================================
+     RESULT STATE: LOSS (red)
+     ============================================================ */
+  .cassette--loss .cassette__front { border-color: rgba(158, 40, 40, 0.4); }
+  .cassette--loss .cassette__front::before { background: #1f0a0a; }
+  .cassette--loss .cassette__top-strip { background: #401616; }
+  .cassette--loss .cassette__side { background: #2e1010; }
+  .cassette--loss .cassette__top { background: #401616; }
+  .cassette--loss .cassette__dot { background: #bf3e3e; box-shadow: 0 0 6px rgba(191, 62, 62, 0.75); }
+  .cassette--loss .cassette__label { border-color: rgba(158, 40, 40, 0.3); }
+  .cassette--loss .cassette__label-bar { background: #9e2828; }
+
+  .cassette-scene:hover .cassette--loss .cassette__front {
+    border-color: rgba(191, 62, 62, 0.7);
+  }
+
+  /* ============================================================
+     RESULT STATE: DRAW (amber)
+     ============================================================ */
+  .cassette--draw .cassette__front { border-color: rgba(158, 120, 40, 0.4); }
+  .cassette--draw .cassette__front::before { background: #1a150a; }
+  .cassette--draw .cassette__top-strip { background: #3d3010; }
+  .cassette--draw .cassette__side { background: #2e2510; }
+  .cassette--draw .cassette__top { background: #3d3010; }
+  .cassette--draw .cassette__dot { background: #c9a03e; box-shadow: 0 0 6px rgba(201, 160, 62, 0.75); }
+  .cassette--draw .cassette__label { border-color: rgba(158, 120, 40, 0.3); }
+  .cassette--draw .cassette__label-bar { background: #9e7828; }
+
+  .cassette-scene:hover .cassette--draw .cassette__front {
+    border-color: rgba(201, 160, 62, 0.7);
+  }
+
+  /* ============================================================
+     FOOTER STATS
+     ============================================================ */
+  .archive__footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(74, 106, 58, 0.3);
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: #4a6a3a;
+  }
+
+  .archive__footer span {
+    color: #a8ff78;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="archive">
+
+  <!-- ==========================================================
+       HEADER
+       ========================================================== -->
+  <header class="archive__header">
+    <div class="archive__label">OMNIVERSUS_ARCHIVE</div>
+    <h1 class="archive__title">Battle History</h1>
+  </header>
+
+  <!-- ==========================================================
+       MONTH: JUNE 2026
+       ========================================================== -->
+  <section class="month">
+    <p class="month__label">// <span>ЧЕРВЕНЬ 2026</span> · 5 RECORDED</p>
+    <div class="cassette-row">
+
+      <!-- WIN vs SHADOWBYTE  03.06  2:1 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--win">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs SHADOWBYTE</span>
+              <span class="cassette__label-meta">03.06 · 2:1</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- LOSS vs NIGHTOWL  05.06  0:3 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--loss">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs NIGHTOWL</span>
+              <span class="cassette__label-meta">05.06 · 0:3</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- DRAW vs FLUXCORE  05.06  1:1 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--draw">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs FLUXCORE</span>
+              <span class="cassette__label-meta">05.06 · 1:1</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- WIN vs PRISM  04.06  3:0 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--win">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs PRISM</span>
+              <span class="cassette__label-meta">04.06 · 3:0</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- WIN vs IRONCLAD  01.06  3:1 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--win">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs IRONCLAD</span>
+              <span class="cassette__label-meta">01.06 · 3:1</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       MONTH: MAY 2026
+       ========================================================== -->
+  <section class="month">
+    <p class="month__label">// <span>МАЙ 2026</span> · 3 RECORDED</p>
+    <div class="cassette-row">
+
+      <!-- WIN vs VOIDPULSE  28.05  2:0 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--win">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs VOIDPULSE</span>
+              <span class="cassette__label-meta">28.05 · 2:0</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- LOSS vs REDLINE  21.05  1:2 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--loss">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs REDLINE</span>
+              <span class="cassette__label-meta">21.05 · 1:2</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+      <!-- DRAW vs STATIC  14.05  2:2 -->
+      <div class="cassette-scene">
+        <div class="cassette cassette--draw">
+          <div class="cassette__face cassette__front">
+            <div class="cassette__top-strip"></div>
+            <div class="cassette__dot"></div>
+            <div class="cassette__reel-area">
+              <div class="cassette__reel"></div>
+              <div class="cassette__reel"></div>
+              <div class="cassette__tape-guide"></div>
+            </div>
+            <div class="cassette__label">
+              <span class="cassette__label-vs">vs STATIC</span>
+              <span class="cassette__label-meta">14.05 · 2:2</span>
+              <div class="cassette__label-bar"></div>
+            </div>
+            <div class="cassette__scanlines"></div>
+          </div>
+          <div class="cassette__face cassette__side"></div>
+          <div class="cassette__face cassette__top"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FOOTER STATS
+       ========================================================== -->
+  <footer class="archive__footer">
+    WIN_RATE <span>57%</span> · TOTAL <span>8</span> · STREAK <span>x2</span>
+  </footer>
+
+</div>
+
+</body>
+</html>

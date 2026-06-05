@@ -253,6 +253,21 @@ enum BattleRunStatus {
   CANCELLED
 }
 
+model Profile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  supabaseId  String   @unique
+  username    String   @unique
+  displayName String?
+  avatarUrl   String?
+  clearance   String   @default("SIGMA-1")
+  reputation  Int      @default(0)
+  credits     Int      @default(100)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
 model Subject {
   id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug            String       @unique

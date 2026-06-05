@@ -1,0 +1,239 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.backButton {
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+  border: 1px solid rgba(104, 183, 104, 0.25);
+  border-radius: 4px;
+  color: #68b768;
+  font-size: 0.75rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.backButton:hover {
+  background: rgba(104, 183, 104, 0.1);
+  border-color: rgba(104, 183, 104, 0.45);
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #d7e2d6;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.logoutButton {
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: 1px solid rgba(224, 108, 117, 0.3);
+  border-radius: 4px;
+  color: #e06c75;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.logoutButton:hover {
+  background: rgba(224, 108, 117, 0.1);
+  border-color: rgba(224, 108, 117, 0.5);
+}
+
+.profileCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(104, 183, 104, 0.15);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(104, 183, 104, 0.12);
+  border: 1px solid rgba(104, 183, 104, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #68b768;
+  flex-shrink: 0;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.displayName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d7e2d6;
+}
+
+.email {
+  font-size: 0.78rem;
+  color: rgba(215, 226, 214, 0.5);
+}
+
+.section {
+  margin-top: 2.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d7e2d6;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.battlesLink {
+  font-size: 0.78rem;
+  color: #68b768;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.battlesLink:hover {
+  text-decoration: underline;
+}
+
+.battleItem {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(104, 183, 104, 0.1);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.battleItem + .battleItem {
+  margin-top: 0.5rem;
+}
+
+.fighters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #d7e2d6;
+}
+
+.fighterName {
+  font-weight: 500;
+}
+
+.vs {
+  color: rgba(215, 226, 214, 0.3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.battleMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: rgba(215, 226, 214, 0.5);
+}
+
+.statusBadge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statusCompleted {
+  background: rgba(104, 183, 104, 0.12);
+  color: #68b768;
+  border: 1px solid rgba(104, 183, 104, 0.25);
+}
+
+.statusPending {
+  background: rgba(215, 226, 214, 0.08);
+  color: rgba(215, 226, 214, 0.6);
+  border: 1px solid rgba(215, 226, 214, 0.15);
+}
+
+.statusFailed {
+  background: rgba(224, 108, 117, 0.12);
+  color: #e06c75;
+  border: 1px solid rgba(224, 108, 117, 0.25);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem 0;
+  color: rgba(215, 226, 214, 0.35);
+  font-size: 0.85rem;
+}
+
+.viewBattles {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(104, 183, 104, 0.12);
+  border: 1px solid rgba(104, 183, 104, 0.25);
+  border-radius: 4px;
+  color: #68b768;
+  font-size: 0.8rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.viewBattles:hover {
+  background: rgba(104, 183, 104, 0.2);
+  border-color: rgba(104, 183, 104, 0.45);
+}

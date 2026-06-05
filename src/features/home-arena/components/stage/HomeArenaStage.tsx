@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   BattleResultPanel,
@@ -117,6 +118,7 @@ export default function HomeArenaStage({
   );
   const [arenaBet, setArenaBet] = useState<ArenaBetDraft>(DEFAULT_ARENA_BET);
   const [bettingStatus, setBettingStatus] = useState("BETTING_READY");
+  const router = useRouter();
   const hasRunPersistenceEffect = useRef(false);
   const {
     battleEliminatedSide,
@@ -153,8 +155,7 @@ export default function HomeArenaStage({
     : undefined;
   const isBattleSequenceActive =
     (isBattleRequestActive || isBattleTimelineActive) && !isReportOpen;
-  const isBattleLoadingVisible =
-    isBattleLoadingConsoleVisible && !isReportOpen;
+  const isBattleLoadingVisible = isBattleLoadingConsoleVisible && !isReportOpen;
   const isArenaLocked = isBattleRequestActive || isBattleTimelineActive;
   const betAmount = parseArenaBetAmount(arenaBet.amountText);
   const hasSelectedCombatants = Boolean(leftCard?.name && rightCard?.name);
@@ -408,8 +409,7 @@ export default function HomeArenaStage({
           rank={214}
           status={bettingStatus}
           onOpenProfile={() => {
-            // TODO: Navigate to profile page
-            console.log("Open profile");
+            router.push("/account");
           }}
           onTopUp={topUpArenaCredits}
         />
