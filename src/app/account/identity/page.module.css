@@ -1,0 +1,229 @@
+/* ============================================================
+   IDENTITY PAGE — TWO-COLUMN DESKTOP PROFILE
+   ============================================================ */
+
+.identity {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 4rem;
+  padding-top: 3rem;
+}
+
+/* ============================================================
+   LEFT COLUMN — PROFILE INFO
+   ============================================================ */
+
+.profileLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 60vh;
+  border-right: 1px solid rgba(74, 122, 74, 0.25);
+  padding-right: 2.5rem;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border: 2px solid #4a7a4a;
+  border-radius: 50%;
+  background: #0d130d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatarInitial {
+  font-size: 2.4rem;
+  color: #00ff41;
+  font-weight: 600;
+  z-index: 1;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  text-transform: uppercase;
+}
+
+.idDivider {
+  border: none;
+  border-top: 1px solid rgba(74, 122, 74, 0.25);
+  margin: 0;
+}
+
+.idMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.idRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.idLabel {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #4a7a4a;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+.idValue {
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: #00ff41;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+.idValueDim {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: #00ff41;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+/* ============================================================
+   RIGHT COLUMN — STATS
+   ============================================================ */
+
+.profileRight {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.statsGrid {
+  display: flex;
+  gap: 2rem;
+}
+
+.statCard {
+  flex: 1;
+  padding: 1.25rem;
+  border: 1px solid rgba(74, 122, 74, 0.25);
+  border-radius: 2px;
+  background: rgba(0, 255, 65, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.statLabel {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: #4a7a4a;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+.statValue {
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  color: #00ff41;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  line-height: 1;
+}
+
+/* ============================================================
+   RECENT ACTIVITY SECTION
+   ============================================================ */
+
+.activitySection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityLabel {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: #4a7a4a;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+.activityRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 2px solid #4a7a4a;
+  background: rgba(0, 255, 65, 0.02);
+  border-radius: 0 2px 2px 0;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  font-size: 13px;
+}
+
+.activityOpponent {
+  color: #00ff41;
+  flex: 1;
+}
+
+.activityResult {
+  color: #00ff41;
+  min-width: 60px;
+  text-align: right;
+}
+
+.activityResultWin {
+  color: #00ff41;
+}
+
+.activityResultLoss {
+  color: #e06c75;
+}
+
+.activityDate {
+  color: #4a7a4a;
+  min-width: 90px;
+  text-align: right;
+  font-size: 11px;
+}
+
+/* ============================================================
+   SIGN OUT BUTTON
+   ============================================================ */
+
+.signOutButton {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(224, 108, 117, 0.3);
+  border-radius: 2px;
+  color: #e06c75;
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  margin-top: auto;
+}
+
+.signOutButton:hover {
+  background: rgba(224, 108, 117, 0.1);
+  border-color: rgba(224, 108, 117, 0.5);
+}

@@ -17,7 +17,7 @@ import {
 import { FactIssueButton } from "./FactIssueButton";
 import { claimTargetId } from "./fullReportAnchors";
 import { SectionHeading } from "./FullBattleReportSectionHeading";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "../../styles/FullBattleReportPage.module.css";
 
 const CHAIN_ROLE_LABELS: Record<string, string> = {
   ANTI_ARGUMENT: "Counter-route",

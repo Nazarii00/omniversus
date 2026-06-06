@@ -25,7 +25,7 @@ import {
   VerdictBrief,
   VerdictStack,
 } from "./FullBattleReportSections";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "../../styles/FullBattleReportPage.module.css";
 
 type ReportPortrait = NonNullable<
   NonNullable<BattleReportJson["fighters"]>[number]["portrait"]

@@ -13,7 +13,7 @@ import {
 
 import { findCompletion, findMatches } from "../../logic";
 import type { ArenaCardSide, CombatantOption } from "../../model";
-import { SubjectRequestDialog } from "@/features/appeals/components/SubjectRequestDialog";
+import { SubjectRequestDialog } from "@/features/home-arena/components/subject-request/SubjectRequestDialog";
 
 type CombatantDrafts = Record<ArenaCardSide, string>;
 type CaretPositions = Record<ArenaCardSide, number>;
@@ -56,7 +56,7 @@ export default function CombatantLoadoutConsole({
     number | null
   >(null);
   const [showSuggestDialog, setShowSuggestDialog] = useState(false);
-  
+
   const leftInputRef = useRef<HTMLInputElement | null>(null);
   const rightInputRef = useRef<HTMLInputElement | null>(null);
   const activeMatches = useMemo(
@@ -420,12 +420,10 @@ export default function CombatantLoadoutConsole({
               ))
             ) : (
               <div className="home-arena-loadout-empty">
-                <p>
-                  No DB matches found for &quot;{drafts[activeSide]}&quot;
-                </p>
-                <button 
-                  type="button" 
-                  className="home-loadout-console__match" 
+                <p>No DB matches found for &quot;{drafts[activeSide]}&quot;</p>
+                <button
+                  type="button"
+                  className="home-loadout-console__match"
                   onClick={() => setShowSuggestDialog(true)}
                 >
                   <span>--</span>
@@ -453,11 +451,11 @@ export default function CombatantLoadoutConsole({
           </div>
         </div>
       </form>
-      
+
       {showSuggestDialog && (
-        <SubjectRequestDialog 
-          initialSubjectName={drafts[activeSide]} 
-          onClose={() => setShowSuggestDialog(false)} 
+        <SubjectRequestDialog
+          initialSubjectName={drafts[activeSide]}
+          onClose={() => setShowSuggestDialog(false)}
         />
       )}
     </div>

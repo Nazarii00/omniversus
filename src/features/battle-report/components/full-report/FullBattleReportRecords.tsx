@@ -21,7 +21,7 @@ import {
 import { FactIssueButton } from "./FactIssueButton";
 import { claimTargetId } from "./fullReportAnchors";
 import { SectionHeading } from "./FullBattleReportSectionHeading";
-import styles from "./FullBattleReportPage.module.css";
+import styles from "../../styles/FullBattleReportPage.module.css";
 
 type ClaimReviewState = "danger" | "caution" | "stable";
 

@@ -1,0 +1,78 @@
+/* ============================================================
+   COMMENDATIONS PAGE
+   ============================================================ */
+
+.commendations {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  color: #00ff41;
+  letter-spacing: 0.15em;
+  margin: 0 0 0 0;
+  text-transform: uppercase;
+  font-weight: 400;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  text-align: left;
+}
+
+.commendationsEmpty {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: #00ff41;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  margin: 0;
+}
+
+.commendationsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.lockedBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0.75rem;
+  border: 1px solid rgba(74, 122, 74, 0.4);
+  border-radius: 2px;
+  background: rgba(74, 122, 74, 0.05);
+  min-height: 140px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.lockedBadge:hover {
+  border-color: rgba(0, 255, 65, 0.2);
+  background: rgba(0, 255, 65, 0.03);
+}
+
+.lockedBadgeIcon {
+  font-size: 24px;
+  color: #4a7a4a;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}
+
+.lockedBadgeLabel {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #4a7a4a;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}

@@ -21,7 +21,7 @@ import {
   type ShareableArtifact,
   type ShareableReportActionsProps,
 } from "./shareableReportArtifactRenderer";
-import styles from "./ShareableReportArtifact.module.css";
+import styles from "../../styles/ShareableReportArtifact.module.css";
 
 type ExportStatus = {
   tone: "ok" | "error" | "idle";
