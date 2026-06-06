@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { MiddlewareHandler, MiddlewareContext } from "@/server/middleware";
+import type { MiddlewareHandler } from "@/server/middleware";
 import { createServerClient } from "@supabase/ssr";
 
 export const supabaseSessionHandler: MiddlewareHandler = async (
