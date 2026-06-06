@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useCallback, useState } from "react";
-import { signInAction, signInWithProviderAction } from "../actions/authActions";
+import { signInAction } from "../actions/authActions";
 import styles from "../styles/auth.module.css";
 
 type FieldError = string | null;
@@ -40,20 +40,9 @@ export function LoginForm() {
     return !emailErr && !passwordErr;
   }, [email, password]);
 
-  async function handleOAuth(provider: "google" | "discord" | "twitter") {
+  function handleOAuth(provider: "google" | "discord" | "twitter") {
     setOAuthPending(provider);
-    try {
-      const result = await signInWithProviderAction(provider);
-      if (result.error) {
-        console.error(`[LoginForm] OAuth ${provider} error:`, result.error);
-        setOAuthPending(null);
-      } else if (result.url) {
-        window.location.href = result.url;
-      }
-    } catch (err) {
-      console.error(`[LoginForm] OAuth ${provider} error:`, err);
-      setOAuthPending(null);
-    }
+    window.location.href = `/auth/sign-in/${provider}`;
   }
 
   return (

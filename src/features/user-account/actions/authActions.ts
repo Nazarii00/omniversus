@@ -75,37 +75,6 @@ export async function signUpAction(
   redirect("/account");
 }
 
-export async function signInWithProviderAction(
-  provider: "google" | "discord" | "twitter",
-): Promise<{ error: string | null; url?: string }> {
-  const supabase = await createServerSupabaseClient();
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const redirectTo = `${siteUrl}/auth/callback`;
-
-  console.log(`[OAuth] Starting ${provider} sign in, redirectTo:`, redirectTo);
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo,
-    },
-  });
-
-  if (error) {
-    console.error(`[OAuth] ${provider} sign in error:`, error.message);
-    return { error: error.message };
-  }
-
-  console.log(`[OAuth] ${provider} got URL:`, data.url);
-
-  if (data.url) {
-    return { error: null, url: data.url };
-  }
-
-  return { error: "No redirect URL returned" };
-}
-
 export async function signOutAction() {
   const supabase = await createServerSupabaseClient();
 

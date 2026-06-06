@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useCallback, useState } from "react";
-import { signUpAction, signInWithProviderAction } from "../actions/authActions";
+import { signUpAction } from "../actions/authActions";
 import styles from "../styles/auth.module.css";
 
 type FieldError = string | null;
@@ -50,20 +50,9 @@ export function RegisterForm() {
     return !usernameErr && !emailErr && !passwordErr;
   }, [username, email, password]);
 
-  async function handleOAuth(provider: "google" | "discord" | "twitter") {
+  function handleOAuth(provider: "google" | "discord" | "twitter") {
     setOAuthPending(provider);
-    try {
-      const result = await signInWithProviderAction(provider);
-      if (result.error) {
-        console.error(`[RegisterForm] OAuth ${provider} error:`, result.error);
-        setOAuthPending(null);
-      } else if (result.url) {
-        window.location.href = result.url;
-      }
-    } catch (err) {
-      console.error(`[RegisterForm] OAuth ${provider} error:`, err);
-      setOAuthPending(null);
-    }
+    window.location.href = `/auth/sign-in/${provider}`;
   }
 
   return (
