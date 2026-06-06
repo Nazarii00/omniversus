@@ -1,0 +1,63 @@
+/* ============================================================
+   INTEL PAGE
+   ============================================================ */
+
+.intel {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  color: #00ff41;
+  letter-spacing: 0.15em;
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 400;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  text-align: left;
+}
+
+.intelEmpty {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: #00ff41;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  margin: 0;
+}
+
+.intelPanels {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.panelPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(74, 122, 74, 0.4);
+  background: rgba(74, 122, 74, 0.03);
+  border-radius: 2px;
+  height: 160px;
+}
+
+.panelLarge {
+  height: 200px;
+}
+
+.panelLabel {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: #4a7a4a;
+  text-transform: uppercase;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+}

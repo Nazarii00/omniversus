@@ -6,3 +6,887 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum SubjectKind {
+  FICTIONAL_CHARACTER
+  REAL_PERSON
+  ANIMAL
+  SPECIES
+  ARMY
+  ORGANIZATION
+  TEAM
+  VEHICLE
+  WEAPON
+  OBJECT
+  NATURAL_FORCE
+  LOCATION
+  ABSTRACT_ENTITY
+  CUSTOM_ENTITY
+  OTHER
+}
+
+enum OriginMedium {
+  COMIC
+  MANGA
+  ANIME
+  MOVIE
+  TV
+  GAME
+  NOVEL
+  LIGHT_NOVEL
+  WEB
+  MYTHOLOGY
+  HISTORY
+  REAL_WORLD
+  CUSTOM
+  MIXED
+  UNKNOWN
+}
+
+enum CanonScope {
+  PRIMARY_CANON
+  COMPOSITE
+  MANGA
+  ANIME
+  COMIC_MAINLINE
+  GAME_CANON
+  MOVIE
+  TV
+  NOVEL
+  LIGHT_NOVEL
+  REAL_WORLD
+  MYTHIC
+  CUSTOM
+  UNKNOWN
+}
+
+enum ReviewStatus {
+  VERIFIED
+  ACCEPTED
+  REQUIRES_REVIEW
+  CONTESTED
+  REJECTED
+  MODEL_INFERRED
+}
+
+enum UserAppealKind {
+  INFO_APPEAL
+  SUBJECT_REQUEST
+}
+
+enum ProvenanceKind {
+  MANUAL_DB
+  IMPORTED_SOURCE
+  RAG_RETRIEVED
+  MODEL_INFERRED
+  MIXED
+  UNKNOWN
+}
+
+enum ConfidenceBand {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CapabilityCategory {
+  ATTACK_POTENCY
+  PHYSICAL_STRENGTH
+  SPEED
+  DURABILITY
+  STAMINA
+  RANGE
+  INTELLIGENCE
+  SKILL
+  SENSES
+  STEALTH
+  MOBILITY
+  ENDURANCE
+  LOGISTICS
+  COMMAND_STRUCTURE
+  NUMBERS
+  TERRITORY_CONTROL
+  OTHER
+}
+
+enum AbilityType {
+  DAMAGE
+  DEFENSE
+  HEALING
+  REGENERATION
+  IMMORTALITY
+  MIND
+  SOUL
+  TIME
+  SPACE
+  SEALING
+  BFR
+  CONCEPTUAL
+  CAUSALITY
+  DOMAIN
+  PASSIVE
+  SUMMONING
+  TRANSFORMATION
+  UTILITY
+  ENVIRONMENTAL
+  OTHER
+}
+
+enum EquipmentCategory {
+  WEAPON
+  ARMOR
+  VEHICLE
+  TOOL
+  ARTIFACT
+  RESOURCE
+  INFRASTRUCTURE
+  STANDARD_LOADOUT
+  OPTIONAL_LOADOUT
+  OTHER
+}
+
+enum ConditionKind {
+  WIN
+  LOSS
+}
+
+enum ConditionType {
+  STAT_CHECK
+  DAMAGE
+  KO
+  DEATH
+  INCAP
+  BFR
+  SEALING
+  STAMINA
+  ATTRITION
+  HAX
+  SKILL
+  ENVIRONMENT
+  OBJECTIVE
+  SUBJECTIVE_EDGE
+  OTHER
+}
+
+enum FeatKind {
+  FEAT
+  ANTI_FEAT
+  STATEMENT
+  CALC
+  SCALING
+}
+
+enum ScalingRelation {
+  SCALES_TO
+  SCALES_ABOVE
+  SCALES_BELOW
+  PARTIALLY_SCALES_TO
+  DOES_NOT_SCALE
+  CONTESTED_SCALE
+}
+
+enum EvidenceSourceType {
+  CANON
+  OFFICIAL_PROFILE
+  OFFICIAL_STATEMENT
+  VSBW
+  FANDOM
+  WIKI
+  CALC
+  INTERVIEW
+  MANUAL_NOTE
+  IMPORTED_PAGE
+  RAG_DOCUMENT
+  OTHER
+}
+
+enum SourceReliability {
+  PRIMARY
+  SECONDARY
+  COMMUNITY
+  EXTRACTED_PAGE
+  UNKNOWN
+}
+
+enum EnvironmentKind {
+  ARENA
+  CITY
+  BUILDING
+  FOREST
+  OCEAN
+  DESERT
+  MOUNTAIN
+  PLANET
+  SPACE
+  DIMENSION
+  REAL_LOCATION
+  DIGITAL_SPACE
+  CUSTOM
+  OTHER
+}
+
+enum ModifierCategory {
+  MENTAL_STATE
+  STAT_CHANGE
+  RULE_CHANGE
+  EQUIPMENT_CHANGE
+  ENVIRONMENTAL
+  TEAM_STRUCTURE
+  WIN_CONDITION
+  KNOWLEDGE
+  PREP_TIME
+  SCALE
+  OTHER
+}
+
+enum BattleSide {
+  A
+  B
+  BOTH
+  SYSTEM
+}
+
+enum BattleRunStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Profile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  supabaseId  String   @unique
+  username    String   @unique
+  displayName String?
+  avatarUrl   String?
+  clearance   String   @default("SIGMA-1")
+  reputation  Int      @default(0)
+  credits     Int      @default(100)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
+model Subject {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug            String       @unique
+  displayName     String
+  canonicalName   String
+  kind            SubjectKind
+  originMedium    OriginMedium
+  originName      String?
+  summary         String?
+  metadata        Json?
+  createdByUserId String?      @db.Uuid
+  createdAt       DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(6)
+
+  aliases            SubjectAlias[]
+  versions           SubjectVersion[]
+  createdFromAppeals UserAppeal[]     @relation("UserAppealCreatedSubject")
+
+  @@index([kind])
+  @@index([originMedium])
+  @@map("subjects")
+}
+
+model SubjectAlias {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectId       String   @db.Uuid
+  value           String
+  normalizedValue String
+  locale          String?
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, normalizedValue])
+  @@index([normalizedValue])
+  @@map("subject_aliases")
+}
+
+model SubjectVersion {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectId       String         @db.Uuid
+  slug            String
+  label           String
+  canonScope      CanonScope
+  continuity      String?
+  era             String?
+  form            String?
+  state           String?
+  isDefault       Boolean        @default(false)
+  summary         String?
+  confidenceBand  ConfidenceBand @default(MEDIUM)
+  confidenceScore Int            @default(50)
+  status          ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind @default(UNKNOWN)
+  metadata        Json?
+  createdByUserId String?        @db.Uuid
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  subject              Subject               @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  capabilities         CapabilityAssertion[]
+  abilities            Ability[]
+  resistances          Resistance[]
+  equipment            EquipmentItem[]
+  weaknesses           Weakness[]
+  conditions           WinLossCondition[]
+  feats                FeatAssertion[]
+  scalingFrom          ScalingEdge[]         @relation("ScalingFrom")
+  scalingTo            ScalingEdge[]         @relation("ScalingTo")
+  compositionChildren  SubjectComposition[]  @relation("CompositionParent")
+  compositionUsages    SubjectComposition[]  @relation("CompositionChild")
+  scenarioParticipants ScenarioParticipant[]
+  snapshots            DossierSnapshot[]
+  suggestions          FactSuggestion[]
+  targetedUserAppeals  UserAppeal[]          @relation("UserAppealTargetVersion")
+  createdFromAppeals   UserAppeal[]          @relation("UserAppealCreatedVersion")
+
+  @@unique([subjectId, slug])
+  @@index([canonScope])
+  @@index([status])
+  @@map("subject_versions")
+}
+
+model SubjectComposition {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentVersionId String  @db.Uuid
+  childVersionId  String? @db.Uuid
+  label           String
+  countText       String?
+  role            String?
+  notes           String?
+  metadata        Json?
+
+  parentVersion SubjectVersion  @relation("CompositionParent", fields: [parentVersionId], references: [id], onDelete: Cascade)
+  childVersion  SubjectVersion? @relation("CompositionChild", fields: [childVersionId], references: [id], onDelete: SetNull)
+
+  @@index([parentVersionId])
+  @@index([childVersionId])
+  @@map("subject_compositions")
+}
+
+model CapabilityAssertion {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String             @db.Uuid
+  category        CapabilityCategory
+  subtype         String?
+  valueText       String
+  normalizedTier  String?
+  normalizedValue Decimal?           @db.Decimal(24, 8)
+  unit            String?
+  context         String?
+  limitations     String?
+  confidenceBand  ConfidenceBand     @default(MEDIUM)
+  confidenceScore Int                @default(50)
+  status          ReviewStatus       @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind     @default(UNKNOWN)
+  contested       Boolean            @default(false)
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime           @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, category])
+  @@index([category, status])
+  @@map("capability_assertions")
+}
+
+model Ability {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId         String         @db.Uuid
+  name              String
+  type              AbilityType
+  description       String
+  activation        String?
+  delivery          String?
+  rangeText         String?
+  timing            String?
+  targetRequirement String?
+  effect            String?
+  limitations       String?
+  counterplay       String?
+  isPassive         Boolean        @default(false)
+  confidenceBand    ConfidenceBand @default(MEDIUM)
+  confidenceScore   Int            @default(50)
+  status            ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance        ProvenanceKind @default(UNKNOWN)
+  metadata          Json?
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, type])
+  @@index([name])
+  @@map("abilities")
+}
+
+model Resistance {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String         @db.Uuid
+  type            AbilityType
+  name            String
+  basis           String
+  limits          String?
+  confidenceBand  ConfidenceBand @default(MEDIUM)
+  confidenceScore Int            @default(50)
+  status          ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind @default(UNKNOWN)
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, type])
+  @@map("resistances")
+}
+
+model EquipmentItem {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId          String            @db.Uuid
+  name               String
+  category           EquipmentCategory
+  description        String
+  standard           Boolean           @default(true)
+  availabilityPolicy String?
+  limitations        String?
+  status             ReviewStatus      @default(REQUIRES_REVIEW)
+  provenance         ProvenanceKind    @default(UNKNOWN)
+  metadata           Json?
+  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, standard])
+  @@map("equipment_items")
+}
+
+model Weakness {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String         @db.Uuid
+  name            String
+  description     String
+  exploitation    String?
+  severity        ConfidenceBand @default(MEDIUM)
+  confidenceBand  ConfidenceBand @default(MEDIUM)
+  confidenceScore Int            @default(50)
+  status          ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind @default(UNKNOWN)
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId])
+  @@map("weaknesses")
+}
+
+model WinLossCondition {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String         @db.Uuid
+  kind            ConditionKind
+  type            ConditionType
+  method          String
+  requires        String?
+  blockedBy       String?
+  probabilityText String?
+  confidenceBand  ConfidenceBand @default(MEDIUM)
+  confidenceScore Int            @default(50)
+  status          ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind @default(UNKNOWN)
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, kind])
+  @@index([type])
+  @@map("win_loss_conditions")
+}
+
+model FeatAssertion {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String              @db.Uuid
+  kind            FeatKind
+  category        CapabilityCategory?
+  title           String
+  description     String
+  scaleText       String?
+  context         String?
+  limitations     String?
+  confidenceBand  ConfidenceBand      @default(MEDIUM)
+  confidenceScore Int                 @default(50)
+  status          ReviewStatus        @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind      @default(UNKNOWN)
+  metadata        Json?
+  createdAt       DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime            @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId, kind])
+  @@index([category])
+  @@map("feat_assertions")
+}
+
+model ScalingEdge {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromVersionId   String              @db.Uuid
+  toVersionId     String              @db.Uuid
+  relation        ScalingRelation
+  category        CapabilityCategory?
+  rationale       String
+  limitations     String?
+  confidenceBand  ConfidenceBand      @default(MEDIUM)
+  confidenceScore Int                 @default(50)
+  status          ReviewStatus        @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind      @default(UNKNOWN)
+  metadata        Json?
+  createdAt       DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime            @updatedAt @db.Timestamptz(6)
+
+  fromVersion   SubjectVersion @relation("ScalingFrom", fields: [fromVersionId], references: [id], onDelete: Cascade)
+  toVersion     SubjectVersion @relation("ScalingTo", fields: [toVersionId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([fromVersionId])
+  @@index([toVersionId])
+  @@index([relation])
+  @@map("scaling_edges")
+}
+
+model EvidenceSource {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        EvidenceSourceType
+  title       String
+  url         String?
+  citation    String?
+  language    String?
+  reliability SourceReliability  @default(UNKNOWN)
+  status      ReviewStatus       @default(REQUIRES_REVIEW)
+  metadata    Json?
+  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(6)
+
+  chunks        EvidenceChunk[]
+  evidenceLinks EvidenceLink[]
+
+  @@index([type])
+  @@index([reliability])
+  @@map("evidence_sources")
+}
+
+model EvidenceChunk {
+  id         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId   String                 @db.Uuid
+  externalId String?
+  text       String
+  tokenCount Int?
+  metadata   Json?
+  embedding  Unsupported("vector")?
+  createdAt  DateTime               @default(now()) @db.Timestamptz(6)
+
+  source        EvidenceSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  evidenceLinks EvidenceLink[]
+
+  @@index([sourceId])
+  @@map("evidence_chunks")
+}
+
+model EvidenceLink {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId       String?  @db.Uuid
+  chunkId        String?  @db.Uuid
+  capabilityId   String?  @db.Uuid
+  abilityId      String?  @db.Uuid
+  resistanceId   String?  @db.Uuid
+  equipmentId    String?  @db.Uuid
+  weaknessId     String?  @db.Uuid
+  conditionId    String?  @db.Uuid
+  featId         String?  @db.Uuid
+  scalingEdgeId  String?  @db.Uuid
+  suggestionId   String?  @db.Uuid
+  quote          String?
+  note           String?
+  relevanceScore Int      @default(50)
+  metadata       Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  source      EvidenceSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  chunk       EvidenceChunk?       @relation(fields: [chunkId], references: [id], onDelete: SetNull)
+  capability  CapabilityAssertion? @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  ability     Ability?             @relation(fields: [abilityId], references: [id], onDelete: Cascade)
+  resistance  Resistance?          @relation(fields: [resistanceId], references: [id], onDelete: Cascade)
+  equipment   EquipmentItem?       @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  weakness    Weakness?            @relation(fields: [weaknessId], references: [id], onDelete: Cascade)
+  condition   WinLossCondition?    @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  feat        FeatAssertion?       @relation(fields: [featId], references: [id], onDelete: Cascade)
+  scalingEdge ScalingEdge?         @relation(fields: [scalingEdgeId], references: [id], onDelete: Cascade)
+  suggestion  FactSuggestion?      @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+  @@index([chunkId])
+  @@index([capabilityId])
+  @@index([abilityId])
+  @@index([resistanceId])
+  @@index([equipmentId])
+  @@index([weaknessId])
+  @@index([conditionId])
+  @@index([featId])
+  @@index([scalingEdgeId])
+  @@index([suggestionId])
+  @@map("evidence_links")
+}
+
+model DossierSnapshot {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId      String    @db.Uuid
+  formatVersion  String
+  payload        Json
+  sourcePriority String[]
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt      DateTime? @db.Timestamptz(6)
+
+  version SubjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId, createdAt])
+  @@map("dossier_snapshots")
+}
+
+model FactSuggestion {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId       String?        @db.Uuid
+  subjectName     String
+  targetKind      String
+  category        String?
+  fieldPath       String?
+  proposedText    String
+  sourceRef       String?
+  confidenceBand  ConfidenceBand @default(MEDIUM)
+  confidenceScore Int            @default(50)
+  reason          String
+  status          ReviewStatus   @default(REQUIRES_REVIEW)
+  provenance      ProvenanceKind @default(MODEL_INFERRED)
+  modelName       String?
+  battleRunId     String?        @db.Uuid
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  version       SubjectVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  battleRun     BattleRun?      @relation(fields: [battleRunId], references: [id], onDelete: SetNull)
+  evidenceLinks EvidenceLink[]
+
+  @@index([versionId])
+  @@index([battleRunId])
+  @@index([status])
+  @@index([subjectName])
+  @@map("fact_suggestions")
+}
+
+model UserAppeal {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind             UserAppealKind
+  status           ReviewStatus   @default(REQUIRES_REVIEW)
+  subjectName      String
+  targetVersionId  String?        @db.Uuid
+  title            String?
+  body             String
+  proposedText     String?
+  sourceRef        String?
+  submitterName    String?
+  submitterContact String?
+  createdByUserId  String?        @db.Uuid
+  reviewedByUserId String?        @db.Uuid
+  reviewedAt       DateTime?      @db.Timestamptz(6)
+  resolutionNote   String?
+  createdSubjectId String?        @db.Uuid
+  createdVersionId String?        @db.Uuid
+  metadata         Json?
+  createdAt        DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(6)
+
+  targetVersion  SubjectVersion? @relation("UserAppealTargetVersion", fields: [targetVersionId], references: [id], onDelete: SetNull)
+  createdSubject Subject?        @relation("UserAppealCreatedSubject", fields: [createdSubjectId], references: [id], onDelete: SetNull)
+  createdVersion SubjectVersion? @relation("UserAppealCreatedVersion", fields: [createdVersionId], references: [id], onDelete: SetNull)
+
+  @@index([kind, status])
+  @@index([status, createdAt])
+  @@index([targetVersionId])
+  @@index([createdSubjectId])
+  @@index([createdVersionId])
+  @@index([subjectName])
+  @@map("user_appeals")
+}
+
+model BattleEnvironment {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug          String          @unique
+  name          String
+  kind          EnvironmentKind
+  scaleText     String?
+  description   String
+  hazards       String?
+  terrain       String?
+  resources     String?
+  physicsPolicy String?
+  metadata      Json?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
+
+  scenarios BattleScenario[]
+
+  @@index([kind])
+  @@map("battle_environments")
+}
+
+model BattleRuleset {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String   @unique
+  name               String
+  description        String?
+  assumptionSet      String   @default("VSBW_SBA")
+  speedEqualized     Boolean  @default(false)
+  prepTime           String?
+  priorKnowledge     String?
+  startingDistance   String?
+  winConditionPolicy String?
+  equipmentPolicy    String?
+  verseEqualization  String?
+  retreatAllowed     Boolean  @default(false)
+  collateralConcern  Boolean  @default(false)
+  customRules        String[]
+  metadata           Json?
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(6)
+
+  scenarios BattleScenario[]
+
+  @@map("battle_rulesets")
+}
+
+model Modifier {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key          String           @unique
+  name         String
+  category     ModifierCategory
+  description  String
+  defaultValue String?
+  stackable    Boolean          @default(false)
+  metadata     Json?
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+
+  scenarioModifiers ScenarioModifier[]
+
+  @@index([category])
+  @@map("modifiers")
+}
+
+model BattleScenario {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug          String?  @unique
+  name          String
+  environmentId String?  @db.Uuid
+  rulesetId     String?  @db.Uuid
+  summary       String?
+  metadata      Json?
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  environment  BattleEnvironment?    @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  ruleset      BattleRuleset?        @relation(fields: [rulesetId], references: [id], onDelete: SetNull)
+  participants ScenarioParticipant[]
+  modifiers    ScenarioModifier[]
+  runs         BattleRun[]
+
+  @@index([environmentId])
+  @@index([rulesetId])
+  @@map("battle_scenarios")
+}
+
+model ScenarioParticipant {
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scenarioId       String     @db.Uuid
+  subjectVersionId String?    @db.Uuid
+  side             BattleSide
+  label            String
+  team             String?
+  countText        String?
+  startingState    String?
+  role             String?
+  metadata         Json?
+
+  scenario       BattleScenario     @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  subjectVersion SubjectVersion?    @relation(fields: [subjectVersionId], references: [id], onDelete: SetNull)
+  modifiers      ScenarioModifier[]
+
+  @@index([scenarioId])
+  @@index([subjectVersionId])
+  @@index([side])
+  @@map("scenario_participants")
+}
+
+model ScenarioModifier {
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scenarioId          String      @db.Uuid
+  modifierId          String      @db.Uuid
+  targetSide          BattleSide?
+  targetParticipantId String?     @db.Uuid
+  value               String?
+  notes               String?
+  metadata            Json?
+
+  scenario          BattleScenario       @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  modifier          Modifier             @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+  targetParticipant ScenarioParticipant? @relation(fields: [targetParticipantId], references: [id], onDelete: SetNull)
+
+  @@index([scenarioId])
+  @@index([modifierId])
+  @@index([targetParticipantId])
+  @@map("scenario_modifiers")
+}
+
+model BattleRun {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scenarioId      String?         @db.Uuid
+  fighterAName    String
+  fighterBName    String
+  cacheKey        String?
+  status          BattleRunStatus @default(PENDING)
+  requestedModel  String?
+  resolvedModel   String?
+  requestPayload  Json?
+  dossierPayload  Json?
+  resultPayload   Json?
+  errorMessage    String?
+  createdByUserId String?         @db.Uuid
+  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
+  completedAt     DateTime?       @db.Timestamptz(6)
+
+  scenario    BattleScenario?  @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  suggestions FactSuggestion[]
+
+  @@index([scenarioId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([cacheKey, status])
+  @@map("battle_runs")
+}

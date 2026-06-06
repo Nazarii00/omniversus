@@ -1,0 +1,88 @@
+import {
+  ConditionKind,
+  ConditionType,
+  ConfidenceBand,
+  ReviewStatus,
+} from "@/generated/prisma/enums";
+
+import type { VersionOption } from "../../data/loadAdminData";
+import { enumValues } from "../../lib/enums";
+import { addConditionAction } from "../../actions/dossierActions";
+import styles from "../../styles/AdminPanel.module.css";
+import { ActionFeedbackForm } from "../ActionFeedbackForm";
+import {
+  EmptyState,
+  EvidenceFields,
+  Field,
+  ScoreField,
+  SelectField,
+  SubmitButton,
+  TextAreaField,
+  VersionSelect,
+} from "../FormControls";
+
+export function ConditionForm({
+  selectedVersionId,
+  versions,
+}: {
+  selectedVersionId?: string;
+  versions: VersionOption[];
+}) {
+  return (
+    <section className={styles.formPanel} id="condition">
+      <div className={styles.sectionHeader}>
+        <p className={styles.eyebrow}>Fact</p>
+        <h2>Win/Loss condition</h2>
+      </div>
+      {!versions.length ? (
+        <EmptyState>Create a subject version first.</EmptyState>
+      ) : (
+        <ActionFeedbackForm
+          action={addConditionAction}
+          className={styles.formGrid}
+          pendingMessage="Adding condition..."
+          resetOnSuccess
+          successMessage="Condition added."
+        >
+          <VersionSelect
+            defaultValue={selectedVersionId}
+            versions={versions}
+          />
+          <SelectField
+            label="Kind"
+            name="kind"
+            values={enumValues(ConditionKind)}
+            defaultValue={ConditionKind.WIN}
+          />
+          <SelectField
+            label="Type"
+            name="type"
+            values={enumValues(ConditionType)}
+            defaultValue={ConditionType.KO}
+          />
+          <TextAreaField label="Method" name="method" required />
+          <TextAreaField label="Requires" name="requires" />
+          <TextAreaField label="Blocked by" name="blockedBy" />
+          <Field label="Probability note" name="probabilityText" />
+          <ScoreField />
+          <SelectField
+            label="Status"
+            name="status"
+            values={enumValues(ReviewStatus)}
+            defaultValue={ReviewStatus.REQUIRES_REVIEW}
+          />
+          <SelectField
+            label="Confidence band"
+            name="confidenceBand"
+            values={enumValues(ConfidenceBand)}
+            defaultValue={ConfidenceBand.MEDIUM}
+          />
+          <EvidenceFields />
+          <div className={styles.formFooter}>
+            <SubmitButton>Add condition</SubmitButton>
+          </div>
+        </ActionFeedbackForm>
+      )}
+    </section>
+  );
+}

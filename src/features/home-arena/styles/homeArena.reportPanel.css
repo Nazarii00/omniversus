@@ -1,0 +1,8 @@
+@import "./reportPanel/homeArena.reportPanel.actions.css";
+@import "./reportPanel/homeArena.reportPanel.shell.css";
+@import "./reportPanel/homeArena.reportPanel.flow.css";
+@import "./reportPanel/homeArena.reportPanel.summary.css";
+@import "./reportPanel/homeArena.reportPanel.details.css";
+@import "./reportPanel/homeArena.reportPanel.modal.css";
+@import "./reportPanel/homeArena.reportPanel.motion.css";
+@import "./reportPanel/homeArena.reportPanel.responsive.css";

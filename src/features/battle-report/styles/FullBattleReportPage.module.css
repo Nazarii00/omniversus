@@ -1,0 +1,1035 @@
+:global(html.battle-report-scroll-unlocked),
+:global(body.battle-report-scroll-unlocked) {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.reportScreen {
+  --bg: #080a08;
+  --panel: #0b120b;
+  --panel-dark: #070b07;
+  --primary: #c9ffc8;
+  --secondary: #6b8f6b;
+  --line: rgba(104, 183, 104, 0.3);
+  --line-soft: rgba(104, 183, 104, 0.16);
+  --amber: #c8a84b;
+  --amber-hot: #ffb340;
+  --amber-orange: #e8791c;
+  --aged-phosphor: #8faf8f;
+  --amber-seal-image: url("/assets/battle-report/amber-seal.png");
+  --font:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  background:
+    radial-gradient(
+      circle at 50% -12%,
+      rgba(104, 183, 104, 0.08),
+      transparent 28rem
+    ),
+    var(--bg);
+  color: var(--primary);
+  font-family: var(--font);
+  font-size: 16px;
+}
+
+.reportScreen::before,
+.reportScreen::after,
+.screenTexture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.reportScreen::before {
+  z-index: 0;
+  content: "";
+  background:
+    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.78)),
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.42),
+      transparent 14%,
+      transparent 86%,
+      rgba(0, 0, 0, 0.48)
+    );
+}
+
+.reportScreen::after {
+  z-index: 5;
+  content: "";
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(201, 255, 200, 0.08) 0,
+      rgba(201, 255, 200, 0.08) 1px,
+      rgba(0, 0, 0, 0.16) 1px,
+      rgba(0, 0, 0, 0.16) 3px,
+      transparent 3px,
+      transparent 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(201, 255, 200, 0.014) 0,
+      rgba(201, 255, 200, 0.014) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  mix-blend-mode: screen;
+  opacity: 0.36;
+}
+
+.screenTexture {
+  z-index: 4;
+  background:
+    radial-gradient(
+      circle at 14% 24%,
+      rgba(201, 255, 200, 0.05),
+      transparent 0.06rem
+    ),
+    radial-gradient(
+      circle at 72% 62%,
+      rgba(201, 255, 200, 0.035),
+      transparent 0.06rem
+    ),
+    repeating-linear-gradient(
+      92deg,
+      transparent 0 78px,
+      rgba(201, 255, 200, 0.025) 79px,
+      transparent 81px
+    );
+  background-size:
+    1.3rem 1.3rem,
+    1.7rem 1.7rem,
+    100% 100%;
+  opacity: 0.4;
+}
+
+.pageShell {
+  position: relative;
+  z-index: 2;
+  width: min(1500px, calc(100vw - 28px));
+  min-width: 0;
+  margin: 14px auto 24px;
+  border: 1px solid rgba(104, 183, 104, 0.24);
+  background:
+    linear-gradient(180deg, rgba(13, 23, 13, 0.94), rgba(4, 7, 4, 0.98)),
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 255, 200, 0.035),
+    inset 0 0 60px rgba(0, 0, 0, 0.72),
+    0 18px 70px rgba(0, 0, 0, 0.66);
+  overflow: visible;
+}
+
+.pageShell > * {
+  position: relative;
+  z-index: 2;
+}
+
+.noticePanel {
+  display: grid;
+  gap: 8px;
+  margin: 18px;
+  border: 1px solid rgba(200, 168, 75, 0.42);
+  background: rgba(24, 20, 9, 0.62);
+  color: var(--aged-phosphor);
+  padding: 18px 20px;
+  text-transform: uppercase;
+}
+
+.noticePanel b {
+  color: var(--amber);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+}
+
+.noticePanel span {
+  max-width: 56rem;
+  color: rgba(201, 255, 200, 0.78);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.sectionHeading,
+.determinationBlock,
+.relatedDocumentPanel,
+.relatedDocuments,
+.factorStrip,
+.briefRoute,
+.chainCard,
+.premiseStack,
+.inferenceRecord,
+.confidencePanel,
+.meter,
+.comparisonRegister,
+.subjectDossier,
+.subjectFlags,
+.claimFilterBar,
+.claimGroup,
+.claimRecordMeta,
+.claimRecord footer,
+.statusStrip {
+  font-family: var(--font);
+  text-transform: uppercase;
+}
+
+.terminalBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 24px 8px;
+}
+
+.subjectSection,
+.verdictBrief,
+.argumentSection,
+.verdictStack,
+.claimsSection,
+.analysisGrid {
+  scroll-margin-top: 48px;
+}
+
+.mainFile,
+.archiveRail,
+.verdictStack {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  align-content: start;
+}
+
+.sectionHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sectionHeading span,
+.sectionHeading b {
+  color: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  color: var(--amber);
+  font-size: 0.9rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.verdictStack > .sectionHeading {
+  grid-column: 1 / -1;
+}
+
+.verdictBrief,
+.argumentSection,
+.claimsSection,
+.subjectSection,
+.confidencePanel,
+.comparisonRegister {
+  border: 1px solid var(--line);
+  background: rgba(7, 11, 7, 0.52);
+  padding: 14px 16px;
+}
+
+.conclusionSheet {
+  display: grid;
+  gap: 12px;
+  height: 100%;
+}
+
+.verdictIntroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.determinationBlock {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.determinationBlock::before {
+  display: block;
+  aspect-ratio: 1;
+  content: "";
+  background: var(--amber-seal-image) center / contain no-repeat;
+  filter: drop-shadow(0 0 10px rgba(200, 168, 75, 0.2));
+  grid-row: 1 / span 2;
+  mix-blend-mode: screen;
+  opacity: 0.72;
+}
+
+.determinationBlock span {
+  color: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 900;
+  grid-column: 2;
+}
+
+.determinationBlock p {
+  margin: 5px 0 0;
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 780;
+  grid-column: 2;
+  line-height: 1.45;
+}
+
+.relatedDocumentPanel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(10, 16, 10, 0.72), rgba(5, 9, 5, 0.76)),
+    rgba(8, 12, 8, 0.42);
+  padding: 14px;
+}
+
+.relatedDocuments {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.relatedDocuments a {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--amber);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  padding: 8px 0;
+  text-decoration: none;
+}
+
+.relatedDocuments a::before {
+  width: 15px;
+  height: 18px;
+  content: "";
+  border: 1px solid rgba(200, 168, 75, 0.72);
+  background:
+    linear-gradient(135deg, transparent 0 51%, rgba(200, 168, 75, 0.44) 52%)
+      right top / 7px 7px no-repeat,
+    linear-gradient(rgba(201, 255, 200, 0.08) 1px, transparent 1px);
+  background-size:
+    7px 7px,
+    100% 5px;
+  box-shadow: inset -4px 4px 0 rgba(200, 168, 75, 0.08);
+}
+
+.relatedDocuments a:hover,
+.relatedDocuments a:focus-visible {
+  color: var(--primary);
+}
+
+.relatedDocuments a span {
+  display: grid;
+  grid-template-columns: auto minmax(18px, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.relatedDocuments a span::after {
+  align-self: end;
+  border-bottom: 1px dotted rgba(200, 168, 75, 0.42);
+  content: "";
+  transform: translateY(-0.18rem);
+}
+
+.relatedDocuments a b {
+  color: var(--secondary);
+  font-size: 0.62rem;
+  font-weight: 950;
+}
+
+.factorStrip,
+.routeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.factorStrip article,
+.briefRoute,
+.chainCard,
+.subjectDossier,
+.claimGroup {
+  border: 1px solid var(--line-soft);
+  background: rgba(8, 12, 8, 0.42);
+  min-width: 0;
+  padding: 12px;
+}
+
+.factorStrip article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.factorStrip article > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.factorStrip b,
+.briefRoute span,
+.chainCard h3,
+.confidencePanel > span,
+.comparisonRegister > span,
+.subjectDossier > span,
+.subjectDossier > div b,
+.claimGroup header {
+  color: var(--amber);
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.factorStrip p,
+.briefRoute p,
+.chainCard > p,
+.inferenceRecord p,
+.subjectDossier p,
+.subjectFindings p,
+.claimText,
+.confidencePanel p,
+.comparisonRegister p {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.factorStrip p,
+.briefRoute p {
+  margin: 7px 0 0;
+}
+
+.decisionChain {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chainEvent {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 5px;
+  min-width: 0;
+}
+
+.chainIndex {
+  color: var(--amber);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.chainCard {
+  display: grid;
+  gap: 10px;
+  height: 100%;
+  border-color: var(--line);
+}
+
+.chainCard header,
+.chainCard footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  color: var(--secondary);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.chainCard header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 8px;
+}
+
+.chainCardHeader > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chainCardHeader small {
+  color: rgba(143, 175, 143, 0.78);
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.chainCard footer {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 8px;
+}
+
+.chainCard header b,
+.chainCard footer em {
+  color: var(--amber);
+  font-style: normal;
+}
+
+.chainCard header b {
+  font-size: 0.62rem;
+  overflow-wrap: anywhere;
+}
+
+.chainCard h3 {
+  margin: 0;
+}
+
+.chainCard > p {
+  margin: 0;
+}
+
+.premiseStack,
+.inferenceRecord,
+.premiseRecord {
+  display: grid;
+  gap: 6px;
+}
+
+.premiseRecord {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-left: 2px solid rgba(200, 168, 75, 0.42);
+  padding: 5px 0 5px 8px;
+}
+
+.premiseRecord[data-fact-issue="true"],
+.claimRecord[data-fact-issue="true"] {
+  border-color: rgba(255, 92, 72, 0.54);
+  background: rgba(255, 92, 72, 0.055);
+  box-shadow: inset 2px 0 0 rgba(255, 92, 72, 0.62);
+}
+
+.premiseRecord[data-fact-issue="true"] {
+  border-left-color: rgba(255, 92, 72, 0.72);
+}
+
+.premiseText {
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+a.premiseText {
+  text-decoration: none;
+}
+
+a.premiseText:hover,
+a.premiseText:focus-visible {
+  color: var(--amber-hot);
+  outline: none;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18rem;
+}
+
+.inferenceRecord {
+  border: 1px solid var(--line-soft);
+  background: rgba(7, 11, 7, 0.44);
+  padding: 9px;
+}
+
+.inferenceRecord span {
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.verdictStack {
+  grid-template-columns: minmax(0, 0.52fr) minmax(0, 0.48fr);
+}
+
+.confidencePanel strong {
+  display: block;
+  color: var(--amber);
+  font-size: 1.8rem;
+  font-weight: 950;
+  margin-top: 6px;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: center;
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  margin-top: 8px;
+}
+
+.meter b {
+  color: var(--primary);
+  text-align: right;
+}
+
+.meter i {
+  position: relative;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  background: rgba(104, 183, 104, 0.1);
+}
+
+.meter i::before {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 9px,
+    rgba(7, 11, 7, 0.5) 9px,
+    rgba(7, 11, 7, 0.5) 10px
+  );
+  pointer-events: none;
+}
+
+.meter i::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  content: "";
+  background: var(--primary);
+}
+
+.meter i::after {
+  width: var(--meter-value);
+}
+
+.warningRack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.warningRack span {
+  color: var(--amber);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.comparisonRegister > div {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.comparisonRegister article {
+  display: grid;
+  gap: 5px;
+}
+
+.comparisonRegister header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.comparisonRegister header b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparisonRegister em {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  justify-content: flex-end;
+  color: var(--amber);
+  font-style: normal;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparisonRegister em span {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comparisonRegister em span[data-side="A"] {
+  color: var(--primary);
+}
+
+.comparisonRegister em span[data-side="B"] {
+  color: var(--amber-hot);
+}
+
+.comparisonSplitBar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, var(--a-share)) minmax(0, var(--b-share));
+  height: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(104, 183, 104, 0.18);
+  background: rgba(104, 183, 104, 0.1);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.32),
+    0 0 12px rgba(104, 183, 104, 0.08);
+}
+
+.comparisonSplitBar::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 9px,
+    rgba(7, 11, 7, 0.48) 9px,
+    rgba(7, 11, 7, 0.48) 10px
+  );
+  pointer-events: none;
+}
+
+.comparisonSplitBar span {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  overflow: hidden;
+}
+
+.comparisonSplitBar span[data-side="A"] {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(201, 255, 200, 0.96),
+      rgba(104, 183, 104, 0.82)
+    ),
+    var(--primary);
+  box-shadow: inset 0 0 10px rgba(201, 255, 200, 0.28);
+}
+
+.comparisonSplitBar span[data-side="B"] {
+  border-left: 1px solid rgba(7, 11, 7, 0.78);
+  background:
+    linear-gradient(90deg, rgba(200, 168, 75, 0.82), rgba(255, 179, 64, 0.94)),
+    var(--amber);
+  box-shadow: inset 0 0 10px rgba(255, 179, 64, 0.24);
+}
+
+.subjectSection,
+.claimsSection {
+  padding: 14px;
+}
+
+.subjectOverviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.34fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.subjectGrid {
+  display: grid;
+  gap: 0;
+}
+
+.comparisonSeal {
+  display: none;
+}
+
+.subjectDossier {
+  display: grid;
+  gap: 10px;
+  border-bottom: 0;
+}
+
+.subjectDossier + .subjectDossier {
+  border-top: 0;
+}
+
+.subjectIdentity {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.subjectPortrait {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  min-height: 112px;
+  place-items: center;
+  border: 1px dashed rgba(200, 168, 75, 0.5);
+  background:
+    linear-gradient(rgba(201, 255, 200, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 255, 200, 0.04) 1px, transparent 1px),
+    rgba(104, 183, 104, 0.08);
+  background-size:
+    100% 10px,
+    10px 100%,
+    auto;
+  color: var(--amber);
+  font-size: 1.4rem;
+  font-weight: 950;
+}
+
+.subjectPortrait img {
+  width: 100%;
+  height: 100%;
+  min-height: 112px;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+}
+
+.subjectPortrait::before {
+  position: absolute;
+  inset: 7px;
+  content: "";
+  background:
+    linear-gradient(var(--amber), var(--amber)) left top / 16px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left top / 1px 16px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right top / 16px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right top / 1px 16px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left bottom / 16px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left bottom / 1px 16px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right bottom / 16px 1px
+      no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right bottom / 1px 16px
+      no-repeat;
+  opacity: 0.62;
+}
+
+.subjectPortrait::after {
+  position: absolute;
+  inset: auto 0 0;
+  content: "";
+  border-top: 1px solid var(--line-soft);
+  height: 6px;
+}
+
+.subjectIdentity > div:not(.subjectPortrait) > span {
+  display: block;
+  color: var(--amber);
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.subjectDossier h3 {
+  margin: 6px 0 0;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.subjectDossier dl {
+  display: grid;
+  gap: 4px;
+  margin: 9px 0 0;
+}
+
+.subjectDossier dl div {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.subjectDossier dt,
+.subjectDossier dd {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.subjectDossier > div:not(.subjectIdentity) {
+  display: none;
+}
+
+.subjectFindings {
+  display: none;
+}
+
+.claimFilterBar {
+  display: none;
+}
+
+.claimGroups {
+  display: grid;
+  gap: 10px;
+}
+
+.claimGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.claimGroup header {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 8px;
+}
+
+.claimGroup > div {
+  display: grid;
+  gap: 8px;
+}
+
+.claimRecord {
+  display: grid;
+  gap: 5px;
+  scroll-margin-top: 52px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 8px;
+}
+
+.claimRecord:target,
+.claimRecord[data-jump-highlight="true"] {
+  border-color: rgba(255, 179, 64, 0.64);
+  background: rgba(255, 179, 64, 0.07);
+  box-shadow: inset 2px 0 0 rgba(255, 179, 64, 0.72);
+}
+
+.claimRecordMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--secondary);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.claimRecordMeta b,
+.claimRecordMeta strong,
+.claimRecordMeta em {
+  color: var(--amber);
+  font-style: normal;
+}
+
+.claimText {
+  margin: 0;
+}
+
+.claimRecord footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--secondary);
+  font-size: 0.6rem;
+  font-weight: 850;
+}
+
+.claimRecord footer > span {
+  min-width: min(100%, 22rem);
+}
+
+.statusStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 10px 24px 14px;
+}
+
+.statusStrip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusStrip span:first-child,
+.statusStrip span:nth-child(3) {
+  color: var(--amber);
+}
+
+@media (max-width: 1100px) {
+  .terminalBody,
+  .statusStrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .verdictIntroGrid,
+  .subjectOverviewGrid,
+  .factorStrip,
+  .routeGrid,
+  .verdictStack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .pageShell {
+    width: calc(100vw - 8px);
+    margin: 4px auto 16px;
+  }
+
+  .terminalBody,
+  .statusStrip {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .subjectIdentity {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+
+  .subjectPortrait {
+    min-height: 96px;
+  }
+}

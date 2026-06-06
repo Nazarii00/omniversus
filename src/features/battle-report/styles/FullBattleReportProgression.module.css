@@ -1,0 +1,347 @@
+/* Full battle report progression timeline and stat diagrams. */
+
+.progressionSection {
+  scroll-margin-top: 48px;
+  border: 1px solid var(--line);
+  background: rgba(7, 11, 7, 0.52);
+  padding: 14px 16px;
+}
+
+.progressionSection {
+  display: grid;
+  gap: 10px;
+}
+
+.progressionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.36fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.progressionTimeline,
+.progressionDiagrams,
+.progressionRadarGrid,
+.progressionRadarCard,
+.progressionMeters,
+.progressionLegend {
+  display: grid;
+  min-width: 0;
+}
+
+.progressionTimeline {
+  gap: 10px;
+  align-content: start;
+}
+
+.progressionStep {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(9, 17, 9, 0.72), rgba(4, 8, 4, 0.8)),
+    rgba(7, 11, 7, 0.48);
+  padding: 12px 13px 12px 15px;
+}
+
+.progressionStep::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: rgba(104, 183, 104, 0.68);
+  box-shadow: 0 0 14px rgba(104, 183, 104, 0.2);
+}
+
+.progressionStep[data-contested="true"] {
+  border-color: rgba(255, 179, 64, 0.34);
+}
+
+.progressionStep[data-contested="true"]::before {
+  background: rgba(255, 179, 64, 0.78);
+  box-shadow: 0 0 14px rgba(255, 179, 64, 0.22);
+}
+
+.progressionStepHeader,
+.progressionStepFooter,
+.progressionDiagramHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--secondary);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.progressionStepHeader b,
+.progressionStepFooter span,
+.progressionDiagramHeader b {
+  color: rgba(143, 175, 143, 0.78);
+}
+
+.progressionStep h3 {
+  margin: 0;
+  color: var(--amber);
+  font-size: 0.86rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+}
+
+.progressionLog,
+.progressionReason p {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 730;
+  line-height: 1.5;
+}
+
+.progressionReason {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line-soft);
+  background: rgba(7, 11, 7, 0.4);
+  padding: 9px;
+}
+
+.progressionReason span {
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.progressionMeters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.progressionMeter {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 8px;
+  align-items: center;
+  color: var(--secondary);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.progressionMeter span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressionMeter b {
+  color: var(--primary);
+  font-size: 0.62rem;
+}
+
+.progressionMeter i {
+  position: relative;
+  display: block;
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(104, 183, 104, 0.2);
+  background: rgba(104, 183, 104, 0.08);
+}
+
+.progressionMeter i::before {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 9px,
+    rgba(7, 11, 7, 0.62) 9px,
+    rgba(7, 11, 7, 0.62) 10px
+  );
+}
+
+.progressionMeter i::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  width: var(--progression-meter);
+  content: "";
+  background: var(--primary);
+  box-shadow: 0 0 12px rgba(201, 255, 200, 0.18);
+}
+
+.progressionMeter[data-side="B"] i::after {
+  background: var(--amber-hot);
+  box-shadow: 0 0 12px rgba(255, 179, 64, 0.2);
+}
+
+.progressionStepFooter {
+  justify-content: flex-start;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 8px;
+  font-size: 0.58rem;
+}
+
+.progressionDiagrams {
+  align-content: start;
+  gap: 11px;
+  border: 1px solid rgba(200, 168, 75, 0.36);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(200, 168, 75, 0.04) 0,
+      rgba(200, 168, 75, 0.04) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    rgba(8, 12, 8, 0.52);
+  padding: 12px;
+}
+
+.progressionDiagramHeader span {
+  color: var(--amber);
+}
+
+.progressionRadarGrid {
+  gap: 10px;
+}
+
+.progressionRadarCard {
+  grid-template-rows: auto minmax(210px, 1fr);
+  gap: 8px;
+  min-height: 250px;
+  border: 1px solid var(--line-soft);
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(104, 183, 104, 0.08),
+      transparent 58%
+    ),
+    rgba(5, 9, 5, 0.62);
+  padding: 10px;
+}
+
+.progressionRadarCard > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--primary);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressionRadarCard[data-side="B"] > span {
+  color: var(--amber-hot);
+}
+
+.progressionRadarPlot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 210px;
+  border: 1px solid rgba(104, 183, 104, 0.16);
+  background:
+    linear-gradient(rgba(104, 183, 104, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(104, 183, 104, 0.06) 1px, transparent 1px),
+    rgba(1, 5, 2, 0.54);
+  background-size:
+    12px 12px,
+    12px 12px,
+    auto;
+}
+
+.progressionRadarRing,
+.progressionRadarAxis {
+  fill: none;
+  stroke: rgba(104, 183, 104, 0.32);
+  stroke-width: 0.9;
+  vector-effect: non-scaling-stroke;
+}
+
+.progressionRadarAxis {
+  stroke: rgba(104, 183, 104, 0.24);
+}
+
+.progressionRadarArea {
+  fill-opacity: 0.24;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.progressionRadarAreaAlpha {
+  fill: rgba(104, 183, 104, 0.44);
+  stroke: rgba(104, 183, 104, 0.82);
+}
+
+.progressionRadarAreaOmega {
+  fill: rgba(255, 179, 64, 0.22);
+  stroke: rgba(255, 179, 64, 0.88);
+}
+
+.progressionRadarLine {
+  fill: none;
+  stroke-width: 1.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.progressionRadarLineAlpha {
+  stroke: rgba(201, 255, 200, 0.92);
+  filter: drop-shadow(0 0 4px rgba(104, 183, 104, 0.26));
+}
+
+.progressionRadarLineOmega {
+  stroke: rgba(255, 179, 64, 0.96);
+  filter: drop-shadow(0 0 5px rgba(255, 179, 64, 0.26));
+}
+
+.progressionRadarLabel {
+  fill: rgba(215, 226, 214, 0.72);
+  font-size: 0.42rem;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.progressionLegend {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 8px;
+  color: var(--secondary);
+  font-size: 0.58rem;
+  font-weight: 850;
+}
+
+.progressionLegend span {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.progressionLegend b {
+  color: var(--amber);
+}
+
+@media (max-width: 1100px) {
+  .progressionGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .progressionMeters,
+  .progressionLegend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

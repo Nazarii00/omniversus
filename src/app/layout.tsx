@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
+import "@/features/home-arena/styles/homeArena.css";
 
 export const metadata: Metadata = {
   title: "Omniversus",
