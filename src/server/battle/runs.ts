@@ -11,6 +11,7 @@ import type {
   RunBattleAnalysisOptions,
 } from "./domain/schema";
 import { resolveBattleProvider } from "./providers";
+import { computeBattleQualityScore } from "./quality";
 
 export type BattleRunHandle = {
   id: string;
@@ -20,6 +21,7 @@ type CreateBattleRunRecordInput = {
   fighterA: string;
   fighterB: string;
   options: RunBattleAnalysisOptions;
+  userId?: string | null;
 };
 
 type CompleteBattleRunRecordInput = {
@@ -54,6 +56,7 @@ export async function createBattleRunRecord({
   fighterA,
   fighterB,
   options,
+  userId,
 }: CreateBattleRunRecordInput): Promise<BattleRunHandle | null> {
   const prisma = getPrisma();
   if (!prisma) return null;
@@ -68,6 +71,7 @@ export async function createBattleRunRecord({
         cacheKey,
         status: BattleRunStatus.PENDING,
         requestedModel: requestedGeneration.model,
+        createdByUserId: userId ?? null,
         requestPayload: toInputJson({
           source: "api/battle",
           provider: requestedGeneration.provider,
@@ -108,6 +112,8 @@ export async function completeBattleRunRecord(
           result,
           generation,
         }),
+        qualityScore: computeBattleQualityScore(result).overall,
+        qualityBand: computeBattleQualityScore(result).band,
         completedAt: new Date(),
       },
     });

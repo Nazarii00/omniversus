@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import type { Battle, MonthGroup } from "./types";
+import { useMemo, useState } from "react";
+import type { Battle, BattleResult, MonthGroup, FilterState } from "./types";
+import ArchiveFilters from "./ArchiveFilters";
 import styles from "./BattleHistory.module.css";
 
 /* ================================================================
    RESULT CLASS MAP
    ================================================================ */
 
-const RESULT_CLASS: Record<Battle["result"], string> = {
+const RESULT_CLASS: Record<BattleResult, string> = {
   win: styles.win,
   loss: styles.loss,
   draw: styles.draw,
@@ -37,9 +38,21 @@ function deriveMonthGroups(battles: Battle[]): MonthGroup[] {
   const groups: Record<string, Battle[]> = {};
 
   for (const battle of battles) {
-    const [day, month] = battle.date.split(".");
-    const year = new Date().getFullYear().toString();
-    const monthIndex = Number(month) - 1;
+    const parts = battle.date.includes(".")
+      ? battle.date.split(".")
+      : battle.date.split("-");
+    let month: number;
+    let year: string;
+
+    if (battle.date.includes(".")) {
+      month = Number(parts[1]);
+      year = parts[2];
+    } else {
+      month = Number(parts[1]);
+      year = parts[0];
+    }
+
+    const monthIndex = month - 1;
     const label = `${MONTH_NAMES[monthIndex]} ${year}`;
 
     if (!groups[label]) {
@@ -73,6 +86,33 @@ function computeStreak(battles: Battle[]): number {
   return streak;
 }
 
+function applyFilters(battles: Battle[], filters: FilterState): Battle[] {
+  let filtered = battles;
+
+  // Filter by result
+  if (filters.result !== "all") {
+    filtered = filtered.filter((b) => b.result === filters.result);
+  }
+
+  // Filter by search
+  if (filters.search.trim()) {
+    const query = filters.search.trim().toLowerCase();
+    filtered = filtered.filter(
+      (b) =>
+        b.fighterA.toLowerCase().includes(query) ||
+        b.fighterB.toLowerCase().includes(query),
+    );
+  }
+
+  // Sort
+  if (filters.sort === "oldest") {
+    filtered = [...filtered].reverse();
+  }
+  // "newest" is default order (already sorted by date desc from DB)
+
+  return filtered;
+}
+
 /* ================================================================
    COMPONENT
    ================================================================ */
@@ -82,15 +122,44 @@ interface BattleHistoryProps {
 }
 
 export default function BattleHistory({ battles = [] }: BattleHistoryProps) {
-  const monthGroups = useMemo(() => deriveMonthGroups(battles), [battles]);
-  const totalBattles = battles.length;
-  const winRate = useMemo(() => computeWinRate(battles), [battles]);
-  const streak = useMemo(() => computeStreak(battles), [battles]);
+  const [filters, setFilters] = useState<FilterState>({
+    result: "all",
+    search: "",
+    sort: "newest",
+  });
+
+  const filteredBattles = useMemo(
+    () => applyFilters(battles, filters),
+    [battles, filters],
+  );
+
+  const monthGroups = useMemo(
+    () => deriveMonthGroups(filteredBattles),
+    [filteredBattles],
+  );
+
+  const totalBattles = filteredBattles.length;
+  const winRate = useMemo(
+    () => computeWinRate(filteredBattles),
+    [filteredBattles],
+  );
+  const streak = useMemo(
+    () => computeStreak(filteredBattles),
+    [filteredBattles],
+  );
 
   return (
     <div className={styles.archive}>
+      {/* FILTERS */}
+      <ArchiveFilters filters={filters} onChange={setFilters} />
+
+      {/* MONTH GROUPS */}
       {monthGroups.length === 0 && (
-        <p className={styles.monthLabel}>No battles recorded yet.</p>
+        <p className={styles.emptyState}>
+          {battles.length === 0
+            ? "No battles recorded yet."
+            : "No battles match your filters."}
+        </p>
       )}
 
       {monthGroups.map((month) => (
@@ -113,7 +182,11 @@ export default function BattleHistory({ battles = [] }: BattleHistoryProps) {
                   <div className={`${styles.face} ${styles.front}`}>
                     <div className={styles.topStrip} />
                     <div className={styles.dot} />
-                    <div className={styles.frontBody} />
+
+                    {/* Battle number badge */}
+                    <div className={styles.battleNumberBadge}>
+                      #{battle.battleNumber}
+                    </div>
 
                     {/* Reel area */}
                     <div className={styles.reelArea}>
@@ -124,11 +197,14 @@ export default function BattleHistory({ battles = [] }: BattleHistoryProps) {
 
                     {/* Label sticker */}
                     <div className={styles.labelSticker}>
+                      <span className={styles.labelMode}>{battle.mode}</span>
                       <span className={styles.labelVs}>
-                        vs {battle.opponent}
+                        {battle.fighterA} vs {battle.fighterB}
                       </span>
                       <span className={styles.labelMeta}>
-                        {battle.date} · {battle.score}
+                        {battle.date}
+                        {battle.wager != null &&
+                          ` · ${battle.wager >= 0 ? "+" : ""}${battle.wager} cr`}
                       </span>
                       <div className={styles.labelBar} />
                     </div>

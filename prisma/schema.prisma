@@ -253,6 +253,12 @@ enum BattleRunStatus {
   CANCELLED
 }
 
+enum BattleFeedbackValue {
+  AGREE
+  DISAGREE
+  UNCERTAIN
+}
+
 model Profile {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   supabaseId  String   @unique
@@ -877,16 +883,35 @@ model BattleRun {
   dossierPayload  Json?
   resultPayload   Json?
   errorMessage    String?
+  qualityScore    Int?
+  qualityBand     String?
   createdByUserId String?         @db.Uuid
   createdAt       DateTime        @default(now()) @db.Timestamptz(6)
   completedAt     DateTime?       @db.Timestamptz(6)
 
   scenario    BattleScenario?  @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
   suggestions FactSuggestion[]
+  feedback    BattleFeedback[]
 
   @@index([scenarioId])
   @@index([status])
   @@index([createdAt])
   @@index([cacheKey, status])
   @@map("battle_runs")
+}
+
+model BattleFeedback {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  battleRunId String               @db.Uuid
+  userId      String               @db.Uuid
+  value       BattleFeedbackValue
+  reason      String?
+  createdAt   DateTime             @default(now()) @db.Timestamptz(6)
+
+  battleRun   BattleRun            @relation(fields: [battleRunId], references: [id], onDelete: Cascade)
+
+  @@unique([battleRunId, userId])
+  @@index([battleRunId])
+  @@index([value])
+  @@map("battle_feedback")
 }

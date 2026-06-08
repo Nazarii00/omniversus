@@ -98,6 +98,8 @@ export type BattleReportJson = Partial<
   cached?: boolean;
   status?: string;
   headline?: string;
+  quality_score?: number | null;
+  quality_band?: string | null;
   generation?: BattleGenerationMetadata;
   metadata?: Partial<OmniversusBattle["metadata"]>;
   fighters?: ReportFighter[];

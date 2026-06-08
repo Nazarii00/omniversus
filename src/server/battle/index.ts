@@ -65,6 +65,7 @@ export {
   type DossierFact,
   type FighterDossier,
 } from "./dossier";
+export { computeBattleQualityScore } from "./quality";
 
 type RunBattleAnalysisWithMetadataResult = {
   result: OmniversusBattle;
@@ -300,8 +301,7 @@ export async function runBattleAnalysisWithMetadata(
   let completionResult: BattleCompletionResult;
 
   try {
-    completionResult =
-      await provider.createBattleCompletion(completionRequest);
+    completionResult = await provider.createBattleCompletion(completionRequest);
   } catch (error) {
     throw new BattleAnalysisError(providerErrorMessage(error, provider), {
       status: providerErrorStatus(error) ?? 502,

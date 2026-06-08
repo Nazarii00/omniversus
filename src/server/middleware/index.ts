@@ -4,6 +4,7 @@ export {
   ROUTE_SCOPE_HEADER,
   resolveRouteScope,
 } from "./routes";
+export { withRateLimit } from "./withRateLimit";
 export { withRequestContext } from "./withRequestContext";
 export type {
   MiddlewareContext,
