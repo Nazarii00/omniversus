@@ -2,24 +2,34 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
-  type FormEvent,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type WheelEvent,
 } from "react";
 import styles from "./SubjectRequestDialog.module.css";
 
+// ---------------------------------------------------------------------------
 // Types
+// ---------------------------------------------------------------------------
+
 type SubjectRequestDialogProps = {
   initialSubjectName?: string;
   onClose: () => void;
 };
 
+type PhotoCrop = {
+  x: number;
+  y: number;
+  zoom: number;
+};
+
 type FormData = {
   subjectName: string;
   universe: string;
-  photoUrl: string;
+  photoFile: File | null;
+  photoCrop: PhotoCrop;
   intelSources: string;
   keyFeats: string;
   additionalNotes: string;
@@ -28,93 +38,127 @@ type FormData = {
 
 type FieldKey = keyof FormData;
 
-type WizardStep = {
+type BlockField = {
   key: FieldKey;
   label: string;
   placeholder: string;
   required: boolean;
   multiline: boolean;
+  isPhoto: boolean;
 };
 
-// Constants
-const WIZARD_STEPS: WizardStep[] = [
+type WizardBlock = {
+  id: string;
+  title: string;
+  fields: BlockField[];
+};
+
+const WIZARD_BLOCKS: WizardBlock[] = [
   {
-    key: "subjectName",
-    label: "SUBJECT ALIAS",
-    placeholder: "e.g. Goku, Batman, SCP-096",
-    required: true,
-    multiline: false,
+    id: "IDENTIFY",
+    title: "IDENTIFY",
+    fields: [
+      {
+        key: "subjectName",
+        label: "SUBJECT ALIAS",
+        placeholder: "e.g. Goku, Batman, SCP-096",
+        required: true,
+        multiline: false,
+        isPhoto: false,
+      },
+      {
+        key: "universe",
+        label: "UNIVERSE / ORIGIN",
+        placeholder: "e.g. Dragon Ball, DC Comics",
+        required: true,
+        multiline: false,
+        isPhoto: false,
+      },
+    ],
   },
   {
-    key: "universe",
-    label: "UNIVERSE / ORIGIN",
-    placeholder: "e.g. Dragon Ball, DC Comics",
-    required: true,
-    multiline: false,
+    id: "EVIDENCE",
+    title: "EVIDENCE",
+    fields: [
+      {
+        key: "photoFile",
+        label: "REFERENCE PHOTO",
+        placeholder: "",
+        required: false,
+        multiline: false,
+        isPhoto: true,
+      },
+      {
+        key: "intelSources",
+        label: "INTEL SOURCES (optional)",
+        placeholder: "Wiki / VSBW links...",
+        required: false,
+        multiline: true,
+        isPhoto: false,
+      },
+      {
+        key: "keyFeats",
+        label: "KEY FEATS & EVIDENCE (optional)",
+        placeholder: "Important feats with evidence...",
+        required: false,
+        multiline: true,
+        isPhoto: false,
+      },
+    ],
   },
   {
-    key: "photoUrl",
-    label: "REFERENCE PHOTO URL (optional)",
-    placeholder: "https://...",
-    required: false,
-    multiline: false,
-  },
-  {
-    key: "intelSources",
-    label: "INTEL SOURCES (optional)",
-    placeholder: "Wiki / VSBW links...",
-    required: false,
-    multiline: true,
-  },
-  {
-    key: "keyFeats",
-    label: "KEY FEATS & EVIDENCE (optional)",
-    placeholder: "Important feats with evidence...",
-    required: false,
-    multiline: true,
-  },
-  {
-    key: "additionalNotes",
-    label: "ADDITIONAL NOTES (optional)",
-    placeholder: "Why add them? Version?",
-    required: false,
-    multiline: true,
-  },
-  {
-    key: "submitterName",
-    label: "FIELD AGENT SIGNATURE (optional)",
-    placeholder: "Your name or callsign",
-    required: false,
-    multiline: false,
+    id: "CONTEXT",
+    title: "CONTEXT",
+    fields: [
+      {
+        key: "additionalNotes",
+        label: "ADDITIONAL NOTES (optional)",
+        placeholder: "Why add them? Version?",
+        required: false,
+        multiline: true,
+        isPhoto: false,
+      },
+      {
+        key: "submitterName",
+        label: "AGENT SIGNATURE (optional)",
+        placeholder: "Your name or callsign",
+        required: false,
+        multiline: false,
+        isPhoto: false,
+      },
+    ],
   },
 ];
 
-const TOTAL_STEPS = WIZARD_STEPS.length;
-
-function generateFlogId(): string {
-  const n = new Date();
-  const pad = (v: number) => String(v).padStart(2, "0");
-  const seq = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
-  return `FLOG-${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}-${pad(n.getHours())}${pad(n.getMinutes())}-${seq}`;
-}
+const TOTAL_BLOCKS = WIZARD_BLOCKS.length;
 
 const EMPTY_FORM: FormData = {
   subjectName: "",
   universe: "",
-  photoUrl: "",
+  photoFile: null,
+  photoCrop: { x: 0, y: 0, zoom: 1 },
   intelSources: "",
   keyFeats: "",
   additionalNotes: "",
   submitterName: "",
 };
 
+const PHOTO_PREVIEW_W = 300;
+const PHOTO_PREVIEW_H = 200;
+
+function clamp(v: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+// ---------------------------------------------------------------------------
 // Component
+// ---------------------------------------------------------------------------
+
 export function SubjectRequestDialog({
   initialSubjectName = "",
   onClose,
 }: SubjectRequestDialogProps) {
-  const flogId = useMemo(() => generateFlogId(), []);
-  const [step, setStep] = useState(0);
+  const [blockIndex, setBlockIndex] = useState(0);
   const [formData, setFormData] = useState<FormData>({
     ...EMPTY_FORM,
     subjectName: initialSubjectName,
@@ -123,9 +167,20 @@ export function SubjectRequestDialog({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Photo preview state
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoNatural, setPhotoNatural] = useState({ w: 0, h: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragLast = useRef({ x: 0, y: 0 });
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+
+  const isConfirmStep = blockIndex >= TOTAL_BLOCKS;
+  const currentBlock = WIZARD_BLOCKS[blockIndex] ?? null;
+  const progress = Math.round((blockIndex / TOTAL_BLOCKS) * 100);
 
   // Close on Escape
   useEffect(() => {
@@ -136,63 +191,147 @@ export function SubjectRequestDialog({
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  // Focus input on step change
+  // Focus first input on block change
   useEffect(() => {
     const t = setTimeout(() => {
       inputRef.current?.focus();
       textareaRef.current?.focus();
     }, 50);
     return () => clearTimeout(t);
-  }, [step]);
+  }, [blockIndex]);
 
-  const currentStep = WIZARD_STEPS[step] ?? null;
-  const progress = Math.round((step / TOTAL_STEPS) * 100);
-  const isConfirmStep = step >= TOTAL_STEPS;
+  // Cleanup preview URL
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function updateField(value: string) {
-    if (!currentStep) return;
-    setFormData((p) => ({ ...p, [currentStep.key]: value }));
+  // -- Helpers --
+  function blockValid(): boolean {
+    if (!currentBlock) return false;
+    return currentBlock.fields.every((f) => {
+      if (!f.required) return true;
+      if (f.key === "photoFile") return true; // photo is optional
+      return formData[f.key].toString().trim().length > 0;
+    });
   }
 
   function goNext() {
-    if (!currentStep) return;
-    if (currentStep.required && !formData[currentStep.key].trim()) return;
-    if (step < TOTAL_STEPS - 1) {
-      setStep((s) => s + 1);
+    if (!blockValid()) return;
+    if (blockIndex < TOTAL_BLOCKS - 1) {
+      setBlockIndex((s) => s + 1);
     } else {
-      setStep(TOTAL_STEPS); // go to confirm
+      setBlockIndex(TOTAL_BLOCKS);
     }
   }
 
   function goBack() {
     if (isConfirmStep) {
-      setStep(TOTAL_STEPS - 1);
-    } else if (step > 0) {
-      setStep((s) => s - 1);
+      setBlockIndex(TOTAL_BLOCKS - 1);
+    } else if (blockIndex > 0) {
+      setBlockIndex((s) => s - 1);
     }
   }
 
-  function handleKeyDown(
-    e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      goNext();
-    }
-    if (e.key === "Tab" && e.shiftKey) {
-      e.preventDefault();
-      goBack();
-    }
+  function getFieldValue(key: FieldKey): string {
+    const v = formData[key];
+    if (v === null || v === undefined) return "";
+    if (v instanceof File) return v.name;
+    return String(v);
   }
 
+  function updateText(key: FieldKey, value: string) {
+    setFormData((p) => ({ ...p, [key]: value }));
+  }
+
+  // -- Photo handlers --
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    const url = URL.createObjectURL(file);
+    setPhotoPreviewUrl(url);
+    setFormData((p) => ({
+      ...p,
+      photoFile: file,
+      photoCrop: { x: 0, y: 0, zoom: 1 },
+    }));
+    // Load natural dimensions
+    const img = new Image();
+    img.onload = () =>
+      setPhotoNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = url;
+  }
+
+  function resetPhoto() {
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    setPhotoPreviewUrl(null);
+    setPhotoNatural({ w: 0, h: 0 });
+    setFormData((p) => ({
+      ...p,
+      photoFile: null,
+      photoCrop: { x: 0, y: 0, zoom: 1 },
+    }));
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function handlePhotoMouseDown(e: ReactMouseEvent) {
+    e.preventDefault();
+    setIsDragging(true);
+    dragLast.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function handlePhotoMouseMove(e: ReactMouseEvent) {
+    if (!isDragging) return;
+    const dx = e.clientX - dragLast.current.x;
+    const dy = e.clientY - dragLast.current.y;
+    dragLast.current = { x: e.clientX, y: e.clientY };
+    setFormData((p) => ({
+      ...p,
+      photoCrop: {
+        ...p.photoCrop,
+        x: p.photoCrop.x + dx,
+        y: p.photoCrop.y + dy,
+      },
+    }));
+  }
+
+  function handlePhotoMouseUp() {
+    setIsDragging(false);
+  }
+
+  function handlePhotoWheel(e: WheelEvent) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    setFormData((p) => ({
+      ...p,
+      photoCrop: {
+        ...p.photoCrop,
+        zoom: clamp(p.photoCrop.zoom + delta, 0.4, 3),
+      },
+    }));
+  }
+
+  // -- Submit --
   async function handleSubmit() {
     setIsSubmitting(true);
     setError(null);
     try {
+      const fd = new FormData();
+      fd.append("subjectName", formData.subjectName);
+      fd.append("universe", formData.universe);
+      if (formData.photoFile) fd.append("photo", formData.photoFile);
+      fd.append("photoCrop", JSON.stringify(formData.photoCrop));
+      fd.append("intelSources", formData.intelSources);
+      fd.append("keyFeats", formData.keyFeats);
+      fd.append("additionalNotes", formData.additionalNotes);
+      fd.append("submitterName", formData.submitterName);
+
       const r = await fetch("/api/subject-requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: fd,
       });
       if (!r.ok) {
         const d = await r.json();
@@ -206,13 +345,86 @@ export function SubjectRequestDialog({
     }
   }
 
-  function handleBackdropClick(e: React.MouseEvent) {
+  function handleBackdropClick(e: ReactMouseEvent) {
     if (e.target === e.currentTarget) onClose();
   }
 
-  const completedSteps = WIZARD_STEPS.slice(0, step).filter((s) =>
-    formData[s.key].trim(),
-  );
+  // -- Render photo preview --
+  function renderPhotoField() {
+    const hasPhoto = !!photoPreviewUrl;
+    return (
+      <div className={styles.photoSection}>
+        <div className={styles.photoInputRow}>
+          <span className={styles.promptChar}>{">"}</span>
+          <span className={styles.photoLabel}>REFERENCE PHOTO:</span>
+          <button
+            type="button"
+            className={styles.browseBtn}
+            onClick={() => fileRef.current?.click()}
+            disabled={isSubmitting}
+          >
+            [BROWSE]
+          </button>
+          {hasPhoto && (
+            <button
+              type="button"
+              className={styles.browseBtn}
+              onClick={resetPhoto}
+              disabled={isSubmitting}
+            >
+              [CLEAR]
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoSelect}
+            className={styles.hiddenFileInput}
+          />
+        </div>
+        {hasPhoto && (
+          <div className={styles.photoPreviewWrap}>
+            <div
+              className={styles.photoPreview}
+              style={{ width: PHOTO_PREVIEW_W, height: PHOTO_PREVIEW_H }}
+              onMouseDown={handlePhotoMouseDown}
+              onMouseMove={handlePhotoMouseMove}
+              onMouseUp={handlePhotoMouseUp}
+              onMouseLeave={handlePhotoMouseUp}
+              onWheel={handlePhotoWheel}
+            >
+              <img
+                src={photoPreviewUrl}
+                alt="Preview"
+                draggable={false}
+                style={{
+                  transform: `translate(${formData.photoCrop.x}px, ${formData.photoCrop.y}px) scale(${formData.photoCrop.zoom})`,
+                  transformOrigin: "center center",
+                  maxWidth: "none",
+                  display: "block",
+                }}
+              />
+            </div>
+            <span className={styles.photoHint}>
+              Drag to reposition | Scroll to zoom | Zoom:{" "}
+              {formData.photoCrop.zoom.toFixed(2)}x
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // -- Common key handler for inputs --
+  function handleInputKeyDown(
+    e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      goNext();
+    }
+  }
 
   return (
     <div className={styles.backdrop} onMouseDown={handleBackdropClick}>
@@ -224,7 +436,7 @@ export function SubjectRequestDialog({
       >
         {/* Titlebar */}
         <div className={styles.titlebar}>
-          <span className={styles.titlebarTitle}>C:\Omniversus\flog.exe</span>
+          <span className={styles.titlebarTitle}>C:\Omniversus\intel.exe</span>
           <button
             type="button"
             className={styles.closeButton}
@@ -237,10 +449,6 @@ export function SubjectRequestDialog({
 
         {/* Screen */}
         <div className={styles.screen}>
-          <p className={styles.flogHeader}>
-            [{flogId}] Initializing intel submission...
-          </p>
-
           {/* Progress */}
           <div className={styles.progressBar}>
             <div className={styles.progressTrack}>
@@ -250,22 +458,9 @@ export function SubjectRequestDialog({
               />
             </div>
             <span className={styles.progressLabel}>
-              {step}/{TOTAL_STEPS}
+              BLOCK {isConfirmStep ? "◇" : blockIndex + 1}/{TOTAL_BLOCKS}
             </span>
           </div>
-
-          {/* Completed steps log */}
-          {completedSteps.length > 0 && (
-            <pre className={styles.stepLog}>
-              {completedSteps.map((s) => (
-                <span key={s.key} className={styles.stepLogLine}>
-                  [{flogId}] {s.label}: {formData[s.key].slice(0, 60)}
-                  {formData[s.key].length > 60 ? "..." : ""}
-                  {"\n"}
-                </span>
-              ))}
-            </pre>
-          )}
 
           {/* Error */}
           {error && <p className={styles.errorLine}>[ERROR]: {error}</p>}
@@ -273,7 +468,7 @@ export function SubjectRequestDialog({
           {/* Success overlay */}
           {isSuccess && (
             <div className={styles.successOverlay}>
-              <span className={styles.successCode}>[{flogId}] COMMITTED</span>
+              <span className={styles.successCode}>INTEL FILE COMMITTED</span>
               <span className={styles.successMsg}>
                 Intel file queued for review. Closing...
               </span>
@@ -282,22 +477,36 @@ export function SubjectRequestDialog({
 
           {/* Confirm step */}
           {isConfirmStep ? (
-            <div className={styles.activeStep}>
-              <span className={styles.confirmHeader}>REVIEW & CONFIRM</span>
+            <div className={styles.blockSection}>
+              <span className={styles.confirmHeader}>
+                BLOCK ◇ — REVIEW & CONFIRM
+              </span>
               <ul className={styles.confirmList}>
-                {WIZARD_STEPS.map((s) => (
-                  <li key={s.key}>
-                    <span className={styles.confirmField}>{s.label}: </span>
-                    {formData[s.key].trim() ? (
-                      <span className={styles.confirmValue}>
-                        {formData[s.key].slice(0, 80)}
-                        {formData[s.key].length > 80 ? "..." : ""}
-                      </span>
-                    ) : (
-                      <span className={styles.confirmMissing}>(empty)</span>
-                    )}
-                  </li>
-                ))}
+                {WIZARD_BLOCKS.map((block) =>
+                  block.fields.map((f) => (
+                    <li key={f.key}>
+                      <span className={styles.confirmField}>{f.label}: </span>
+                      {f.key === "photoFile" ? (
+                        formData.photoFile ? (
+                          <span className={styles.confirmValue}>
+                            {formData.photoFile.name}
+                          </span>
+                        ) : (
+                          <span className={styles.confirmMissing}>
+                            (no photo)
+                          </span>
+                        )
+                      ) : formData[f.key].toString().trim() ? (
+                        <span className={styles.confirmValue}>
+                          {formData[f.key].toString().slice(0, 80)}
+                          {formData[f.key].toString().length > 80 ? "..." : ""}
+                        </span>
+                      ) : (
+                        <span className={styles.confirmMissing}>(empty)</span>
+                      )}
+                    </li>
+                  )),
+                )}
               </ul>
               <p className={styles.confirmPrompt}>
                 <span className={styles.promptChar}>{">"}</span> Commit intel
@@ -320,49 +529,60 @@ export function SubjectRequestDialog({
                 </button>
               </div>
             </div>
-          ) : currentStep ? (
-            <div className={styles.activeStep}>
-              <span className={styles.stepLabel}>
-                Step {step + 1}/{TOTAL_STEPS}: {currentStep.label}
+          ) : currentBlock ? (
+            <div className={styles.blockSection}>
+              <span className={styles.blockTitle}>
+                BLOCK {blockIndex + 1}/{TOTAL_BLOCKS} — {currentBlock.title}
               </span>
 
-              <div className={styles.promptLine}>
-                <span className={styles.promptChar}>{">"}</span>
-                {currentStep.multiline ? (
-                  <textarea
-                    ref={textareaRef}
-                    className={styles.fieldTextarea}
-                    value={formData[currentStep.key]}
-                    onChange={(e) => updateField(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={currentStep.placeholder}
-                    disabled={isSubmitting || isSuccess}
-                    rows={3}
-                  />
-                ) : (
-                  <input
-                    ref={inputRef}
-                    className={styles.fieldInput}
-                    type="text"
-                    value={formData[currentStep.key]}
-                    onChange={(e) => updateField(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={currentStep.placeholder}
-                    disabled={isSubmitting || isSuccess}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                )}
-              </div>
+              {currentBlock.fields.map((f) => {
+                if (f.isPhoto) {
+                  return <div key={f.key}>{renderPhotoField()}</div>;
+                }
+                if (f.multiline) {
+                  return (
+                    <div key={f.key} className={styles.fieldRow}>
+                      <span className={styles.promptChar}>{">"}</span>
+                      <textarea
+                        ref={textareaRef}
+                        className={styles.fieldTextarea}
+                        value={getFieldValue(f.key)}
+                        onChange={(e) => updateText(f.key, e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                        placeholder={f.placeholder}
+                        disabled={isSubmitting || isSuccess}
+                        rows={3}
+                      />
+                      <span className={styles.fieldLabel}>{f.label}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={f.key} className={styles.fieldRow}>
+                    <span className={styles.promptChar}>{">"}</span>
+                    <input
+                      ref={inputRef}
+                      className={styles.fieldInput}
+                      type="text"
+                      value={getFieldValue(f.key)}
+                      onChange={(e) => updateText(f.key, e.target.value)}
+                      onKeyDown={handleInputKeyDown}
+                      placeholder={f.placeholder}
+                      disabled={isSubmitting || isSuccess}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <span className={styles.fieldLabel}>{f.label}</span>
+                  </div>
+                );
+              })}
 
               <span className={styles.hint}>
-                Enter — next
-                {currentStep.multiline ? " (Shift+Enter for newline)" : ""} |
-                Shift+Tab — back | Esc — abort
+                Enter — next | Shift+Tab — back | Esc — abort
               </span>
 
               <div className={styles.actions}>
-                {step > 0 && (
+                {blockIndex > 0 && (
                   <button
                     type="button"
                     onClick={goBack}
@@ -374,10 +594,7 @@ export function SubjectRequestDialog({
                 <button
                   type="button"
                   onClick={goNext}
-                  disabled={
-                    isSubmitting ||
-                    (currentStep.required && !formData[currentStep.key].trim())
-                  }
+                  disabled={isSubmitting || !blockValid()}
                 >
                   [NEXT]
                 </button>
