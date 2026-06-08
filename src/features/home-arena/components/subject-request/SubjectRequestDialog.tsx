@@ -1,205 +1,393 @@
 "use client";
 
-import { useState, type FormEvent, useEffect, useRef } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import styles from "./SubjectRequestDialog.module.css";
 
+// Types
 type SubjectRequestDialogProps = {
   initialSubjectName?: string;
   onClose: () => void;
 };
 
+type FormData = {
+  subjectName: string;
+  universe: string;
+  photoUrl: string;
+  intelSources: string;
+  keyFeats: string;
+  additionalNotes: string;
+  submitterName: string;
+};
+
+type FieldKey = keyof FormData;
+
+type WizardStep = {
+  key: FieldKey;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  multiline: boolean;
+};
+
+// Constants
+const WIZARD_STEPS: WizardStep[] = [
+  {
+    key: "subjectName",
+    label: "SUBJECT ALIAS",
+    placeholder: "e.g. Goku, Batman, SCP-096",
+    required: true,
+    multiline: false,
+  },
+  {
+    key: "universe",
+    label: "UNIVERSE / ORIGIN",
+    placeholder: "e.g. Dragon Ball, DC Comics",
+    required: true,
+    multiline: false,
+  },
+  {
+    key: "photoUrl",
+    label: "REFERENCE PHOTO URL (optional)",
+    placeholder: "https://...",
+    required: false,
+    multiline: false,
+  },
+  {
+    key: "intelSources",
+    label: "INTEL SOURCES (optional)",
+    placeholder: "Wiki / VSBW links...",
+    required: false,
+    multiline: true,
+  },
+  {
+    key: "keyFeats",
+    label: "KEY FEATS & EVIDENCE (optional)",
+    placeholder: "Important feats with evidence...",
+    required: false,
+    multiline: true,
+  },
+  {
+    key: "additionalNotes",
+    label: "ADDITIONAL NOTES (optional)",
+    placeholder: "Why add them? Version?",
+    required: false,
+    multiline: true,
+  },
+  {
+    key: "submitterName",
+    label: "FIELD AGENT SIGNATURE (optional)",
+    placeholder: "Your name or callsign",
+    required: false,
+    multiline: false,
+  },
+];
+
+const TOTAL_STEPS = WIZARD_STEPS.length;
+
+function generateFlogId(): string {
+  const n = new Date();
+  const pad = (v: number) => String(v).padStart(2, "0");
+  const seq = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+  return `FLOG-${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}-${pad(n.getHours())}${pad(n.getMinutes())}-${seq}`;
+}
+
+const EMPTY_FORM: FormData = {
+  subjectName: "",
+  universe: "",
+  photoUrl: "",
+  intelSources: "",
+  keyFeats: "",
+  additionalNotes: "",
+  submitterName: "",
+};
+
+// Component
 export function SubjectRequestDialog({
   initialSubjectName = "",
   onClose,
 }: SubjectRequestDialogProps) {
-  const [subjectName, setSubjectName] = useState(initialSubjectName);
-  const [universe, setUniverse] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [intelSources, setIntelSources] = useState("");
-  const [keyFeats, setKeyFeats] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState("");
-  const [submitterName, setSubmitterName] = useState("");
-
+  const flogId = useMemo(() => generateFlogId(), []);
+  const [step, setStep] = useState(0);
+  const [formData, setFormData] = useState<FormData>({
+    ...EMPTY_FORM,
+    subjectName: initialSubjectName,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key
+  // Close on Escape
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const h = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!subjectName.trim() || !universe.trim()) return;
+  // Focus input on step change
+  useEffect(() => {
+    const t = setTimeout(() => {
+      inputRef.current?.focus();
+      textareaRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [step]);
 
+  const currentStep = WIZARD_STEPS[step] ?? null;
+  const progress = Math.round((step / TOTAL_STEPS) * 100);
+  const isConfirmStep = step >= TOTAL_STEPS;
+
+  function updateField(value: string) {
+    if (!currentStep) return;
+    setFormData((p) => ({ ...p, [currentStep.key]: value }));
+  }
+
+  function goNext() {
+    if (!currentStep) return;
+    if (currentStep.required && !formData[currentStep.key].trim()) return;
+    if (step < TOTAL_STEPS - 1) {
+      setStep((s) => s + 1);
+    } else {
+      setStep(TOTAL_STEPS); // go to confirm
+    }
+  }
+
+  function goBack() {
+    if (isConfirmStep) {
+      setStep(TOTAL_STEPS - 1);
+    } else if (step > 0) {
+      setStep((s) => s - 1);
+    }
+  }
+
+  function handleKeyDown(
+    e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      goNext();
+    }
+    if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      goBack();
+    }
+  }
+
+  async function handleSubmit() {
     setIsSubmitting(true);
     setError(null);
-
     try {
-      const response = await fetch("/api/subject-requests", {
+      const r = await fetch("/api/subject-requests", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subjectName,
-          universe,
-          photoUrl,
-          intelSources,
-          keyFeats,
-          additionalNotes,
-          submitterName,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to submit request.");
+      if (!r.ok) {
+        const d = await r.json();
+        throw new Error(d.error || "Failed to submit request.");
       }
-
       setIsSuccess(true);
-      // Automatically close after a short delay to show the stamp
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      setTimeout(() => onClose(), 1800);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred.");
       setIsSubmitting(false);
     }
   }
 
-  function handleBackdropClick(event: React.MouseEvent) {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
+  function handleBackdropClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) onClose();
   }
+
+  const completedSteps = WIZARD_STEPS.slice(0, step).filter((s) =>
+    formData[s.key].trim(),
+  );
 
   return (
     <div className={styles.backdrop} onMouseDown={handleBackdropClick}>
-      <div className={styles.dossier} ref={dialogRef} role="dialog" aria-modal="true">
-        {isSuccess && <div className={styles.stampOverlay}>RECEIVED</div>}
-        
-        <header className={styles.header}>
-          <div className={styles.titleGroup}>
-            <span className={styles.classification}>Top Secret // Request Form</span>
-            <h2 className={styles.title}>Subject Intel File</h2>
-          </div>
-          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close">
+      <div
+        className={styles.terminal}
+        ref={terminalRef}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Titlebar */}
+        <div className={styles.titlebar}>
+          <span className={styles.titlebarTitle}>C:\Omniversus\flog.exe</span>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close"
+          >
             [X]
           </button>
-        </header>
+        </div>
 
-        {error && <div className={styles.errorText}>[ERROR]: {error}</div>}
+        {/* Screen */}
+        <div className={styles.screen}>
+          <p className={styles.flogHeader}>
+            [{flogId}] Initializing intel submission...
+          </p>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.field}>
-            <label htmlFor="subjectName">Subject Alias</label>
-            <input
-              id="subjectName"
-              type="text"
-              className={styles.input}
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              placeholder="e.g. Goku, Batman, SCP-096"
-              required
-              disabled={isSubmitting || isSuccess}
-            />
+          {/* Progress */}
+          <div className={styles.progressBar}>
+            <div className={styles.progressTrack}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className={styles.progressLabel}>
+              {step}/{TOTAL_STEPS}
+            </span>
           </div>
 
-          <div className={styles.field}>
-            <label htmlFor="universe">Universe / Origin</label>
-            <input
-              id="universe"
-              type="text"
-              className={styles.input}
-              value={universe}
-              onChange={(e) => setUniverse(e.target.value)}
-              placeholder="e.g. Dragon Ball, DC Comics, SCP Foundation"
-              required
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+          {/* Completed steps log */}
+          {completedSteps.length > 0 && (
+            <pre className={styles.stepLog}>
+              {completedSteps.map((s) => (
+                <span key={s.key} className={styles.stepLogLine}>
+                  [{flogId}] {s.label}: {formData[s.key].slice(0, 60)}
+                  {formData[s.key].length > 60 ? "..." : ""}
+                  {"\n"}
+                </span>
+              ))}
+            </pre>
+          )}
 
-          <div className={styles.field}>
-            <label htmlFor="photoUrl">Reference Photo URL <span className={styles.optional}>(optional)</span></label>
-            <input
-              id="photoUrl"
-              type="url"
-              className={styles.input}
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+          {/* Error */}
+          {error && <p className={styles.errorLine}>[ERROR]: {error}</p>}
 
-          <div className={styles.field}>
-            <label htmlFor="intelSources">Intel Sources <span className={styles.optional}>(optional)</span></label>
-            <textarea
-              id="intelSources"
-              className={styles.textarea}
-              value={intelSources}
-              onChange={(e) => setIntelSources(e.target.value)}
-              placeholder="Links to Wiki, VSBW, or official character profiles..."
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+          {/* Success overlay */}
+          {isSuccess && (
+            <div className={styles.successOverlay}>
+              <span className={styles.successCode}>[{flogId}] COMMITTED</span>
+              <span className={styles.successMsg}>
+                Intel file queued for review. Closing...
+              </span>
+            </div>
+          )}
 
-          <div className={styles.field}>
-            <label htmlFor="keyFeats">Key Feats & Evidence <span className={styles.optional}>(optional)</span></label>
-            <textarea
-              id="keyFeats"
-              className={styles.textarea}
-              value={keyFeats}
-              onChange={(e) => setKeyFeats(e.target.value)}
-              placeholder="Mention important feats and provide links to scans/evidence..."
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+          {/* Confirm step */}
+          {isConfirmStep ? (
+            <div className={styles.activeStep}>
+              <span className={styles.confirmHeader}>REVIEW & CONFIRM</span>
+              <ul className={styles.confirmList}>
+                {WIZARD_STEPS.map((s) => (
+                  <li key={s.key}>
+                    <span className={styles.confirmField}>{s.label}: </span>
+                    {formData[s.key].trim() ? (
+                      <span className={styles.confirmValue}>
+                        {formData[s.key].slice(0, 80)}
+                        {formData[s.key].length > 80 ? "..." : ""}
+                      </span>
+                    ) : (
+                      <span className={styles.confirmMissing}>(empty)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.confirmPrompt}>
+                <span className={styles.promptChar}>{">"}</span> Commit intel
+                file? [Y / n]
+              </p>
 
-          <div className={styles.field}>
-            <label htmlFor="additionalNotes">Additional Notes <span className={styles.optional}>(optional)</span></label>
-            <textarea
-              id="additionalNotes"
-              className={styles.textarea}
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Why should they be added? Specific version requested?"
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+              <div className={styles.actions}>
+                <button type="button" onClick={goBack} disabled={isSubmitting}>
+                  [BACK]
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "[FILING...]" : "[COMMIT]"}
+                </button>
+                <button type="button" onClick={onClose} disabled={isSubmitting}>
+                  [ABORT]
+                </button>
+              </div>
+            </div>
+          ) : currentStep ? (
+            <div className={styles.activeStep}>
+              <span className={styles.stepLabel}>
+                Step {step + 1}/{TOTAL_STEPS}: {currentStep.label}
+              </span>
 
-          <div className={styles.field}>
-            <label htmlFor="submitterName">Field Agent <span className={styles.optional}>(optional)</span></label>
-            <input
-              id="submitterName"
-              type="text"
-              className={styles.input}
-              value={submitterName}
-              onChange={(e) => setSubmitterName(e.target.value)}
-              placeholder="Your name or callsign"
-              disabled={isSubmitting || isSuccess}
-            />
-          </div>
+              <div className={styles.promptLine}>
+                <span className={styles.promptChar}>{">"}</span>
+                {currentStep.multiline ? (
+                  <textarea
+                    ref={textareaRef}
+                    className={styles.fieldTextarea}
+                    value={formData[currentStep.key]}
+                    onChange={(e) => updateField(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={currentStep.placeholder}
+                    disabled={isSubmitting || isSuccess}
+                    rows={3}
+                  />
+                ) : (
+                  <input
+                    ref={inputRef}
+                    className={styles.fieldInput}
+                    type="text"
+                    value={formData[currentStep.key]}
+                    onChange={(e) => updateField(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={currentStep.placeholder}
+                    disabled={isSubmitting || isSuccess}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                )}
+              </div>
 
-          <div className={styles.actions}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={isSubmitting || isSuccess}>
-              Abort
-            </button>
-            <button type="submit" className={styles.submitBtn} disabled={isSubmitting || isSuccess}>
-              {isSubmitting ? "Filing..." : "Submit File"}
-            </button>
-          </div>
-        </form>
+              <span className={styles.hint}>
+                Enter — next
+                {currentStep.multiline ? " (Shift+Enter for newline)" : ""} |
+                Shift+Tab — back | Esc — abort
+              </span>
+
+              <div className={styles.actions}>
+                {step > 0 && (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    disabled={isSubmitting}
+                  >
+                    [BACK]
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={
+                    isSubmitting ||
+                    (currentStep.required && !formData[currentStep.key].trim())
+                  }
+                >
+                  [NEXT]
+                </button>
+                <button type="button" onClick={onClose} disabled={isSubmitting}>
+                  [ABORT]
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
