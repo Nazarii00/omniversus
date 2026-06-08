@@ -60,7 +60,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
     fields: [
       {
         key: "subjectName",
-        label: "SUBJECT ALIAS",
+        label: "Subject alias",
         placeholder: "e.g. Goku, Batman, SCP-096",
         required: true,
         multiline: false,
@@ -68,7 +68,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
       },
       {
         key: "universe",
-        label: "UNIVERSE / ORIGIN",
+        label: "Universe / origin",
         placeholder: "e.g. Dragon Ball, DC Comics",
         required: true,
         multiline: false,
@@ -82,7 +82,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
     fields: [
       {
         key: "photoFile",
-        label: "REFERENCE PHOTO",
+        label: "Reference photo",
         placeholder: "",
         required: false,
         multiline: false,
@@ -90,7 +90,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
       },
       {
         key: "intelSources",
-        label: "INTEL SOURCES (optional)",
+        label: "Intel sources (optional)",
         placeholder: "Wiki / VSBW links...",
         required: false,
         multiline: true,
@@ -98,7 +98,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
       },
       {
         key: "keyFeats",
-        label: "KEY FEATS & EVIDENCE (optional)",
+        label: "Key feats & evidence (optional)",
         placeholder: "Important feats with evidence...",
         required: false,
         multiline: true,
@@ -112,7 +112,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
     fields: [
       {
         key: "additionalNotes",
-        label: "ADDITIONAL NOTES (optional)",
+        label: "Additional notes (optional)",
         placeholder: "Why add them? Version?",
         required: false,
         multiline: true,
@@ -120,7 +120,7 @@ const WIZARD_BLOCKS: WizardBlock[] = [
       },
       {
         key: "submitterName",
-        label: "AGENT SIGNATURE (optional)",
+        label: "Agent signature (optional)",
         placeholder: "Your name or callsign",
         required: false,
         multiline: false,
@@ -148,6 +148,11 @@ const PHOTO_PREVIEW_H = 200;
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
+}
+
+function progressBar(block: number, total: number): string {
+  const filled = Math.round((block / total) * 10);
+  return "▓".repeat(filled) + "░".repeat(10 - filled);
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +185,6 @@ export function SubjectRequestDialog({
 
   const isConfirmStep = blockIndex >= TOTAL_BLOCKS;
   const currentBlock = WIZARD_BLOCKS[blockIndex] ?? null;
-  const progress = Math.round((blockIndex / TOTAL_BLOCKS) * 100);
 
   // Close on Escape
   useEffect(() => {
@@ -213,7 +217,7 @@ export function SubjectRequestDialog({
     if (!currentBlock) return false;
     return currentBlock.fields.every((f) => {
       if (!f.required) return true;
-      if (f.key === "photoFile") return true; // photo is optional
+      if (f.key === "photoFile") return true;
       return formData[f.key].toString().trim().length > 0;
     });
   }
@@ -258,7 +262,6 @@ export function SubjectRequestDialog({
       photoFile: file,
       photoCrop: { x: 0, y: 0, zoom: 1 },
     }));
-    // Load natural dimensions
     const img = new Image();
     img.onload = () =>
       setPhotoNatural({ w: img.naturalWidth, h: img.naturalHeight });
@@ -355,15 +358,13 @@ export function SubjectRequestDialog({
     return (
       <div className={styles.photoSection}>
         <div className={styles.photoInputRow}>
-          <span className={styles.promptChar}>{">"}</span>
-          <span className={styles.photoLabel}>REFERENCE PHOTO:</span>
           <button
             type="button"
             className={styles.browseBtn}
             onClick={() => fileRef.current?.click()}
             disabled={isSubmitting}
           >
-            [BROWSE]
+            browse
           </button>
           {hasPhoto && (
             <button
@@ -372,7 +373,7 @@ export function SubjectRequestDialog({
               onClick={resetPhoto}
               disabled={isSubmitting}
             >
-              [CLEAR]
+              clear
             </button>
           )}
           <input
@@ -407,7 +408,7 @@ export function SubjectRequestDialog({
               />
             </div>
             <span className={styles.photoHint}>
-              Drag to reposition | Scroll to zoom | Zoom:{" "}
+              drag to reposition | scroll to zoom | zoom:{" "}
               {formData.photoCrop.zoom.toFixed(2)}x
             </span>
           </div>
@@ -443,7 +444,7 @@ export function SubjectRequestDialog({
             onClick={onClose}
             aria-label="Close"
           >
-            [X]
+            x
           </button>
         </div>
 
@@ -451,26 +452,28 @@ export function SubjectRequestDialog({
         <div className={styles.screen}>
           {/* Progress */}
           <div className={styles.progressBar}>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+            <span className={styles.progressTrack}>
+              [
+              {progressBar(
+                isConfirmStep ? TOTAL_BLOCKS : blockIndex,
+                TOTAL_BLOCKS,
+              )}
+              ]
+            </span>
             <span className={styles.progressLabel}>
-              BLOCK {isConfirmStep ? "◇" : blockIndex + 1}/{TOTAL_BLOCKS}
+              {isConfirmStep ? "review" : `${currentBlock?.title ?? ""}`}
             </span>
           </div>
 
           {/* Error */}
-          {error && <p className={styles.errorLine}>[ERROR]: {error}</p>}
+          {error && <p className={styles.errorLine}>error: {error}</p>}
 
           {/* Success overlay */}
           {isSuccess && (
             <div className={styles.successOverlay}>
-              <span className={styles.successCode}>INTEL FILE COMMITTED</span>
+              <span className={styles.successCode}>intel file committed</span>
               <span className={styles.successMsg}>
-                Intel file queued for review. Closing...
+                queued for review. closing...
               </span>
             </div>
           )}
@@ -478,9 +481,7 @@ export function SubjectRequestDialog({
           {/* Confirm step */}
           {isConfirmStep ? (
             <div className={styles.blockSection}>
-              <span className={styles.confirmHeader}>
-                BLOCK ◇ — REVIEW & CONFIRM
-              </span>
+              <span className={styles.confirmHeader}>review & confirm</span>
               <ul className={styles.confirmList}>
                 {WIZARD_BLOCKS.map((block) =>
                   block.fields.map((f) => (
@@ -509,40 +510,43 @@ export function SubjectRequestDialog({
                 )}
               </ul>
               <p className={styles.confirmPrompt}>
-                <span className={styles.promptChar}>{">"}</span> Commit intel
-                file? [Y / n]
+                <span className={styles.promptChar}>{">"}</span> commit intel
+                file? [y / n]
               </p>
 
               <div className={styles.actions}>
                 <button type="button" onClick={goBack} disabled={isSubmitting}>
-                  [BACK]
+                  back
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "[FILING...]" : "[COMMIT]"}
+                  {isSubmitting ? "filing..." : "commit"}
                 </button>
                 <button type="button" onClick={onClose} disabled={isSubmitting}>
-                  [ABORT]
+                  abort
                 </button>
               </div>
             </div>
           ) : currentBlock ? (
             <div className={styles.blockSection}>
-              <span className={styles.blockTitle}>
-                BLOCK {blockIndex + 1}/{TOTAL_BLOCKS} — {currentBlock.title}
-              </span>
+              <span className={styles.blockTitle}>{currentBlock.title}</span>
 
               {currentBlock.fields.map((f) => {
                 if (f.isPhoto) {
-                  return <div key={f.key}>{renderPhotoField()}</div>;
+                  return (
+                    <div key={f.key} className={styles.fieldRow}>
+                      <span className={styles.fieldLabel}>{f.label}</span>
+                      {renderPhotoField()}
+                    </div>
+                  );
                 }
                 if (f.multiline) {
                   return (
                     <div key={f.key} className={styles.fieldRow}>
-                      <span className={styles.promptChar}>{">"}</span>
+                      <span className={styles.fieldLabel}>{f.label}</span>
                       <textarea
                         ref={textareaRef}
                         className={styles.fieldTextarea}
@@ -553,13 +557,12 @@ export function SubjectRequestDialog({
                         disabled={isSubmitting || isSuccess}
                         rows={3}
                       />
-                      <span className={styles.fieldLabel}>{f.label}</span>
                     </div>
                   );
                 }
                 return (
                   <div key={f.key} className={styles.fieldRow}>
-                    <span className={styles.promptChar}>{">"}</span>
+                    <span className={styles.fieldLabel}>{f.label}</span>
                     <input
                       ref={inputRef}
                       className={styles.fieldInput}
@@ -572,13 +575,12 @@ export function SubjectRequestDialog({
                       autoComplete="off"
                       spellCheck={false}
                     />
-                    <span className={styles.fieldLabel}>{f.label}</span>
                   </div>
                 );
               })}
 
               <span className={styles.hint}>
-                Enter — next | Shift+Tab — back | Esc — abort
+                enter — next | shift+tab — back | esc — abort
               </span>
 
               <div className={styles.actions}>
@@ -588,7 +590,7 @@ export function SubjectRequestDialog({
                     onClick={goBack}
                     disabled={isSubmitting}
                   >
-                    [BACK]
+                    back
                   </button>
                 )}
                 <button
@@ -596,10 +598,10 @@ export function SubjectRequestDialog({
                   onClick={goNext}
                   disabled={isSubmitting || !blockValid()}
                 >
-                  [NEXT]
+                  next
                 </button>
                 <button type="button" onClick={onClose} disabled={isSubmitting}>
-                  [ABORT]
+                  abort
                 </button>
               </div>
             </div>
