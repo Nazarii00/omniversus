@@ -10,6 +10,7 @@ import {
   writeLatestBattleReport,
   type BattleReportJson,
 } from "@/features/battle-report";
+import { VerdictFeedback } from "@/features/battle-report/components/full-report/VerdictFeedback";
 
 import { arenaCards } from "../../data";
 import {
@@ -396,6 +397,12 @@ export default function HomeArenaStage({
               ariaLabel="Reset selected combatants"
               label="RESET_SELECTION"
               onViewReport={resetSelection}
+            />
+          ) : null}
+          {isReportReady && battleReport?.battle_run_id ? (
+            <VerdictFeedback
+              variant="arena"
+              battleRunId={battleReport.battle_run_id}
             />
           ) : null}
         </div>
