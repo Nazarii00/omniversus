@@ -14,24 +14,132 @@ async function ensureProfile(supabaseId: string, fallbackUsername: string) {
   const prisma = getPrisma();
   if (!prisma) return null;
 
-  const existing = await prisma.profile.findUnique({
-    where: { supabaseId },
-  });
+  try {
+    return await prisma.profile.upsert({
+      where: { supabaseId },
+      create: {
+        supabaseId,
+        username: fallbackUsername,
+        clearance: "SIGMA-1",
+        reputation: 0,
+        credits: 100,
+      },
+      update: {},
+    });
+  } catch (error) {
+    console.error("[ensureProfile] Upsert failed:", error);
+    return null;
+  }
+}
 
-  if (existing) return existing;
+function DevIdentityPage({
+  email,
+  initial,
+}: {
+  email: string;
+  initial: string;
+}) {
+  const DEV = {
+    initial,
+    username: "dev_user",
+    email,
+    joined: "2026-06-07",
+    clearance: "SIGMA-1",
+    reputation: 42,
+    credits: 1337,
+    totalBattles: 12,
+    winRate: 67,
+    currentStreak: 3,
+    recentBattles: [
+      {
+        fighterB: "ShadowWolf",
+        result: "win" as const,
+        date: "2026-06-07",
+      },
+      {
+        fighterB: "BlazeFist",
+        result: "loss" as const,
+        date: "2026-06-06",
+      },
+      { fighterB: "IceQueen", result: "win" as const, date: "2026-06-05" },
+    ],
+  } as const;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (prisma.profile as any).create({
-    data: {
-      supabaseId,
-      username: fallbackUsername,
-      clearance: "SIGMA-1",
-      reputation: 0,
-      credits: 100,
-    },
-  });
-
-  return prisma.profile.findUnique({ where: { supabaseId } });
+  return (
+    <div className={styles.identity}>
+      <div className={styles.profileLeft}>
+        <div className={styles.avatar}>
+          <span className={styles.avatarInitial}>{DEV.initial}</span>
+        </div>
+        <hr className={styles.idDivider} />
+        <div className={styles.idMeta}>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>USERNAME</span>
+            <span className={styles.idValue}>{DEV.username}</span>
+          </div>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>EMAIL</span>
+            <span className={styles.idValueDim}>{DEV.email}</span>
+          </div>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>JOINED</span>
+            <span className={styles.idValueDim}>{DEV.joined}</span>
+          </div>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>CLEARANCE</span>
+            <span className={styles.idValueDim}>{DEV.clearance}</span>
+          </div>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>REPUTATION</span>
+            <span className={styles.idValueDim}>{DEV.reputation}</span>
+          </div>
+          <div className={styles.idRow}>
+            <span className={styles.idLabel}>CREDITS</span>
+            <span className={styles.idValueDim}>{DEV.credits}</span>
+          </div>
+        </div>
+        <form action={signOutAction}>
+          <button className={styles.signOutButton} type="submit">
+            SIGN OUT
+          </button>
+        </form>
+      </div>
+      <div className={styles.profileRight}>
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>TOTAL BATTLES</span>
+            <span className={styles.statValue}>{DEV.totalBattles}</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>WIN RATE</span>
+            <span className={styles.statValue}>{DEV.winRate}%</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>CUR. STREAK</span>
+            <span className={styles.statValue}>x{DEV.currentStreak}</span>
+          </div>
+        </div>
+        <div className={styles.activitySection}>
+          <span className={styles.activityLabel}>{"// RECENT ACTIVITY"}</span>
+          {DEV.recentBattles.map((battle, i) => (
+            <div key={i} className={styles.activityRow}>
+              <span className={styles.activityOpponent}>{battle.fighterB}</span>
+              <span
+                className={`${styles.activityResult} ${
+                  battle.result === "win"
+                    ? styles.activityResultWin
+                    : styles.activityResultLoss
+                }`}
+              >
+                {battle.result.toUpperCase()}
+              </span>
+              <span className={styles.activityDate}>{battle.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default async function IdentityPage() {
@@ -41,115 +149,27 @@ export default async function IdentityPage() {
     return null; // layout handles redirect
   }
 
+  const email = user.email ?? "Unknown";
+  const initial = email.charAt(0).toUpperCase();
+
   // DEVELOPMENT BYPASS — fully mocked UI without any DB calls
   if (process.env.NODE_ENV === "development") {
-    const DEV = {
-      initial: "D",
-      username: "dev_user",
-      email: user.email ?? "dev@arena.local",
-      joined: "2026-06-07",
-      clearance: "SIGMA-1",
-      reputation: 42,
-      credits: 1337,
-      totalBattles: 12,
-      winRate: 67,
-      currentStreak: 3,
-      recentBattles: [
-        { fighterB: "ShadowWolf", result: "win" as const, date: "2026-06-07" },
-        { fighterB: "BlazeFist", result: "loss" as const, date: "2026-06-06" },
-        { fighterB: "IceQueen", result: "win" as const, date: "2026-06-05" },
-      ],
-    } as const;
-
-    return (
-      <div className={styles.identity}>
-        <div className={styles.profileLeft}>
-          <div className={styles.avatar}>
-            <span className={styles.avatarInitial}>{DEV.initial}</span>
-          </div>
-          <hr className={styles.idDivider} />
-          <div className={styles.idMeta}>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>USERNAME</span>
-              <span className={styles.idValue}>{DEV.username}</span>
-            </div>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>EMAIL</span>
-              <span className={styles.idValueDim}>{DEV.email}</span>
-            </div>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>JOINED</span>
-              <span className={styles.idValueDim}>{DEV.joined}</span>
-            </div>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>CLEARANCE</span>
-              <span className={styles.idValueDim}>{DEV.clearance}</span>
-            </div>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>REPUTATION</span>
-              <span className={styles.idValueDim}>{DEV.reputation}</span>
-            </div>
-            <div className={styles.idRow}>
-              <span className={styles.idLabel}>CREDITS</span>
-              <span className={styles.idValueDim}>{DEV.credits}</span>
-            </div>
-          </div>
-          <form action={signOutAction}>
-            <button className={styles.signOutButton} type="submit">
-              SIGN OUT
-            </button>
-          </form>
-        </div>
-        <div className={styles.profileRight}>
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>TOTAL BATTLES</span>
-              <span className={styles.statValue}>{DEV.totalBattles}</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>WIN RATE</span>
-              <span className={styles.statValue}>{DEV.winRate}%</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>CUR. STREAK</span>
-              <span className={styles.statValue}>x{DEV.currentStreak}</span>
-            </div>
-          </div>
-          <div className={styles.activitySection}>
-            <span className={styles.activityLabel}>{"// RECENT ACTIVITY"}</span>
-            {DEV.recentBattles.map((battle, i) => (
-              <div key={i} className={styles.activityRow}>
-                <span className={styles.activityOpponent}>
-                  {battle.fighterB}
-                </span>
-                <span
-                  className={`${styles.activityResult} ${
-                    battle.result === "win"
-                      ? styles.activityResultWin
-                      : styles.activityResultLoss
-                  }`}
-                >
-                  {battle.result.toUpperCase()}
-                </span>
-                <span className={styles.activityDate}>{battle.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <DevIdentityPage email={email} initial={initial} />;
   }
 
-  const email = user.email ?? "Unknown";
-
   // Ensure profile exists (for users who registered before onboarding was removed)
-  await ensureProfile(user.id, email.split("@")[0] ?? "user");
+  const ensuredProfile = await ensureProfile(
+    user.id,
+    email.split("@")[0] ?? "user",
+  );
 
+  // If ensureProfile failed, still try to fetch data (profile might already exist)
   const profile = await getUserProfile(user.id);
   const recentBattles = await getUserBattles(user.id, 3);
 
-  const initial = email.charAt(0).toUpperCase();
-  const joined = profile?.user.createdAt.toISOString().split("T")[0] ?? "—";
+  const joined = ensuredProfile?.createdAt
+    ? ensuredProfile.createdAt.toISOString().split("T")[0]
+    : (profile?.user.createdAt.toISOString().split("T")[0] ?? "—");
 
   return (
     <div className={styles.identity}>
