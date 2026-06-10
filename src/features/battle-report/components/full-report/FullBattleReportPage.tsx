@@ -25,6 +25,7 @@ import {
   VerdictBrief,
   VerdictStack,
 } from "./FullBattleReportSections";
+import { QualityBadge, VerdictFeedback } from "./VerdictFeedback";
 import styles from "../../styles/FullBattleReportPage.module.css";
 
 type ReportPortrait = NonNullable<
@@ -66,7 +67,10 @@ export default function FullBattleReportPage() {
     hydratedReport?.storageKey === storedReportText
       ? hydratedReport.report
       : storedReport;
-  const view = useMemo(() => (report ? normalizeReport(report) : null), [report]);
+  const view = useMemo(
+    () => (report ? normalizeReport(report) : null),
+    [report],
+  );
 
   useEffect(() => {
     if (!storedReport || !needsPortraitHydration(storedReport)) return;
@@ -143,13 +147,20 @@ export default function FullBattleReportPage() {
       )
     : [];
   const warnings = report ? qualityWarnings(report) : [];
-  const winnerLabel = view ? formatSide(view.verdict.winner_side, fighters) : "";
-  const winnerName = view?.verdict.winner_name ?? view?.winnerName ?? winnerLabel;
+  const winnerLabel = view
+    ? formatSide(view.verdict.winner_side, fighters)
+    : "";
+  const winnerName =
+    view?.verdict.winner_name ?? view?.winnerName ?? winnerLabel;
   const heroSummary =
     view?.verdict.summary_3_sentences ??
     view?.verdict.primary_reason ??
     view?.chainTeaser ??
     "";
+
+  const qualityScore = report?.quality_score ?? null;
+  const qualityBand = report?.quality_band ?? null;
+  const battleRunId = report?.battle_run_id ?? null;
 
   if (!report || !view) {
     return (
@@ -188,17 +199,20 @@ export default function FullBattleReportPage() {
               : []),
           ]}
           actions={
-            <ShareableReportActions
-              abilityInteractions={report.ability_interactions}
-              comparison={comparison}
-              dataProvenance={report.data_provenance}
-              decisiveChain={decisiveChain}
-              reportMetadata={report.metadata}
-              reportRules={report.rules}
-              summary={heroSummary}
-              view={view}
-              winConditions={report.win_conditions}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <QualityBadge score={qualityScore} band={qualityBand} />
+              <ShareableReportActions
+                abilityInteractions={report.ability_interactions}
+                comparison={comparison}
+                dataProvenance={report.data_provenance}
+                decisiveChain={decisiveChain}
+                reportMetadata={report.metadata}
+                reportRules={report.rules}
+                summary={heroSummary}
+                view={view}
+                winConditions={report.win_conditions}
+              />
+            </div>
           }
         />
 
@@ -256,6 +270,10 @@ export default function FullBattleReportPage() {
             />
 
             <BattleProgression view={view} />
+
+            {battleRunId && (
+              <VerdictFeedback variant="full" battleRunId={battleRunId} />
+            )}
           </div>
         </div>
       </div>

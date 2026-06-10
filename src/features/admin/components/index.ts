@@ -1,4 +1,6 @@
 export { AdminDisabled, MissingDatabase } from "./AdminNotice";
+export { CharacterImportConsole } from "./CharacterImportConsole";
+export { ImportApprovalQueue } from "./ImportApprovalQueue";
 export { AdminHeader, AdminShell } from "./AdminShell";
 export { AppealsReview } from "./AppealsReview";
 export { DossierForms } from "./forms/DossierForms";

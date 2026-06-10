@@ -10,7 +10,7 @@
 
 .pageTitle {
   font-size: 1.5rem;
-  color: #00ff41;
+  color: #50c878;
   letter-spacing: 0.15em;
   margin: 0;
   text-transform: uppercase;
@@ -24,7 +24,7 @@
 .intelEmpty {
   font-size: 13px;
   letter-spacing: 0.2em;
-  color: #00ff41;
+  color: #50c878;
   text-transform: uppercase;
   font-family:
     "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
@@ -42,8 +42,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(74, 122, 74, 0.4);
-  background: rgba(74, 122, 74, 0.03);
+  border: 1px solid rgba(45, 106, 74, 0.4);
+  background: rgba(45, 106, 74, 0.04);
   border-radius: 2px;
   height: 160px;
 }
@@ -55,7 +55,7 @@
 .panelLabel {
   font-size: 11px;
   letter-spacing: 0.22em;
-  color: #4a7a4a;
+  color: #2d6a4a;
   text-transform: uppercase;
   font-family:
     "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",

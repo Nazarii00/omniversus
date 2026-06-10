@@ -1,5 +1,6 @@
 import {
   createMiddlewarePipeline,
+  withRateLimit,
   withRequestContext,
 } from "@/server/middleware";
 import { supabaseSessionHandler } from "@/server/supabase/supabaseSessionHandler";
@@ -20,4 +21,5 @@ export const config = {
 export const proxy = createMiddlewarePipeline([
   withRequestContext,
   supabaseSessionHandler,
+  withRateLimit,
 ]);

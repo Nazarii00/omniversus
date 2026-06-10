@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   BattleAnalysisError,
   buildBattleCacheKey,
+  checkDailyBattleLimit,
   completeBattleRunRecord,
+  computeBattleQualityScore,
   createBattleRunRecord,
   failBattleRunRecord,
   findCachedBattleResult,
@@ -11,6 +13,8 @@ import {
   runBattleAnalysisWithMetadata,
   type RunBattleAnalysisOptions,
 } from "@/server/battle";
+import { getPrisma } from "@/server/db/prisma";
+import { createServerSupabaseClient } from "@/server/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -34,10 +38,7 @@ function readString(
   return null;
 }
 
-function readBoolean(
-  body: Record<string, unknown>,
-  key: string,
-): boolean {
+function readBoolean(body: Record<string, unknown>, key: string): boolean {
   return body[key] === true;
 }
 
@@ -116,23 +117,89 @@ export async function POST(request: NextRequest) {
   const options = readOptions(body);
   const forceRefresh = readBoolean(body, "forceRefresh");
 
+  // --- Resolve user ---------------------------------------------------------
+  let userId: string | null = null;
+  let userClearance: string | null = null;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      userId = user.id;
+
+      const prisma = getPrisma();
+      if (prisma) {
+        const profile = await prisma.profile.findUnique({
+          where: { supabaseId: user.id },
+          select: { clearance: true },
+        });
+        userClearance = profile?.clearance ?? null;
+      }
+    }
+  } catch {
+    // Non-critical — proceed as anonymous
+  }
+
+  // --- Per-user daily cap ---------------------------------------------------
+  if (userId) {
+    const limitCheck = await checkDailyBattleLimit(userId, userClearance);
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "daily_battle_limit_exceeded",
+          limit: limitCheck.limit,
+          used: limitCheck.used,
+          retryAfter: limitCheck.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(limitCheck.retryAfterSeconds ?? 0),
+          },
+        },
+      );
+    }
+  }
+
   // --- Cache-first lookup ---------------------------------------------------
   if (!forceRefresh) {
     const cacheKey = buildBattleCacheKey(fighterA, fighterB, options);
     const cached = await findCachedBattleResult(cacheKey);
 
     if (cached) {
+      // Create a history record for the current user even on cache hit
+      if (userId) {
+        const battleRun = await createBattleRunRecord({
+          fighterA,
+          fighterB,
+          options,
+          userId,
+        });
+        await completeBattleRunRecord(battleRun, {
+          result: cached.result,
+          generation: cached.generation,
+        });
+      }
+
       const result = orientBattleResultForRequest(
         cached.result,
         fighterA,
         fighterB,
       );
 
+      const quality = computeBattleQualityScore(result);
+
       return NextResponse.json({
         ...result,
         generation: cached.generation,
         battle_run_id: cached.battleRunId,
         cached: true,
+        quality_score: quality.overall,
+        quality_band: quality.band,
       });
     }
   }
@@ -142,6 +209,7 @@ export async function POST(request: NextRequest) {
     fighterA,
     fighterB,
     options,
+    userId,
   });
 
   try {
@@ -153,11 +221,15 @@ export async function POST(request: NextRequest) {
 
     await completeBattleRunRecord(battleRun, { result, generation });
 
+    const quality = computeBattleQualityScore(result);
+
     return NextResponse.json({
       ...result,
       generation,
       battle_run_id: battleRun?.id ?? null,
       cached: false,
+      quality_score: quality.overall,
+      quality_band: quality.band,
     });
   } catch (error) {
     console.error(error);

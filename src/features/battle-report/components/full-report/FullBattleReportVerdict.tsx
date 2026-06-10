@@ -480,12 +480,15 @@ function ComparisonPulse({
     <section className={styles.comparisonRegister}>
       <span>Category Advantages</span>
       <div>
-        {comparison.slice(0, 5).map((row) => {
+        {comparison.slice(0, 5).map((row, i) => {
           const split = comparisonPowerSplit(row, fighters);
           const splitLabel = `${split.aLabel}: ${split.aShare}% / ${split.bLabel}: ${split.bShare}%`;
 
           return (
-            <article key={row.category} data-contested={row.contested}>
+            <article
+              key={`${row.category}-${i}`}
+              data-contested={row.contested}
+            >
               <header>
                 <b>{row.category}</b>
                 <em title={splitLabel}>

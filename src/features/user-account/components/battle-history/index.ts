@@ -1,2 +1,8 @@
 export { default } from "./BattleHistory";
-export type { Battle, BattleResult, MonthGroup } from "./types";
+export type {
+  Battle,
+  BattleResult,
+  BattleMode,
+  MonthGroup,
+  FilterState,
+} from "./types";

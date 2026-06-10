@@ -3,7 +3,7 @@
    ============================================================ */
 .page {
   min-width: 1200px;
-  padding: 3rem;
+  padding: 3rem 1.5rem;
 }
 
 /* ============================================================
@@ -14,20 +14,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 3rem 1rem;
-  border-bottom: 1px solid rgba(74, 122, 74, 0.15);
+  border-bottom: 1px solid rgba(45, 106, 74, 0.2);
   margin-bottom: 0;
 }
 
 .arenaLink {
   font-size: 13px;
   letter-spacing: 0.18em;
-  color: #00ff41;
+  color: #50c878;
   text-decoration: none;
   text-transform: uppercase;
   font-family:
     "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
     "Courier New", monospace;
-  border: 1px solid #00ff41;
+  border: 1px solid #50c878;
   padding: 6px 14px;
   transition:
     background 0.15s ease,
@@ -35,8 +35,8 @@
 }
 
 .arenaLink:hover {
-  color: #00ff41;
-  background: rgba(0, 255, 65, 0.08);
+  color: #6fcf97;
+  background: rgba(80, 200, 120, 0.08);
 }
 
 /* ============================================================
@@ -46,7 +46,7 @@
   display: flex;
   justify-content: center;
   gap: 3rem;
-  border-bottom: 1px solid rgba(74, 122, 74, 0.3);
+  border-bottom: 1px solid rgba(45, 106, 74, 0.35);
   margin-bottom: 2.5rem;
   padding: 1.5rem 3rem;
   font-family:
@@ -61,7 +61,7 @@
   padding: 0.75rem 0;
   font-size: 13px;
   letter-spacing: 0.2em;
-  color: #4a7a4a;
+  color: #2d6a4a;
   text-decoration: none;
   border-bottom: 2px solid transparent;
   transition:
@@ -72,12 +72,12 @@
 }
 
 .link:hover {
-  color: #00cc33;
+  color: #6fcf97;
 }
 
 .linkActive {
-  color: #00ff41;
-  border-bottom-color: #00ff41;
+  color: #50c878;
+  border-bottom-color: #50c878;
 }
 
 /* ============================================================

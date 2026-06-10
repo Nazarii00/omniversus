@@ -1,0 +1,168 @@
+/* ============================================================
+   COIN FLIGHT ANIMATION — CRT NEON AESTHETIC
+   ============================================================ */
+
+.coin-flight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.coin-flight-particle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", "Roboto Mono", "IBM Plex Mono",
+    "Courier New", monospace;
+  font-size: 10px;
+  font-weight: bold;
+  color: #00ff88;
+  border: 1.5px solid #00ff88;
+  background: rgba(0, 0, 0, 0.85);
+  text-shadow:
+    0 0 4px #00ff88,
+    0 0 8px #00ff8899;
+  box-shadow:
+    0 0 6px #00ff8877,
+    0 0 14px #00ff8844,
+    inset 0 0 4px #00ff8833;
+  will-change: transform, opacity;
+  animation: coinFlyToWallet var(--flight-duration, 1.2s)
+    var(--flight-delay, 0s) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.coin-flight-particle::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 1px solid #00ff8844;
+  animation: coinGlitchPulse 0.3s steps(2) infinite;
+}
+
+@keyframes coinFlyToWallet {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  15% {
+    transform: translate(
+        calc(var(--drift-x) * 0.2),
+        calc(var(--drift-y) * 0.15)
+      )
+      scale(1.15) rotate(calc(var(--spin-start) * 0.3));
+    opacity: 1;
+  }
+  40% {
+    transform: translate(
+        calc(var(--drift-x) * 0.6),
+        calc(var(--drift-y) * 0.45)
+      )
+      scale(1.05) rotate(calc(var(--spin-start) * 0.7));
+  }
+  70% {
+    transform: translate(calc(var(--drift-x) * 0.9), calc(var(--drift-y) * 0.8))
+      scale(0.85) rotate(calc(var(--spin-start) * 0.95));
+  }
+  85% {
+    transform: translate(
+        calc(var(--drift-x) * 0.98),
+        calc(var(--drift-y) * 0.95)
+      )
+      scale(0.5) rotate(var(--spin-start));
+    opacity: 0.9;
+  }
+  95% {
+    transform: translate(var(--drift-x), var(--drift-y)) scale(0.25)
+      rotate(calc(var(--spin-start) + 15deg));
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(var(--drift-x), var(--drift-y)) scale(0)
+      rotate(calc(var(--spin-start) + 30deg));
+    opacity: 0;
+  }
+}
+
+@keyframes coinGlitchPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translate(0, 0);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(1px, -1px);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translate(-1px, 0);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translate(0, 1px);
+  }
+}
+
+/* ============================================================
+   COUNTING NUMBER ANIMATION — RP / CR SPIN UP
+   ============================================================ */
+
+.wallet-widget__value--counting {
+  position: relative;
+}
+
+.wallet-widget__value--counting::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 1px;
+  background: #00ff88;
+  opacity: 0.6;
+  animation: countingBlink 0.15s steps(1) infinite;
+}
+
+@keyframes countingBlink {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ============================================================
+   WALLET FLASH — brief glow when coins arrive
+   ============================================================ */
+
+.wallet-widget--coin-receive {
+  animation: walletReceiveFlash 0.6s ease-out;
+}
+
+@keyframes walletReceiveFlash {
+  0% {
+    box-shadow: 0 0 0 0 #00ff8899;
+    border-color: #1e3d1e;
+  }
+  30% {
+    box-shadow:
+      0 0 20px 4px #00ff88aa,
+      0 0 40px 8px #00ff8855;
+    border-color: #00ff88;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #00ff8800;
+    border-color: #1e3d1e;
+  }
+}
