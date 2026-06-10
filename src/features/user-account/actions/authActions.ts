@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/server/supabase/server";
 import { getPrisma } from "@/server/db/prisma";
+import { withActionRateLimit } from "./withActionRateLimit";
 
-export async function signInAction(
+async function _signInAction(
   _prevState: { error: string | null },
   formData: FormData,
 ) {
@@ -27,7 +28,9 @@ export async function signInAction(
   redirect("/account");
 }
 
-export async function signUpAction(
+export const signInAction = withActionRateLimit("login", _signInAction);
+
+async function _signUpAction(
   _prevState: { error: string | null },
   formData: FormData,
 ) {
@@ -74,6 +77,8 @@ export async function signUpAction(
   revalidatePath("/", "layout");
   redirect("/account");
 }
+
+export const signUpAction = withActionRateLimit("register", _signUpAction);
 
 export async function signOutAction() {
   const supabase = await createServerSupabaseClient();

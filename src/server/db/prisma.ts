@@ -7,6 +7,16 @@ import {
 
 export type { PrismaClientInstance };
 
+export function prismaOrThrow(): PrismaClientInstance {
+  const prisma = getPrisma();
+  if (!prisma) {
+    throw new Error(
+      "Prisma client not initialised — ensure DATABASE_URL or DIRECT_URL is set",
+    );
+  }
+  return prisma;
+}
+
 type GlobalPrismaCache = {
   omniversusPrisma?: PrismaClientInstance;
   omniversusPrismaUrl?: string;

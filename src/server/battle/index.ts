@@ -2,14 +2,9 @@ import {
   type BattleCompletionResult,
   type ChatCompletionRequest,
 } from "./providers/openaiCompatible";
-import { resolveBattleProvider, type BattleProvider } from "./providers";
+import { resolveBattleProvider } from "./providers";
 import { prepareBattleOutput } from "./pipeline/prepareBattleOutput";
-import {
-  DEFAULT_MAX_COMPLETION_TOKENS,
-  DEFAULT_TEMPERATURE,
-  DEFAULT_THINKING_LEVEL,
-  DEFAULT_TOP_P,
-} from "./config/model";
+import { DEFAULT_THINKING_LEVEL } from "./config/model";
 import { normalizeBattleResult } from "./pipeline/normalize";
 import {
   buildUserPrompt,
@@ -25,8 +20,17 @@ import {
   type BattleGenerationMetadata,
   type OmniversusBattle,
   type RunBattleAnalysisOptions,
-  type ThinkingLevel,
 } from "./domain/schema";
+import {
+  normalizeTemperature,
+  normalizeTopP,
+  normalizeMaxCompletionTokens,
+} from "./config/params";
+import { hasRefusal, parseJsonObject } from "./pipeline/parseResponse";
+import { buildGenerationMetadata } from "./generation";
+import { providerErrorMessage, providerErrorStatus } from "./providers/errors";
+
+// ─── Re-exports ─────────────────────────────────────────────────────
 
 export type {
   BattleGenerationMetadata,
@@ -65,11 +69,10 @@ export {
   type DossierFact,
   type FighterDossier,
 } from "./dossier";
+export { computeBattleQualityScore } from "./quality";
+export { checkDailyBattleLimit, type DailyLimitCheck } from "./limits";
 
-type RunBattleAnalysisWithMetadataResult = {
-  result: OmniversusBattle;
-  generation: BattleGenerationMetadata;
-};
+// ─── BattleAnalysisError ────────────────────────────────────────────
 
 type BattleAnalysisErrorOptions = {
   status?: number;
@@ -91,173 +94,12 @@ export class BattleAnalysisError extends Error {
   }
 }
 
-function hasRefusal(message: unknown): message is { refusal: string } {
-  return (
-    typeof message === "object" &&
-    message !== null &&
-    "refusal" in message &&
-    typeof (message as { refusal?: unknown }).refusal === "string"
-  );
-}
+// ─── Core: runBattleAnalysisWithMetadata ────────────────────────────
 
-function parseJsonObject(content: string): unknown {
-  const trimmed = content.trim();
-
-  if (trimmed.startsWith("```")) {
-    const withoutFence = trimmed
-      .replace(/^```(?:json)?/i, "")
-      .replace(/```$/, "")
-      .trim();
-
-    return JSON.parse(withoutFence);
-  }
-
-  return JSON.parse(trimmed);
-}
-
-function readNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function normalizeTemperature(value: unknown): number {
-  const parsed = readNumber(value);
-  return parsed === null ? DEFAULT_TEMPERATURE : clampNumber(parsed, 0, 2);
-}
-
-function normalizeTopP(value: unknown): number | null {
-  const parsed = readNumber(value);
-  return parsed === null ? DEFAULT_TOP_P : clampNumber(parsed, 0, 1);
-}
-
-function normalizeMaxCompletionTokens(value: unknown): number | null {
-  const parsed = readNumber(value);
-  if (parsed === null) return DEFAULT_MAX_COMPLETION_TOKENS;
-  return Math.round(clampNumber(parsed, 1, DEFAULT_MAX_COMPLETION_TOKENS));
-}
-
-function safeNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function buildGenerationMetadata(
-  completionResult: BattleCompletionResult,
-  request: {
-    model: string;
-    reasoningEffort: ThinkingLevel;
-    temperature: number | null;
-    topP: number | null;
-    maxCompletionTokens: number | null;
-    startedAtMs: number;
-  },
-  content: string | null,
-): BattleGenerationMetadata {
-  const completedAtMs = Date.now();
-  const completion = completionResult.completion;
-  const choice = completion.choices[0];
-  const usage = completion.usage;
-  const promptDetails = usage?.prompt_tokens_details as
-    | { cached_tokens?: unknown }
-    | undefined;
-  const completionDetails = usage?.completion_tokens_details as
-    | { reasoning_tokens?: unknown }
-    | undefined;
-  const requestId = (completion as { _request_id?: unknown })._request_id;
-
-  return {
-    provider: completionResult.provider,
-    api: completionResult.api,
-    requested_model: request.model,
-    model: completion.model ?? null,
-    thinking_level: request.reasoningEffort,
-    temperature: request.temperature,
-    top_p: request.topP,
-    max_completion_tokens: request.maxCompletionTokens,
-    response_format: completionResult.responseFormat,
-    response_format_fallback_used: completionResult.responseFormatFallbackUsed,
-    id: completion.id ?? null,
-    request_id: typeof requestId === "string" ? requestId : null,
-    created: safeNumber(completion.created),
-    finish_reason: choice?.finish_reason ?? null,
-    service_tier: completion.service_tier ?? null,
-    system_fingerprint: completion.system_fingerprint ?? null,
-    usage: usage
-      ? {
-          prompt_tokens: safeNumber(usage.prompt_tokens),
-          completion_tokens: safeNumber(usage.completion_tokens),
-          total_tokens: safeNumber(usage.total_tokens),
-          cached_tokens: safeNumber(promptDetails?.cached_tokens),
-          reasoning_tokens: safeNumber(completionDetails?.reasoning_tokens),
-          prompt_tokens_details: usage.prompt_tokens_details ?? null,
-          completion_tokens_details: usage.completion_tokens_details ?? null,
-        }
-      : null,
-    content_length: content === null ? null : content.length,
-    timings: {
-      started_at: new Date(request.startedAtMs).toISOString(),
-      completed_at: new Date(completedAtMs).toISOString(),
-      duration_ms: completedAtMs - request.startedAtMs,
-    },
-  };
-}
-
-function providerErrorStatus(error: unknown): number | null {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    typeof (error as { status?: unknown }).status === "number"
-  ) {
-    return (error as { status: number }).status;
-  }
-
-  return null;
-}
-
-function providerErrorDetail(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  return "";
-}
-
-function providerErrorMessage(
-  error: unknown,
-  provider: BattleProvider,
-): string {
-  const status = providerErrorStatus(error);
-  const detail = providerErrorDetail(error);
-  const providerLabel = provider.label;
-
-  if (provider.isStructuredOutputSchemaError(error)) {
-    return detail
-      ? `${providerLabel} rejected the structured output schema: ${detail}`
-      : `${providerLabel} rejected the structured output schema.`;
-  }
-
-  if (status === 400) {
-    return detail
-      ? `${providerLabel} rejected the battle generation request: ${detail}`
-      : `${providerLabel} rejected the battle generation request.`;
-  }
-
-  if (status === 429) {
-    return detail
-      ? `${providerLabel} rate limit or quota was hit: ${detail}`
-      : `${providerLabel} rate limit or quota was hit. Wait a bit, then retry with the same fighters.`;
-  }
-
-  if (status && status >= 500) {
-    return `${providerLabel} provider is temporarily unavailable. Retry the battle request shortly.`;
-  }
-
-  if (error instanceof Error) return error.message;
-  return `${providerLabel} provider request failed`;
-}
+type RunBattleAnalysisWithMetadataResult = {
+  result: OmniversusBattle;
+  generation: BattleGenerationMetadata;
+};
 
 export async function runBattleAnalysisWithMetadata(
   fighterA: string,
@@ -300,8 +142,7 @@ export async function runBattleAnalysisWithMetadata(
   let completionResult: BattleCompletionResult;
 
   try {
-    completionResult =
-      await provider.createBattleCompletion(completionRequest);
+    completionResult = await provider.createBattleCompletion(completionRequest);
   } catch (error) {
     throw new BattleAnalysisError(providerErrorMessage(error, provider), {
       status: providerErrorStatus(error) ?? 502,
@@ -410,6 +251,26 @@ export async function runBattleAnalysisWithMetadata(
   };
 }
 
+// ─── Core: runBattleAnalysis ────────────────────────────────────────
+
+export async function runBattleAnalysis(
+  fighterA: string,
+  fighterB: string,
+  options: RunBattleAnalysisOptions = {},
+): Promise<OmniversusBattle> {
+  const { result } = await runBattleAnalysisWithMetadata(
+    fighterA,
+    fighterB,
+    options,
+  );
+
+  return result;
+}
+
+export default runBattleAnalysis;
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
 function attachDossierPortraits(
   result: OmniversusBattle,
   dossierContext: BattleDossierContext,
@@ -430,19 +291,3 @@ function portraitForSide(
 ): DossierPortrait | null {
   return dossierContext[side].dossier?.portrait ?? null;
 }
-
-export async function runBattleAnalysis(
-  fighterA: string,
-  fighterB: string,
-  options: RunBattleAnalysisOptions = {},
-): Promise<OmniversusBattle> {
-  const { result } = await runBattleAnalysisWithMetadata(
-    fighterA,
-    fighterB,
-    options,
-  );
-
-  return result;
-}
-
-export default runBattleAnalysis;

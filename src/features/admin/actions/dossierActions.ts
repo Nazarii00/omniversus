@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { FeatKind } from "@/generated/prisma/enums";
 
 import {
   AbilityType,
@@ -207,6 +208,8 @@ export async function saveSubjectVersionAction(formData: FormData) {
   revalidatePath("/admin");
 }
 
+// ─── Capability ───────────────────────────────────────────────────────
+
 export async function addCapabilityAction(formData: FormData) {
   assertAdminEnabled();
   const prisma = prismaOrThrow();
@@ -247,7 +250,59 @@ export async function addCapabilityAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { capabilityId: fact.id });
+  revalidatePath("/admin");
 }
+
+export async function updateCapabilityAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.capabilityAssertion.update({
+    where: { id },
+    data: {
+      category: readEnum(
+        CapabilityCategory,
+        formData,
+        "category",
+        CapabilityCategory.OTHER,
+      ) as CapabilityCategoryValue,
+      subtype: optionalString(formData, "subtype"),
+      valueText: requiredString(formData, "valueText", "Value text"),
+      normalizedTier: optionalString(formData, "normalizedTier"),
+      context: optionalString(formData, "context"),
+      limitations: optionalString(formData, "limitations"),
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+      contested: readBoolean(formData, "contested"),
+      notes: optionalString(formData, "notes"),
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteCapabilityAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.capabilityAssertion.delete({ where: { id } });
+  revalidatePath("/admin");
+}
+
+// ─── Ability ──────────────────────────────────────────────────────────
 
 export async function addAbilityAction(formData: FormData) {
   assertAdminEnabled();
@@ -288,7 +343,63 @@ export async function addAbilityAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { abilityId: ability.id });
+  revalidatePath("/admin");
 }
+
+export async function updateAbilityAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.ability.update({
+    where: { id },
+    data: {
+      name: requiredString(formData, "name", "Ability name"),
+      type: readEnum(
+        AbilityType,
+        formData,
+        "type",
+        AbilityType.OTHER,
+      ) as AbilityTypeValue,
+      description: requiredString(formData, "description", "Description"),
+      activation: optionalString(formData, "activation"),
+      delivery: optionalString(formData, "delivery"),
+      rangeText: optionalString(formData, "rangeText"),
+      timing: optionalString(formData, "timing"),
+      targetRequirement: optionalString(formData, "targetRequirement"),
+      effect: optionalString(formData, "effect"),
+      limitations: optionalString(formData, "limitations"),
+      counterplay: optionalString(formData, "counterplay"),
+      isPassive: readBoolean(formData, "isPassive"),
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteAbilityAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.ability.delete({ where: { id } });
+  revalidatePath("/admin");
+}
+
+// ─── Weakness ─────────────────────────────────────────────────────────
 
 export async function addWeaknessAction(formData: FormData) {
   assertAdminEnabled();
@@ -325,7 +436,55 @@ export async function addWeaknessAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { weaknessId: weakness.id });
+  revalidatePath("/admin");
 }
+
+export async function updateWeaknessAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.weakness.update({
+    where: { id },
+    data: {
+      name: requiredString(formData, "name", "Weakness name"),
+      description: requiredString(formData, "description", "Description"),
+      exploitation: optionalString(formData, "exploitation"),
+      severity: readEnum(
+        ConfidenceBand,
+        formData,
+        "severity",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteWeaknessAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.weakness.delete({ where: { id } });
+  revalidatePath("/admin");
+}
+
+// ─── Condition ────────────────────────────────────────────────────────
 
 export async function addConditionAction(formData: FormData) {
   assertAdminEnabled();
@@ -369,7 +528,62 @@ export async function addConditionAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { conditionId: condition.id });
+  revalidatePath("/admin");
 }
+
+export async function updateConditionAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.winLossCondition.update({
+    where: { id },
+    data: {
+      kind: readEnum(
+        ConditionKind,
+        formData,
+        "kind",
+        ConditionKind.WIN,
+      ) as ConditionKindValue,
+      type: readEnum(
+        ConditionType,
+        formData,
+        "type",
+        ConditionType.OTHER,
+      ) as ConditionTypeValue,
+      method: requiredString(formData, "method", "Method"),
+      requires: optionalString(formData, "requires"),
+      blockedBy: optionalString(formData, "blockedBy"),
+      probabilityText: optionalString(formData, "probabilityText"),
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteConditionAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.winLossCondition.delete({ where: { id } });
+  revalidatePath("/admin");
+}
+
+// ─── Equipment ────────────────────────────────────────────────────────
 
 export async function addEquipmentAction(formData: FormData) {
   assertAdminEnabled();
@@ -401,4 +615,146 @@ export async function addEquipmentAction(formData: FormData) {
   });
 
   await createEvidenceLink(prisma, formData, { equipmentId: item.id });
+  revalidatePath("/admin");
+}
+
+export async function updateEquipmentAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.equipmentItem.update({
+    where: { id },
+    data: {
+      name: requiredString(formData, "name", "Equipment name"),
+      category: readEnum(
+        EquipmentCategory,
+        formData,
+        "category",
+        EquipmentCategory.OTHER,
+      ) as EquipmentCategoryValue,
+      description: requiredString(formData, "description", "Description"),
+      standard: readBoolean(formData, "standard"),
+      availabilityPolicy: optionalString(formData, "availabilityPolicy"),
+      limitations: optionalString(formData, "limitations"),
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteEquipmentAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.equipmentItem.delete({ where: { id } });
+  revalidatePath("/admin");
+}
+
+// ─── Feat ─────────────────────────────────────────────────────────────
+
+export async function addFeatAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+
+  const feat = await prisma.featAssertion.create({
+    data: {
+      versionId: requiredString(formData, "versionId", "Version"),
+      kind: readEnum(FeatKind, formData, "kind", FeatKind.FEAT) as
+        | "FEAT"
+        | "ANTI_FEAT"
+        | "STATEMENT"
+        | "CALC"
+        | "SCALING",
+      category: readEnum(
+        CapabilityCategory,
+        formData,
+        "category",
+        CapabilityCategory.OTHER,
+      ) as CapabilityCategoryValue,
+      title: requiredString(formData, "title", "Feat title"),
+      description: requiredString(formData, "description", "Description"),
+      scaleText: optionalString(formData, "scaleText"),
+      context: optionalString(formData, "context"),
+      limitations: optionalString(formData, "limitations"),
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+      provenance: ProvenanceKind.MANUAL_DB,
+      metadata: { createdFrom: "admin-panel" },
+    },
+  });
+
+  await createEvidenceLink(prisma, formData, { featId: feat.id });
+  revalidatePath("/admin");
+}
+
+export async function updateFeatAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.featAssertion.update({
+    where: { id },
+    data: {
+      kind: readEnum(FeatKind, formData, "kind", FeatKind.FEAT) as
+        | "FEAT"
+        | "ANTI_FEAT"
+        | "STATEMENT"
+        | "CALC"
+        | "SCALING",
+      category: readEnum(
+        CapabilityCategory,
+        formData,
+        "category",
+        CapabilityCategory.OTHER,
+      ) as CapabilityCategoryValue,
+      title: requiredString(formData, "title", "Feat title"),
+      description: requiredString(formData, "description", "Description"),
+      scaleText: optionalString(formData, "scaleText"),
+      context: optionalString(formData, "context"),
+      limitations: optionalString(formData, "limitations"),
+      confidenceScore: readScore(formData, "confidenceScore", 50),
+      confidenceBand: readEnum(
+        ConfidenceBand,
+        formData,
+        "confidenceBand",
+        ConfidenceBand.MEDIUM,
+      ) as ConfidenceBandValue,
+      status: readEnum(
+        ReviewStatus,
+        formData,
+        "status",
+        ReviewStatus.REQUIRES_REVIEW,
+      ) as ReviewStatusValue,
+    },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function deleteFeatAction(formData: FormData) {
+  assertAdminEnabled();
+  const prisma = prismaOrThrow();
+  const id = requiredString(formData, "id", "ID");
+
+  await prisma.featAssertion.delete({ where: { id } });
+  revalidatePath("/admin");
 }

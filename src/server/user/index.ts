@@ -2,16 +2,19 @@ import { prismaOrThrow } from "@/features/admin/actions/formUtils";
 import type { BattlesHistoryItem } from "@/features/user-account/model/types";
 import { BattleRunStatus } from "@/generated/prisma/enums";
 
-export async function getRecentBattles(
+/**
+ * Fetch battle history for a user, optionally capped at `limit` rows.
+ */
+export async function getUserBattles(
   userId: string,
-  limit: number,
+  limit?: number,
 ): Promise<BattlesHistoryItem[]> {
   const prisma = prismaOrThrow();
 
   const runs = await prisma.battleRun.findMany({
     where: { createdByUserId: userId },
     orderBy: { createdAt: "desc" },
-    take: limit,
+    ...(limit !== undefined ? { take: limit } : {}),
     select: {
       id: true,
       fighterAName: true,
@@ -34,34 +37,19 @@ export async function getRecentBattles(
   }));
 }
 
+/** @deprecated Use `getUserBattles(userId, limit)` instead. */
+export async function getRecentBattles(
+  userId: string,
+  limit: number,
+): Promise<BattlesHistoryItem[]> {
+  return getUserBattles(userId, limit);
+}
+
+/** @deprecated Use `getUserBattles(userId)` instead. */
 export async function getAllBattles(
   userId: string,
 ): Promise<BattlesHistoryItem[]> {
-  const prisma = prismaOrThrow();
-
-  const runs = await prisma.battleRun.findMany({
-    where: { createdByUserId: userId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      fighterAName: true,
-      fighterBName: true,
-      status: true,
-      resultPayload: true,
-      createdAt: true,
-      completedAt: true,
-    },
-  });
-
-  return runs.map((run) => ({
-    id: run.id,
-    fighterA: run.fighterAName,
-    fighterB: run.fighterBName,
-    status: run.status,
-    winner: extractWinner(run.status, run.resultPayload),
-    createdAt: run.createdAt,
-    completedAt: run.completedAt,
-  }));
+  return getUserBattles(userId);
 }
 
 function extractWinner(

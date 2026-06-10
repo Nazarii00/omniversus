@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type WalletWidgetProps = {
   cr: number;
@@ -11,6 +11,56 @@ export type WalletWidgetProps = {
   onOpenProfile: () => void;
   onTopUp?: () => void;
 };
+
+function useCountingValue(target: number, duration = 600) {
+  const [displayed, setDisplayed] = useState(target);
+  const prevTargetRef = useRef(target);
+  const rafRef = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+  const fromRef = useRef(target);
+
+  useEffect(() => {
+    if (target === prevTargetRef.current) return;
+
+    const from = prevTargetRef.current;
+    const to = target;
+    prevTargetRef.current = target;
+    fromRef.current = from;
+
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+
+    const startTime = performance.now();
+    startRef.current = startTime;
+
+    function tick(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(from + (to - from) * eased);
+
+      setDisplayed(current);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        setDisplayed(to);
+        rafRef.current = null;
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [target, duration]);
+
+  return displayed;
+}
 
 export default function ArenaBalancePanel({
   cr,
@@ -23,8 +73,13 @@ export default function ArenaBalancePanel({
 }: WalletWidgetProps) {
   const [isMax, setIsMax] = useState(false);
 
-  const crDisplay = String(cr).padStart(4, "0");
-  const rpDisplay = String(rp).padStart(8, "0");
+  const animatedCR = useCountingValue(cr);
+  const animatedRP = useCountingValue(rp);
+
+  const crDisplay = String(animatedCR).padStart(4, "0");
+  const rpDisplay = String(animatedRP).padStart(8, "0");
+  const isCountingCR = animatedCR !== cr;
+  const isCountingRP = animatedRP !== rp;
 
   return (
     <aside

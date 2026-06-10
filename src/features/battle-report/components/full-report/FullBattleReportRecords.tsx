@@ -87,8 +87,8 @@ export function SubjectFaceoff({
         <RelatedDocumentPanel />
       </div>
       <div className={styles.subjectFindings}>
-        {comparison.slice(0, 4).map((row) => (
-          <article key={row.category} data-contested={row.contested}>
+        {comparison.slice(0, 4).map((row, i) => (
+          <article key={`${row.category}-${i}`} data-contested={row.contested}>
             <span>{row.category}</span>
             <b>{displayVerdict(row.winner ?? "SYSTEM")}</b>
             <p>{row.reason}</p>
@@ -227,10 +227,7 @@ function SubjectDossier({
         <div className={styles.subjectPortrait} aria-hidden="true">
           {fighter?.portrait?.data_url ? (
             // eslint-disable-next-line @next/next/no-img-element -- Curated admin portrait data URLs are already approved assets.
-            <img
-              alt=""
-              src={fighter.portrait.data_url}
-            />
+            <img alt="" src={fighter.portrait.data_url} />
           ) : (
             <span>{portraitInitials(fighter?.name ?? side)}</span>
           )}
@@ -268,9 +265,9 @@ function SubjectDossier({
       </div>
       <div className={styles.subjectFlags}>
         {subjectFlags.length ? (
-          subjectFlags.map((row) => (
+          subjectFlags.map((row, i) => (
             <span
-              key={row.category}
+              key={`${row.category}-${i}`}
               data-risk={row.contested || row.winner !== side}
             >
               {row.category}: {row.contested ? "REVIEW" : "DISADVANTAGE"}
@@ -283,8 +280,8 @@ function SubjectDossier({
       <div>
         {(relevantRows.length ? relevantRows : comparison.slice(0, 3))
           .slice(0, 3)
-          .map((row) => (
-            <span key={row.category}>
+          .map((row, i) => (
+            <span key={`${row.category}-${i}`}>
               {row.category}: {row.margin ?? "EVEN"}
             </span>
           ))}

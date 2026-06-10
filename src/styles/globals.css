@@ -39,3 +39,35 @@ select {
   text-shadow: none;
 }
 
+/* ============================================================
+   CUSTOM SCROLLBAR — GREEN CRT STYLE
+   ============================================================ */
+
+/* Webkit (Chrome / Edge / Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0b07;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #50c878;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6fcf97;
+}
+
+::-webkit-scrollbar-corner {
+  background: #0a0b07;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #50c878 #0a0b07;
+}

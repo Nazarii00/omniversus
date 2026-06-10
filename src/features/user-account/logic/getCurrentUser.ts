@@ -6,6 +6,14 @@ interface AuthenticatedUser {
 }
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+  // DEVELOPMENT BYPASS — skip Supabase auth, return fake user for local UI testing
+  if (process.env.NODE_ENV === "development") {
+    return {
+      id: "dev-user-000",
+      email: "dev@arena.local",
+    };
+  }
+
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },

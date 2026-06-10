@@ -1,7 +1,9 @@
 import type { PrismaClientInstance } from "@/server/db/prisma";
-import { getPrisma } from "@/server/db/prisma";
+import { prismaOrThrow } from "@/server/db/prisma";
 
 type EnumLike = Record<string, string>;
+
+export { prismaOrThrow } from "@/server/db/prisma";
 
 export function assertAdminEnabled() {
   if (
@@ -10,15 +12,6 @@ export function assertAdminEnabled() {
   ) {
     throw new Error("Admin panel is disabled in production");
   }
-}
-
-export function prismaOrThrow(): PrismaClientInstance {
-  const prisma = getPrisma();
-  if (!prisma) {
-    throw new Error("DATABASE_URL or DIRECT_URL is required");
-  }
-
-  return prisma;
 }
 
 export function readString(formData: FormData, key: string): string {

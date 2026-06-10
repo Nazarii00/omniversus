@@ -948,6 +948,211 @@
   }
 }
 
+/* ─── InlineEditableList ───────────────────────────────────────── */
+
+.editableList {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.editableListEmpty {
+  margin: 0.8rem 0 0;
+  color: #8e8e8e;
+  font-size: 0.78rem;
+}
+
+.editableListItem {
+  border: 1px solid #242424;
+  border-radius: 7px;
+  background: #090909;
+  overflow: hidden;
+}
+
+.editableListItem[data-expanded="true"] {
+  border-color: #3a5f43;
+}
+
+.editableListRow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.62rem 0.72rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editableListRow:hover {
+  background: #0f0f0f;
+}
+
+.editableListChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  color: #707070;
+  font-size: 0.68rem;
+  transition: transform 140ms ease;
+}
+
+.editableListItem[data-expanded="true"] .editableListChevron {
+  transform: rotate(90deg);
+}
+
+.editableListTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: #ededed;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editableListBadge {
+  display: inline-flex;
+  min-height: 1.4rem;
+  align-items: center;
+  flex-shrink: 0;
+  border: 1px solid #333333;
+  border-radius: 999px;
+  color: #8e8e8e;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0 0.45rem;
+  white-space: nowrap;
+}
+
+.editableListActions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.editableListActionBtn {
+  display: inline-flex;
+  min-height: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333333;
+  border-radius: 5px;
+  background: #111111;
+  color: #a1a1a1;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0.42rem;
+  white-space: nowrap;
+}
+
+.editableListActionBtn:hover,
+.editableListActionBtn:focus-visible {
+  border-color: #4a4a4a;
+  background: #1a1a1a;
+  color: #ffffff;
+  outline: none;
+}
+
+.editableListActionBtnDanger:hover,
+.editableListActionBtnDanger:focus-visible {
+  border-color: #7f1d1d;
+  background: #3b1111;
+  color: #fca5a5;
+}
+
+.editableListDetails {
+  border-top: 1px solid #242424;
+  padding: 0.78rem 0.85rem;
+}
+
+.editableListDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.editableListDetailField {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.editableListDetailLabel {
+  display: block;
+  color: #777777;
+  font-size: 0.68rem;
+  font-weight: 650;
+  margin-bottom: 0.15rem;
+}
+
+.editableListDetailValue {
+  display: block;
+  color: #d4d4d4;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.editableListAddBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.55rem;
+}
+
+.editableListAddBtn {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px dashed #444444;
+  border-radius: 6px;
+  background: transparent;
+  color: #8e8e8e;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0.75rem;
+}
+
+.editableListAddBtn:hover,
+.editableListAddBtn:focus-visible {
+  border-color: #707070;
+  background: #111111;
+  color: #ffffff;
+  outline: none;
+}
+
+/* ─── Inline edit form inside list ─────────────────────────────── */
+
+.editableListEditForm {
+  border-top: 1px solid #242424;
+  padding: 0.78rem 0.85rem;
+}
+
+.editableListEditFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.editableListEditFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+@media (max-width: 1180px) {
+  .editableListDetailGrid,
+  .editableListEditFormGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 720px) {
   .content {
     padding: 0.85rem;
@@ -964,4 +1169,210 @@
   .appealMeta {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ─── JSON button in RecentRuns table ─────────────────────────── */
+
+.jsonButton {
+  display: inline-flex;
+  min-height: 1.65rem;
+  align-items: center;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  background: #111111;
+  color: #8e8e8e;
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0 0.45rem;
+  white-space: nowrap;
+}
+
+.jsonButton:hover,
+.jsonButton:focus-visible {
+  border-color: #4a4a4a;
+  background: #1a1a1a;
+  color: #ffffff;
+  outline: none;
+}
+
+/* ─── JSON modal ──────────────────────────────────────────────── */
+
+.jsonModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 72%);
+  backdrop-filter: blur(4px);
+}
+
+.jsonModal {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: min(95vw, 960px);
+  max-height: 88vh;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  background: #0c0c0c;
+  box-shadow: 0 0 40px rgb(0 0 0 / 60%);
+  overflow: hidden;
+}
+
+.jsonModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #202020;
+  padding: 1rem 1.2rem;
+}
+
+.jsonModalEyebrow {
+  display: block;
+  color: #6b6b6b;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.jsonModalTitle {
+  margin: 0.25rem 0 0;
+  color: #ededed;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.jsonModalRunId {
+  display: block;
+  margin-top: 0.3rem;
+  color: #555555;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.68rem;
+}
+
+.jsonModalActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.jsonModalCopyBtn {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px solid #333333;
+  border-radius: 5px;
+  background: #141414;
+  color: #a1a1a1;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1;
+  padding: 0 0.85rem;
+  white-space: nowrap;
+}
+
+.jsonModalCopyBtn:hover,
+.jsonModalCopyBtn:focus-visible {
+  border-color: #4a4a4a;
+  background: #1e1e1e;
+  color: #ffffff;
+  outline: none;
+}
+
+.jsonModalCloseBtn {
+  display: inline-flex;
+  min-width: 2rem;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2d2d2d;
+  border-radius: 5px;
+  background: transparent;
+  color: #8e8e8e;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+}
+
+.jsonModalCloseBtn:hover,
+.jsonModalCloseBtn:focus-visible {
+  border-color: #4a4a4a;
+  background: #1a1a1a;
+  color: #ffffff;
+  outline: none;
+}
+
+.jsonModalCode {
+  margin: 0;
+  padding: 1.2rem;
+  overflow: auto;
+  background: #060606;
+  color: #c4c4c4;
+  font-family:
+    ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* ─── Regenerate button ────────────────────────────────────────── */
+
+.regenerateCell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.regenerateButton {
+  display: inline-flex;
+  min-height: 1.65rem;
+  align-items: center;
+  border: 1px solid #3a5f43;
+  border-radius: 4px;
+  background: #111811;
+  color: #b5f2c2;
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0 0.45rem;
+  white-space: nowrap;
+}
+
+.regenerateButton:hover,
+.regenerateButton:focus-visible {
+  border-color: #5a8f63;
+  background: #1a251a;
+  color: #d0ffd0;
+  outline: none;
+}
+
+.regenerateButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.regenerateSuccess {
+  color: #b5f2c2;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.regenerateError {
+  color: #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: help;
 }

@@ -29,10 +29,13 @@ export interface ProfileStats {
 
 export interface BattleEntry {
   id: string;
-  opponent: string;
+  battleNumber: number;
+  fighterA: string;
+  fighterB: string;
+  mode: "1v1" | "2v2" | "FFA" | "CUSTOM";
   date: string;
-  score: string;
   result: "win" | "loss" | "draw";
+  wager?: number;
 }
 
 /* ================================================================
@@ -213,20 +216,21 @@ export async function getUserBattles(
       },
     });
 
-    return runs.map((run) => {
+    return runs.map((run, index) => {
       const result = extractBattleResult(
         run.status,
         run.resultPayload,
         run.fighterAName,
         run.fighterBName,
       );
-      const { scoreA, scoreB } = extractScore(run.resultPayload);
 
       return {
         id: run.id,
-        opponent: run.fighterBName,
+        battleNumber: runs.length - index,
+        fighterA: run.fighterAName,
+        fighterB: run.fighterBName,
+        mode: "1v1" as const,
         date: formatDateDM(run.createdAt),
-        score: `${scoreA}:${scoreB}`,
         result,
       };
     });
