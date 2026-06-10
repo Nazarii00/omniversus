@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { BattleRunStatus } from "@/generated/prisma/enums";
 import {
   BattleAnalysisError,
   buildBattleCacheKey,
+  checkDailyBattleLimit,
   completeBattleRunRecord,
   computeBattleQualityScore,
   createBattleRunRecord,
@@ -117,31 +117,6 @@ export async function POST(request: NextRequest) {
   const options = readOptions(body);
   const forceRefresh = readBoolean(body, "forceRefresh");
 
-  // --- Cache-first lookup ---------------------------------------------------
-  if (!forceRefresh) {
-    const cacheKey = buildBattleCacheKey(fighterA, fighterB, options);
-    const cached = await findCachedBattleResult(cacheKey);
-
-    if (cached) {
-      const result = orientBattleResultForRequest(
-        cached.result,
-        fighterA,
-        fighterB,
-      );
-
-      const quality = computeBattleQualityScore(result);
-
-      return NextResponse.json({
-        ...result,
-        generation: cached.generation,
-        battle_run_id: cached.battleRunId,
-        cached: true,
-        quality_score: quality.overall,
-        quality_band: quality.band,
-      });
-    }
-  }
-
   // --- Resolve user ---------------------------------------------------------
   let userId: string | null = null;
   let userClearance: string | null = null;
@@ -170,42 +145,62 @@ export async function POST(request: NextRequest) {
 
   // --- Per-user daily cap ---------------------------------------------------
   if (userId) {
-    const prisma = getPrisma();
-    if (prisma) {
-      const isAdmin = userClearance?.startsWith("SIGMA-5") ?? false;
-      const dailyLimit = isAdmin ? 200 : 50;
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const limitCheck = await checkDailyBattleLimit(userId, userClearance);
 
-      const count = await prisma.battleRun.count({
-        where: {
-          createdByUserId: userId,
-          createdAt: { gte: since },
-          status: { not: BattleRunStatus.CANCELLED },
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "daily_battle_limit_exceeded",
+          limit: limitCheck.limit,
+          used: limitCheck.used,
+          retryAfter: limitCheck.retryAfterSeconds,
         },
-      });
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(limitCheck.retryAfterSeconds ?? 0),
+          },
+        },
+      );
+    }
+  }
 
-      if (count >= dailyLimit) {
-        return NextResponse.json(
-          {
-            error: "daily_battle_limit_exceeded",
-            limit: dailyLimit,
-            used: count,
-            retryAfter: Math.ceil(
-              (since.getTime() + 24 * 60 * 60 * 1000 - Date.now()) / 1000,
-            ),
-          },
-          {
-            status: 429,
-            headers: {
-              "Retry-After": String(
-                Math.ceil(
-                  (since.getTime() + 24 * 60 * 60 * 1000 - Date.now()) / 1000,
-                ),
-              ),
-            },
-          },
-        );
+  // --- Cache-first lookup ---------------------------------------------------
+  if (!forceRefresh) {
+    const cacheKey = buildBattleCacheKey(fighterA, fighterB, options);
+    const cached = await findCachedBattleResult(cacheKey);
+
+    if (cached) {
+      // Create a history record for the current user even on cache hit
+      if (userId) {
+        const battleRun = await createBattleRunRecord({
+          fighterA,
+          fighterB,
+          options,
+          userId,
+        });
+        await completeBattleRunRecord(battleRun, {
+          result: cached.result,
+          generation: cached.generation,
+        });
       }
+
+      const result = orientBattleResultForRequest(
+        cached.result,
+        fighterA,
+        fighterB,
+      );
+
+      const quality = computeBattleQualityScore(result);
+
+      return NextResponse.json({
+        ...result,
+        generation: cached.generation,
+        battle_run_id: cached.battleRunId,
+        cached: true,
+        quality_score: quality.overall,
+        quality_band: quality.band,
+      });
     }
   }
 

@@ -42,7 +42,12 @@ import {
   BattleLoadingConsole,
   BattleReportButton,
 } from "../battle-controls";
-import { ArenaBalancePanel, ArenaBetSelector } from "../betting";
+import "../../styles/coin-flight.css";
+import {
+  ArenaBalancePanel,
+  ArenaBetSelector,
+  CoinFlightAnimation,
+} from "../betting";
 import { CombatantDeck } from "../combatant-deck";
 import {
   CombatantEntrySlot,
@@ -119,6 +124,13 @@ export default function HomeArenaStage({
   );
   const [arenaBet, setArenaBet] = useState<ArenaBetDraft>(DEFAULT_ARENA_BET);
   const [bettingStatus, setBettingStatus] = useState("BETTING_READY");
+  const [coinFlight, setCoinFlight] = useState<{
+    sourceX: number;
+    sourceY: number;
+    targetX: number;
+    targetY: number;
+    amount: number;
+  } | null>(null);
   const router = useRouter();
   const hasRunPersistenceEffect = useRef(false);
   const {
@@ -291,6 +303,21 @@ export default function HomeArenaStage({
       await timelineFinished;
       const settlement = settleArenaBet(report, lockedBet);
 
+      if (settlement.payout > 0 && settlement.status.startsWith("BET_WON")) {
+        const walletEl = document.querySelector(".wallet-widget");
+        const walletRect = walletEl?.getBoundingClientRect();
+        const walX = walletRect ? walletRect.left + walletRect.width / 2 : 120;
+        const walY = walletRect ? walletRect.top + walletRect.height / 2 : 40;
+
+        setCoinFlight({
+          sourceX: window.innerWidth / 2 - 7,
+          sourceY: window.innerHeight / 2 - 7,
+          targetX: walX,
+          targetY: walY,
+          amount: settlement.payout,
+        });
+      }
+
       setArenaWallet((current) => applyArenaBetSettlement(current, settlement));
       setBettingStatus(settlement.status);
       setIsReportReady(true);
@@ -345,176 +372,192 @@ export default function HomeArenaStage({
   }
 
   return (
-    <section
-      className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
-      data-battle-loading={isBattleSequenceActive ? "true" : undefined}
-      data-battle-opener={isBattleOpenerActive ? "true" : undefined}
-      data-view={isReportOpen ? "report" : "setup"}
-    >
-      {isBattleOpenerActive ? (
-        <span aria-hidden="true" className="home-battle-opener">
-          <span className="home-battle-opener__shade" />
-          <span className="home-battle-opener__scan" />
-          <span className="home-battle-opener__line" />
-        </span>
-      ) : null}
-
-      {battleShockCue ? (
-        <span
-          key={`${battleShockCue.runId}-${battleShockCue.act}`}
-          aria-hidden="true"
-          className="home-battle-impact"
-          data-act={battleShockCue.act}
-        >
-          <span className="home-battle-impact__pressure" />
-          <span className="home-battle-impact__edge" />
-          <span className="home-battle-impact__shock" />
-        </span>
-      ) : null}
-
-      {isBattleTimelineActive && !isBattleOpenerActive && !isReportOpen ? (
-        <button
-          type="button"
-          className="home-battle-skip"
-          onClick={skipBattleTimeline}
-        >
-          SKIP_SIM
-        </button>
-      ) : null}
-
-      {((isReportReady && battleReport) || leftCard || rightCard) &&
-      !isArenaLocked &&
-      !isReportOpen ? (
-        <div
-          className="home-arena-top-actions"
-          aria-label="Arena quick actions"
-        >
-          {isReportReady && battleReport ? (
-            <BattleReportButton key={reportSerial} onViewReport={openReport} />
-          ) : null}
-          {leftCard || rightCard ? (
-            <BattleReportButton
-              ariaLabel="Reset selected combatants"
-              label="RESET_SELECTION"
-              onViewReport={resetSelection}
-            />
-          ) : null}
-          {isReportReady && battleReport?.battle_run_id ? (
-            <VerdictFeedback
-              variant="arena"
-              battleRunId={battleReport.battle_run_id}
-            />
-          ) : null}
-        </div>
-      ) : null}
-
-      {!isReportOpen ? (
-        <ArenaBalancePanel
-          cr={arenaWallet.credits}
-          rp={arenaWallet.reputation}
-          username="PLAYER_001"
-          rank={214}
-          status={bettingStatus}
-          onOpenProfile={() => {
-            router.push("/account");
-          }}
-          onTopUp={topUpArenaCredits}
-        />
-      ) : null}
-
-      <div
-        className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center"
-        data-impact-act={battleShockCue?.act}
-        data-impact-phase={battleImpactPhase}
+    <>
+      <section
+        className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
+        data-battle-loading={isBattleSequenceActive ? "true" : undefined}
+        data-battle-opener={isBattleOpenerActive ? "true" : undefined}
+        data-view={isReportOpen ? "report" : "setup"}
       >
-        <div className="home-arena-combat-zone w-full">
-          <div className="home-arena-setup-grid grid w-full grid-cols-1 justify-items-center gap-7 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:items-center sm:gap-10 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:gap-12">
-            <div className="sm:justify-self-end">
-              <CombatantEntrySlot
-                card={leftCard}
-                crtImpact={leftCrtImpact}
-                crtResetToken={battleGlitchResetToken}
-                isEliminated={displayedEliminatedSide === "left"}
-                template={leftTemplate}
-                label="ALPHA_SLOT"
-                onOpenConsole={openLeftLoadoutConsole}
-              />
-            </div>
+        {isBattleOpenerActive ? (
+          <span aria-hidden="true" className="home-battle-opener">
+            <span className="home-battle-opener__shade" />
+            <span className="home-battle-opener__scan" />
+            <span className="home-battle-opener__line" />
+          </span>
+        ) : null}
 
-            <ArenaVersusMark />
+        {battleShockCue ? (
+          <span
+            key={`${battleShockCue.runId}-${battleShockCue.act}`}
+            aria-hidden="true"
+            className="home-battle-impact"
+            data-act={battleShockCue.act}
+          >
+            <span className="home-battle-impact__pressure" />
+            <span className="home-battle-impact__edge" />
+            <span className="home-battle-impact__shock" />
+          </span>
+        ) : null}
 
-            <div className="sm:justify-self-start">
-              <CombatantEntrySlot
-                card={rightCard}
-                crtImpact={rightCrtImpact}
-                crtResetToken={battleGlitchResetToken}
-                isEliminated={displayedEliminatedSide === "right"}
-                template={rightTemplate}
-                label="OMEGA_SLOT"
-                onOpenConsole={openRightLoadoutConsole}
+        {isBattleTimelineActive && !isBattleOpenerActive && !isReportOpen ? (
+          <button
+            type="button"
+            className="home-battle-skip"
+            onClick={skipBattleTimeline}
+          >
+            SKIP_SIM
+          </button>
+        ) : null}
+
+        {((isReportReady && battleReport) || leftCard || rightCard) &&
+        !isArenaLocked &&
+        !isReportOpen ? (
+          <div
+            className="home-arena-top-actions"
+            aria-label="Arena quick actions"
+          >
+            {isReportReady && battleReport ? (
+              <BattleReportButton
+                key={reportSerial}
+                onViewReport={openReport}
               />
-            </div>
+            ) : null}
+            {leftCard || rightCard ? (
+              <BattleReportButton
+                ariaLabel="Reset selected combatants"
+                label="RESET_SELECTION"
+                onViewReport={resetSelection}
+              />
+            ) : null}
+            {isReportReady && battleReport?.battle_run_id ? (
+              <VerdictFeedback
+                variant="arena"
+                battleRunId={battleReport.battle_run_id}
+              />
+            ) : null}
           </div>
+        ) : null}
 
-          {isLoadoutConsoleOpen && !isReportOpen ? (
-            <CombatantLoadoutConsole
-              initialFocusSide={loadoutFocusSide}
-              initialLeftName={leftCard?.name}
-              initialRightName={rightCard?.name}
-              options={arenaCombatantOptions}
-              onClose={() => setIsLoadoutConsoleOpen(false)}
-              onSubmit={loadCombatants}
-            />
-          ) : null}
-
-          {isReportOpen && leftCard && rightCard && battleReport ? (
-            <div className="home-arena-report-layout">
-              <CombatantDeck
-                cards={[leftCard, rightCard]}
-                onReturn={() => setIsReportOpen(false)}
-              />
-              <BattleResultPanel playIntro report={battleReport} />
-            </div>
-          ) : null}
-        </div>
-
-        {isBattleLoadingVisible ? (
-          <BattleLoadingConsole
-            fighterA={leftCard?.name}
-            fighterB={rightCard?.name}
+        {!isReportOpen ? (
+          <ArenaBalancePanel
+            cr={arenaWallet.credits}
+            rp={arenaWallet.reputation}
+            username="PLAYER_001"
+            rank={214}
+            status={bettingStatus}
+            onOpenProfile={() => {
+              router.push("/account");
+            }}
+            onTopUp={topUpArenaCredits}
           />
         ) : null}
 
-        <div className="home-arena-controls flex w-full flex-col items-center">
-          {battleError ? (
-            <p className="home-arena-battle-error" role="alert">
-              {battleError}
-            </p>
-          ) : null}
-          {leftCard && rightCard ? (
-            <ArenaBetSelector
-              bet={arenaBet}
-              disabled={isArenaLocked}
-              leftCard={leftCard}
-              maxReputation={arenaWallet.reputation}
-              onBetChange={setArenaBet}
-              rightCard={rightCard}
+        <div
+          className="home-arena-flow mx-auto flex h-full w-full max-w-[72rem] flex-col items-center justify-center"
+          data-impact-act={battleShockCue?.act}
+          data-impact-phase={battleImpactPhase}
+        >
+          <div className="home-arena-combat-zone w-full">
+            <div className="home-arena-setup-grid grid w-full grid-cols-1 justify-items-center gap-7 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:items-center sm:gap-10 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:gap-12">
+              <div className="sm:justify-self-end">
+                <CombatantEntrySlot
+                  card={leftCard}
+                  crtImpact={leftCrtImpact}
+                  crtResetToken={battleGlitchResetToken}
+                  isEliminated={displayedEliminatedSide === "left"}
+                  template={leftTemplate}
+                  label="ALPHA_SLOT"
+                  onOpenConsole={openLeftLoadoutConsole}
+                />
+              </div>
+
+              <ArenaVersusMark />
+
+              <div className="sm:justify-self-start">
+                <CombatantEntrySlot
+                  card={rightCard}
+                  crtImpact={rightCrtImpact}
+                  crtResetToken={battleGlitchResetToken}
+                  isEliminated={displayedEliminatedSide === "right"}
+                  template={rightTemplate}
+                  label="OMEGA_SLOT"
+                  onOpenConsole={openRightLoadoutConsole}
+                />
+              </div>
+            </div>
+
+            {isLoadoutConsoleOpen && !isReportOpen ? (
+              <CombatantLoadoutConsole
+                initialFocusSide={loadoutFocusSide}
+                initialLeftName={leftCard?.name}
+                initialRightName={rightCard?.name}
+                options={arenaCombatantOptions}
+                onClose={() => setIsLoadoutConsoleOpen(false)}
+                onSubmit={loadCombatants}
+              />
+            ) : null}
+
+            {isReportOpen && leftCard && rightCard && battleReport ? (
+              <div className="home-arena-report-layout">
+                <CombatantDeck
+                  cards={[leftCard, rightCard]}
+                  onReturn={() => setIsReportOpen(false)}
+                />
+                <BattleResultPanel playIntro report={battleReport} />
+              </div>
+            ) : null}
+          </div>
+
+          {isBattleLoadingVisible ? (
+            <BattleLoadingConsole
+              fighterA={leftCard?.name}
+              fighterB={rightCard?.name}
             />
-          ) : (
-            <p className="mb-3 text-center text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-[#d7e2d6]/62">
-              LOAD_TWO_COMBATANTS_TO_ENABLE_BATTLE
-            </p>
-          )}
-          <BattleControls
-            canStart={canExecuteBattle}
-            disabledLabel={battleDisabledLabel}
-            fighterA={leftCard?.name ?? null}
-            fighterB={rightCard?.name ?? null}
-            onBattleStart={handleBattleStart}
-          />
+          ) : null}
+
+          <div className="home-arena-controls flex w-full flex-col items-center">
+            {battleError ? (
+              <p className="home-arena-battle-error" role="alert">
+                {battleError}
+              </p>
+            ) : null}
+            {leftCard && rightCard ? (
+              <ArenaBetSelector
+                bet={arenaBet}
+                disabled={isArenaLocked}
+                leftCard={leftCard}
+                maxReputation={arenaWallet.reputation}
+                onBetChange={setArenaBet}
+                rightCard={rightCard}
+              />
+            ) : (
+              <p className="mb-3 text-center text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-[#d7e2d6]/62">
+                LOAD_TWO_COMBATANTS_TO_ENABLE_BATTLE
+              </p>
+            )}
+            <BattleControls
+              canStart={canExecuteBattle}
+              disabledLabel={battleDisabledLabel}
+              fighterA={leftCard?.name ?? null}
+              fighterB={rightCard?.name ?? null}
+              onBattleStart={handleBattleStart}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {coinFlight && (
+        <CoinFlightAnimation
+          sourceX={coinFlight.sourceX}
+          sourceY={coinFlight.sourceY}
+          targetX={coinFlight.targetX}
+          targetY={coinFlight.targetY}
+          coinCount={12}
+          onComplete={() => setCoinFlight(null)}
+        />
+      )}
+    </>
   );
 }
 

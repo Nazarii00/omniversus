@@ -1,0 +1,564 @@
+{
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonicalName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "FICTIONAL_CHARACTER",
+            "REAL_PERSON",
+            "ANIMAL",
+            "SPECIES",
+            "ARMY",
+            "ORGANIZATION",
+            "TEAM",
+            "VEHICLE",
+            "WEAPON",
+            "OBJECT",
+            "NATURAL_FORCE",
+            "LOCATION",
+            "ABSTRACT_ENTITY",
+            "CUSTOM_ENTITY",
+            "OTHER"
+          ]
+        },
+        "originMedium": {
+          "type": "string",
+          "enum": [
+            "COMIC",
+            "MANGA",
+            "ANIME",
+            "MOVIE",
+            "TV",
+            "GAME",
+            "NOVEL",
+            "LIGHT_NOVEL",
+            "WEB",
+            "MYTHOLOGY",
+            "HISTORY",
+            "REAL_WORLD",
+            "CUSTOM",
+            "MIXED",
+            "UNKNOWN"
+          ]
+        },
+        "originName": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "displayName",
+        "canonicalName",
+        "kind",
+        "originMedium"
+      ],
+      "additionalProperties": false
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonScope": {
+          "type": "string",
+          "enum": [
+            "PRIMARY_CANON",
+            "COMPOSITE",
+            "MANGA",
+            "ANIME",
+            "COMIC_MAINLINE",
+            "GAME_CANON",
+            "MOVIE",
+            "TV",
+            "NOVEL",
+            "LIGHT_NOVEL",
+            "REAL_WORLD",
+            "MYTHIC",
+            "CUSTOM",
+            "UNKNOWN"
+          ]
+        },
+        "continuity": {
+          "type": "string"
+        },
+        "era": {
+          "type": "string"
+        },
+        "form": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "confidenceBand": {
+          "type": "string",
+          "enum": ["LOW", "MEDIUM", "HIGH"]
+        },
+        "confidenceScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "VERIFIED",
+            "ACCEPTED",
+            "REQUIRES_REVIEW",
+            "CONTESTED",
+            "REJECTED",
+            "MODEL_INFERRED"
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "MANUAL_DB",
+            "IMPORTED_SOURCE",
+            "RAG_RETRIEVED",
+            "MODEL_INFERRED",
+            "MIXED",
+            "UNKNOWN"
+          ]
+        }
+      },
+      "required": ["slug", "label", "canonScope"],
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "ATTACK_POTENCY",
+              "PHYSICAL_STRENGTH",
+              "SPEED",
+              "DURABILITY",
+              "STAMINA",
+              "RANGE",
+              "INTELLIGENCE",
+              "SKILL",
+              "SENSES",
+              "STEALTH",
+              "MOBILITY",
+              "ENDURANCE",
+              "LOGISTICS",
+              "COMMAND_STRUCTURE",
+              "NUMBERS",
+              "TERRITORY_CONTROL",
+              "OTHER"
+            ]
+          },
+          "subtype": {
+            "type": "string"
+          },
+          "valueText": {
+            "type": "string",
+            "minLength": 1
+          },
+          "normalizedTier": {
+            "type": "string"
+          },
+          "normalizedValue": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "string"
+          },
+          "contested": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["category", "valueText"],
+        "additionalProperties": false
+      }
+    },
+    "abilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "DAMAGE",
+              "DEFENSE",
+              "HEALING",
+              "REGENERATION",
+              "IMMORTALITY",
+              "MIND",
+              "SOUL",
+              "TIME",
+              "SPACE",
+              "SEALING",
+              "BFR",
+              "CONCEPTUAL",
+              "CAUSALITY",
+              "DOMAIN",
+              "PASSIVE",
+              "SUMMONING",
+              "TRANSFORMATION",
+              "UTILITY",
+              "ENVIRONMENTAL",
+              "OTHER"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "activation": {
+            "type": "string"
+          },
+          "delivery": {
+            "type": "string"
+          },
+          "rangeText": {
+            "type": "string"
+          },
+          "timing": {
+            "type": "string"
+          },
+          "targetRequirement": {
+            "type": "string"
+          },
+          "effect": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "string"
+          },
+          "counterplay": {
+            "type": "string"
+          },
+          "isPassive": {
+            "type": "boolean"
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["name", "type", "description"],
+        "additionalProperties": false
+      }
+    },
+    "resistances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "DAMAGE",
+              "DEFENSE",
+              "HEALING",
+              "REGENERATION",
+              "IMMORTALITY",
+              "MIND",
+              "SOUL",
+              "TIME",
+              "SPACE",
+              "SEALING",
+              "BFR",
+              "CONCEPTUAL",
+              "CAUSALITY",
+              "DOMAIN",
+              "PASSIVE",
+              "SUMMONING",
+              "TRANSFORMATION",
+              "UTILITY",
+              "ENVIRONMENTAL",
+              "OTHER"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limits": {
+            "type": "string"
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["type", "name", "basis"],
+        "additionalProperties": false
+      }
+    },
+    "weaknesses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "exploitation": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["name", "description"],
+        "additionalProperties": false
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["WIN", "LOSS"]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "STAT_CHECK",
+              "DAMAGE",
+              "KO",
+              "DEATH",
+              "INCAP",
+              "BFR",
+              "SEALING",
+              "STAMINA",
+              "ATTRITION",
+              "HAX",
+              "SKILL",
+              "ENVIRONMENT",
+              "OBJECTIVE",
+              "SUBJECTIVE_EDGE",
+              "OTHER"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requires": {
+            "type": "string"
+          },
+          "blockedBy": {
+            "type": "string"
+          },
+          "probabilityText": {
+            "type": "string"
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["kind", "type", "method"],
+        "additionalProperties": false
+      }
+    },
+    "equipment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "WEAPON",
+              "ARMOR",
+              "VEHICLE",
+              "TOOL",
+              "ARTIFACT",
+              "RESOURCE",
+              "INFRASTRUCTURE",
+              "STANDARD_LOADOUT",
+              "OPTIONAL_LOADOUT",
+              "OTHER"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "standard": {
+            "type": "boolean"
+          },
+          "availabilityPolicy": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "category", "description"],
+        "additionalProperties": false
+      }
+    },
+    "feats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["FEAT", "ANTI_FEAT", "STATEMENT", "CALC", "SCALING"]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "ATTACK_POTENCY",
+              "PHYSICAL_STRENGTH",
+              "SPEED",
+              "DURABILITY",
+              "STAMINA",
+              "RANGE",
+              "INTELLIGENCE",
+              "SKILL",
+              "SENSES",
+              "STEALTH",
+              "MOBILITY",
+              "ENDURANCE",
+              "LOGISTICS",
+              "COMMAND_STRUCTURE",
+              "NUMBERS",
+              "TERRITORY_CONTROL",
+              "OTHER"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scaleText": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "string"
+          },
+          "confidenceBand": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "confidenceScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["kind", "title", "description"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["subject", "version"],
+  "additionalProperties": false
+}

@@ -915,3 +915,26 @@ model BattleFeedback {
   @@index([value])
   @@map("battle_feedback")
 }
+
+model CharacterImportSuggestion {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectSlug     String
+  subjectName     String
+  versionSlug     String?
+  importPayload   Json
+  currentSnapshot Json?
+  diffSummary     Json?
+  status          ReviewStatus @default(REQUIRES_REVIEW)
+  batchId         String?      @db.Uuid
+  resolvedById    String?      @db.Uuid
+  resolvedAt      DateTime?
+  resolutionNote  String?
+  metadata        Json?
+  createdAt       DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@index([subjectSlug])
+  @@index([batchId])
+  @@map("character_import_suggestions")
+}

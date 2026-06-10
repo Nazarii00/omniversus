@@ -2,7 +2,9 @@ import {
   AdminDisabled,
   AdminHeader,
   AdminShell,
+  CharacterImportConsole,
   DossierForms,
+  ImportApprovalQueue,
   Metrics,
   MissingDatabase,
   RecentFacts,
@@ -16,6 +18,8 @@ import {
   loadAdminData,
 } from "@/features/admin/data";
 import styles from "@/features/admin/styles/AdminPanel.module.css";
+import { getPrisma } from "@/server/db/prisma";
+import { ReviewStatus } from "@/generated/prisma/enums";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,11 +43,32 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const data = await loadAdminData({ subjectPage, subjectQuery });
   if (!data) return <MissingDatabase />;
 
-  const selectedVersion =
-    isAddingSubject
-      ? null
-      : data.versions.find((version) => version.id === editVersionId) ?? null;
+  const selectedVersion = isAddingSubject
+    ? null
+    : (data.versions.find((version) => version.id === editVersionId) ?? null);
   const showProfileWorkflow = isAddingSubject || Boolean(selectedVersion);
+
+  const prisma = getPrisma();
+  const pendingImports = prisma
+    ? await prisma.characterImportSuggestion.findMany({
+        where: { status: ReviewStatus.REQUIRES_REVIEW },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          subjectSlug: true,
+          versionSlug: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+    : [];
+  const importQueue = pendingImports.map((i) => ({
+    id: i.id,
+    suggestedSubjectSlug: i.subjectSlug,
+    suggestedVersionSlug: i.versionSlug,
+    status: i.status,
+    createdAt: i.createdAt.toISOString(),
+  }));
 
   return (
     <AdminShell>
@@ -74,8 +99,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <ReferenceLists data={data} />
       </section>
 
+      <section id="import">
+        <CharacterImportConsole />
+      </section>
+
+      <section id="import-queue">
+        <ImportApprovalQueue items={importQueue} />
+      </section>
+
       <RecentFacts data={data} />
-      <RecentRuns data={data} />
+      <RecentRuns runs={data.recentRuns} />
     </AdminShell>
   );
 }

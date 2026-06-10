@@ -40,7 +40,8 @@ export async function createEvidenceLink(
     | { abilityId: string }
     | { weaknessId: string }
     | { conditionId: string }
-    | { equipmentId: string },
+    | { equipmentId: string }
+    | { featId: string },
 ) {
   const source = await maybeCreateEvidenceSource(prisma, formData);
   const note = optionalString(formData, "evidenceNote");

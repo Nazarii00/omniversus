@@ -5,7 +5,7 @@ export const BATTLE_MODEL_CONFIG = {
   thinkingLevel: "high" satisfies ThinkingLevel,
   temperature: 1,
   topP: null,
-  maxCompletionTokens: 16000,
+  maxCompletionTokens: 25000,
   responseFormat: "json_schema",
 } as const;
 
