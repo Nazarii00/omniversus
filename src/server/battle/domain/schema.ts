@@ -23,6 +23,7 @@ export type DataProvenanceMode =
   | "UNKNOWN";
 
 export type RunBattleAnalysisOptions = {
+  devMode?: boolean;
   model?: string;
   temperature?: number;
   topP?: number;
