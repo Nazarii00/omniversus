@@ -32,116 +32,6 @@ async function ensureProfile(supabaseId: string, fallbackUsername: string) {
   }
 }
 
-function DevIdentityPage({
-  email,
-  initial,
-}: {
-  email: string;
-  initial: string;
-}) {
-  const DEV = {
-    initial,
-    username: "dev_user",
-    email,
-    joined: "2026-06-07",
-    clearance: "SIGMA-1",
-    reputation: 42,
-    credits: 1337,
-    totalBattles: 12,
-    winRate: 67,
-    currentStreak: 3,
-    recentBattles: [
-      {
-        fighterB: "ShadowWolf",
-        result: "win" as const,
-        date: "2026-06-07",
-      },
-      {
-        fighterB: "BlazeFist",
-        result: "loss" as const,
-        date: "2026-06-06",
-      },
-      { fighterB: "IceQueen", result: "win" as const, date: "2026-06-05" },
-    ],
-  } as const;
-
-  return (
-    <div className={styles.identity}>
-      <div className={styles.profileLeft}>
-        <div className={styles.avatar}>
-          <span className={styles.avatarInitial}>{DEV.initial}</span>
-        </div>
-        <hr className={styles.idDivider} />
-        <div className={styles.idMeta}>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>USERNAME</span>
-            <span className={styles.idValue}>{DEV.username}</span>
-          </div>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>EMAIL</span>
-            <span className={styles.idValueDim}>{DEV.email}</span>
-          </div>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>JOINED</span>
-            <span className={styles.idValueDim}>{DEV.joined}</span>
-          </div>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>CLEARANCE</span>
-            <span className={styles.idValueDim}>{DEV.clearance}</span>
-          </div>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>REPUTATION</span>
-            <span className={styles.idValueDim}>{DEV.reputation}</span>
-          </div>
-          <div className={styles.idRow}>
-            <span className={styles.idLabel}>CREDITS</span>
-            <span className={styles.idValueDim}>{DEV.credits}</span>
-          </div>
-        </div>
-        <form action={signOutAction}>
-          <button className={styles.signOutButton} type="submit">
-            SIGN OUT
-          </button>
-        </form>
-      </div>
-      <div className={styles.profileRight}>
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>TOTAL BATTLES</span>
-            <span className={styles.statValue}>{DEV.totalBattles}</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>WIN RATE</span>
-            <span className={styles.statValue}>{DEV.winRate}%</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>CUR. STREAK</span>
-            <span className={styles.statValue}>x{DEV.currentStreak}</span>
-          </div>
-        </div>
-        <div className={styles.activitySection}>
-          <span className={styles.activityLabel}>{"// RECENT ACTIVITY"}</span>
-          {DEV.recentBattles.map((battle, i) => (
-            <div key={i} className={styles.activityRow}>
-              <span className={styles.activityOpponent}>{battle.fighterB}</span>
-              <span
-                className={`${styles.activityResult} ${
-                  battle.result === "win"
-                    ? styles.activityResultWin
-                    : styles.activityResultLoss
-                }`}
-              >
-                {battle.result.toUpperCase()}
-              </span>
-              <span className={styles.activityDate}>{battle.date}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default async function IdentityPage() {
   const user = await getCurrentUser();
 
@@ -151,11 +41,6 @@ export default async function IdentityPage() {
 
   const email = user.email ?? "Unknown";
   const initial = email.charAt(0).toUpperCase();
-
-  // DEVELOPMENT BYPASS — fully mocked UI without any DB calls
-  if (process.env.NODE_ENV === "development") {
-    return <DevIdentityPage email={email} initial={initial} />;
-  }
 
   // Ensure profile exists (for users who registered before onboarding was removed)
   const ensuredProfile = await ensureProfile(
