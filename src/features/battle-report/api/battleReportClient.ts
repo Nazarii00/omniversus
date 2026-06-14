@@ -6,6 +6,11 @@ export type BattleReportRequest = {
   signal?: AbortSignal;
 };
 
+export type BattleCacheCheckResult = {
+  cached: boolean;
+  battleRunId: string | null;
+};
+
 export class BattleReportRequestError extends Error {
   readonly status: number;
   readonly payload: unknown;
@@ -73,6 +78,38 @@ export async function requestBattleReport({
   return requestBattleReportFromApi({ fighterA, fighterB, signal });
 }
 
+export async function requestBattleReportDev({
+  fighterA,
+  fighterB,
+  signal,
+}: BattleReportRequest): Promise<BattleReportJson> {
+  const response = await fetch("/api/battle/dev", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fighterA,
+      fighterB,
+      options: {
+        outputLanguage: "en",
+      },
+    }),
+    signal,
+  });
+  const payload = await readResponsePayload(response);
+
+  if (!response.ok) {
+    throw new BattleReportRequestError(
+      readErrorMessage(payload),
+      response.status,
+      payload,
+    );
+  }
+
+  return payload as BattleReportJson;
+}
+
 export async function requestBattleReportFromApi({
   fighterA,
   fighterB,
@@ -103,4 +140,15 @@ export async function requestBattleReportFromApi({
   }
 
   return payload as BattleReportJson;
+}
+
+export async function checkBattleCache(
+  fighterA: string,
+  fighterB: string,
+): Promise<BattleCacheCheckResult> {
+  const params = new URLSearchParams({ fighterA, fighterB });
+  const response = await fetch(`/api/battle/cache?${params.toString()}`);
+  const payload = await response.json();
+
+  return payload as BattleCacheCheckResult;
 }

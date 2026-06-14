@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { BattleReportJson } from "@/features/battle-report";
 
@@ -15,6 +15,7 @@ import {
   type BattleShockCue,
 } from "../../../logic";
 import type { ArenaCardSide } from "../../../model";
+import usePageVisibility from "./usePageVisibility";
 
 type BattleTimelineRun = {
   report: BattleReportJson | null | undefined;
@@ -24,6 +25,7 @@ type BattleTimelineRun = {
 export default function useBattleTimeline() {
   const battleTimelineTimeoutsRef = useRef<number[]>([]);
   const battleTimelineRunRef = useRef<BattleTimelineRun | null>(null);
+  const savedReportRef = useRef<BattleReportJson | null | undefined>(null);
   const [battleShockCue, setBattleShockCue] = useState<BattleShockCue | null>(
     null,
   );
@@ -32,6 +34,9 @@ export default function useBattleTimeline() {
   const [battleGlitchResetToken, setBattleGlitchResetToken] = useState(0);
   const [isBattleOpenerActive, setIsBattleOpenerActive] = useState(false);
   const [isBattleTimelineActive, setIsBattleTimelineActive] = useState(false);
+
+  const { isPageVisible, markAnimationStarted, wasEverVisibleSince } =
+    usePageVisibility();
 
   function clearBattleTimelineTimeouts() {
     for (const timeoutId of battleTimelineTimeoutsRef.current) {
@@ -49,7 +54,7 @@ export default function useBattleTimeline() {
     run.resolve();
   }
 
-  function resetBattleTimeline() {
+  const resetBattleTimeline = useCallback(() => {
     setBattleShockCue(null);
     setBattleEliminatedSide(null);
     setBattleGlitchResetToken((current) => current + 1);
@@ -57,52 +62,58 @@ export default function useBattleTimeline() {
     setIsBattleTimelineActive(false);
     clearBattleTimelineTimeouts();
     resolveBattleTimelineRun();
-  }
+  }, []);
 
-  function startBattleTimeline(report: BattleReportJson | null | undefined) {
-    resetBattleTimeline();
+  const startBattleTimeline = useCallback(
+    (report: BattleReportJson | null | undefined) => {
+      resetBattleTimeline();
 
-    const runId = Date.now();
-    const shockCueCount = battleShockCueCountForReport(report);
-    const timelineMs = battleTimelineMsForReport(report);
+      savedReportRef.current = report;
+      markAnimationStarted();
 
-    setIsBattleTimelineActive(true);
-    setIsBattleOpenerActive(true);
+      const runId = Date.now();
+      const shockCueCount = battleShockCueCountForReport(report);
+      const timelineMs = battleTimelineMsForReport(report);
 
-    return new Promise<void>((resolve) => {
-      battleTimelineRunRef.current = { report, resolve };
+      setIsBattleTimelineActive(true);
+      setIsBattleOpenerActive(true);
 
-      const openerTimeoutId = window.setTimeout(() => {
-        setIsBattleOpenerActive(false);
-      }, BATTLE_TIMELINE_OPENER_MS);
+      return new Promise<void>((resolve) => {
+        battleTimelineRunRef.current = { report, resolve };
 
-      battleTimelineTimeoutsRef.current.push(openerTimeoutId);
+        const openerTimeoutId = window.setTimeout(() => {
+          setIsBattleOpenerActive(false);
+        }, BATTLE_TIMELINE_OPENER_MS);
 
-      for (let act = 1; act <= shockCueCount; act += 1) {
-        const timeoutId = window.setTimeout(
-          () => {
-            setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
-          },
-          BATTLE_TIMELINE_OPENER_MS + (act - 1) * BATTLE_TIMELINE_STEP_MS,
-        );
+        battleTimelineTimeoutsRef.current.push(openerTimeoutId);
 
-        battleTimelineTimeoutsRef.current.push(timeoutId);
-      }
+        for (let act = 1; act <= shockCueCount; act += 1) {
+          const timeoutId = window.setTimeout(
+            () => {
+              setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
+            },
+            BATTLE_TIMELINE_OPENER_MS + (act - 1) * BATTLE_TIMELINE_STEP_MS,
+          );
 
-      const cleanupTimeoutId = window.setTimeout(() => {
-        clearBattleTimelineTimeouts();
-        setBattleShockCue(null);
-        setBattleEliminatedSide(eliminatedCardSideForReport(report));
-        setIsBattleOpenerActive(false);
-        setIsBattleTimelineActive(false);
-        resolveBattleTimelineRun();
-      }, BATTLE_TIMELINE_OPENER_MS + timelineMs);
+          battleTimelineTimeoutsRef.current.push(timeoutId);
+        }
 
-      battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
-    });
-  }
+        const cleanupTimeoutId = window.setTimeout(() => {
+          clearBattleTimelineTimeouts();
+          setBattleShockCue(null);
+          setBattleEliminatedSide(eliminatedCardSideForReport(report));
+          setIsBattleOpenerActive(false);
+          setIsBattleTimelineActive(false);
+          resolveBattleTimelineRun();
+        }, BATTLE_TIMELINE_OPENER_MS + timelineMs);
 
-  function skipBattleTimeline() {
+        battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
+      });
+    },
+    [markAnimationStarted, resetBattleTimeline],
+  );
+
+  const skipBattleTimeline = useCallback(() => {
     const report = battleTimelineRunRef.current?.report;
 
     clearBattleTimelineTimeouts();
@@ -111,7 +122,57 @@ export default function useBattleTimeline() {
     setIsBattleOpenerActive(false);
     setIsBattleTimelineActive(false);
     resolveBattleTimelineRun();
-  }
+  }, []);
+
+  // Restart battle timeline when user returns to tab and hasn't seen the animation
+  useEffect(() => {
+    if (!isPageVisible) return;
+    if (!isBattleTimelineActive) return;
+    if (wasEverVisibleSince()) return;
+
+    const report = savedReportRef.current;
+    if (!report) return;
+
+    // Reset and restart the timeline so the user sees it from the beginning
+    clearBattleTimelineTimeouts();
+    resolveBattleTimelineRun();
+
+    const runId = Date.now();
+    const shockCueCount = battleShockCueCountForReport(report);
+    const timelineMs = battleTimelineMsForReport(report);
+
+    setIsBattleTimelineActive(true);
+    setIsBattleOpenerActive(true);
+    markAnimationStarted();
+
+    const openerTimeoutId = window.setTimeout(() => {
+      setIsBattleOpenerActive(false);
+    }, BATTLE_TIMELINE_OPENER_MS);
+
+    battleTimelineTimeoutsRef.current.push(openerTimeoutId);
+
+    for (let act = 1; act <= shockCueCount; act += 1) {
+      const timeoutId = window.setTimeout(
+        () => {
+          setBattleShockCue({ act, runId, ...battleHpForCue(report, act) });
+        },
+        BATTLE_TIMELINE_OPENER_MS + (act - 1) * BATTLE_TIMELINE_STEP_MS,
+      );
+
+      battleTimelineTimeoutsRef.current.push(timeoutId);
+    }
+
+    const cleanupTimeoutId = window.setTimeout(() => {
+      clearBattleTimelineTimeouts();
+      setBattleShockCue(null);
+      setBattleEliminatedSide(eliminatedCardSideForReport(report));
+      setIsBattleOpenerActive(false);
+      setIsBattleTimelineActive(false);
+    }, BATTLE_TIMELINE_OPENER_MS + timelineMs);
+
+    battleTimelineTimeoutsRef.current.push(cleanupTimeoutId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Visibility-driven restart requires state sync.
+  }, [isPageVisible]);
 
   useEffect(() => {
     return () => {

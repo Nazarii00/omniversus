@@ -8,6 +8,7 @@ import { DEFAULT_THINKING_LEVEL } from "./config/model";
 import { normalizeBattleResult } from "./pipeline/normalize";
 import {
   buildUserPrompt,
+  OMNIVERSUS_DEV_PROMPT,
   OMNIVERSUS_MASTER_PROMPT,
 } from "./prompts/battlePrompt";
 import {
@@ -61,6 +62,7 @@ export { BATTLE_MODEL_CONFIG } from "./config/model";
 export {
   buildUserPrompt,
   OMNIVERSUS_MASTER_PROMPT,
+  OMNIVERSUS_DEV_PROMPT,
 } from "./prompts/battlePrompt";
 export {
   resolveBattleDossierContext,
@@ -121,6 +123,10 @@ export async function runBattleAnalysisWithMetadata(
     options,
   );
 
+  const systemPrompt = options.devMode
+    ? OMNIVERSUS_DEV_PROMPT
+    : OMNIVERSUS_MASTER_PROMPT;
+
   const completionRequest: ChatCompletionRequest = {
     model,
     reasoning_effort: reasoningEffort,
@@ -130,7 +136,7 @@ export async function runBattleAnalysisWithMetadata(
       ? { max_completion_tokens: maxCompletionTokens }
       : {}),
     messages: [
-      { role: "system", content: OMNIVERSUS_MASTER_PROMPT },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: buildUserPrompt(fighterA, fighterB, options, dossierContext),

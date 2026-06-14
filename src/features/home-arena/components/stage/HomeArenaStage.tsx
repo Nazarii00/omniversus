@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 
 import {
   BattleResultPanel,
+  checkBattleCache,
   clearLatestBattleReport,
   requestBattleReport,
+  requestBattleReportDev,
   writeLatestBattleReport,
   type BattleReportJson,
 } from "@/features/battle-report";
@@ -53,7 +55,12 @@ import {
   CombatantEntrySlot,
   CombatantLoadoutConsole,
 } from "../combatant-entry";
-import { useBattleTimeline, useStoredHomeArenaState } from "./hooks";
+import {
+  useBattleTimeline,
+  useDevMode,
+  usePageVisibility,
+  useStoredHomeArenaState,
+} from "./hooks";
 import { clearStoredHomeArenaState, writeStoredHomeArenaState } from "./state";
 
 type HomeArenaStageProps = {
@@ -131,8 +138,14 @@ export default function HomeArenaStage({
     targetY: number;
     amount: number;
   } | null>(null);
+  const [isBattleCached, setIsBattleCached] = useState(false);
+  const [cachedBattleRunId, setCachedBattleRunId] = useState<string | null>(
+    null,
+  );
+  const cacheCheckRef = useRef(0);
   const router = useRouter();
   const hasRunPersistenceEffect = useRef(false);
+  const { isPageVisible } = usePageVisibility();
   const {
     battleEliminatedSide,
     battleGlitchResetToken,
@@ -145,6 +158,7 @@ export default function HomeArenaStage({
     skipBattleTimeline,
     startBattleTimeline,
   } = useBattleTimeline();
+  const { isAdmin, isDevMode, toggleDevMode } = useDevMode();
   const leftCard =
     leftCardState === undefined ? restoredLeftCard : leftCardState;
   const rightCard =
@@ -217,6 +231,40 @@ export default function HomeArenaStage({
     writeStoredArenaWallet(arenaWallet);
   }, [arenaWallet]);
 
+  // Check cache whenever both combatants are selected
+  useEffect(() => {
+    const leftName = leftCard?.name?.trim();
+    const rightName = rightCard?.name?.trim();
+
+    if (!leftName || !rightName) {
+      setIsBattleCached(false);
+      setCachedBattleRunId(null);
+      return;
+    }
+
+    let cancelled = false;
+    const checkId = ++cacheCheckRef.current;
+
+    void checkBattleCache(leftName, rightName)
+      .then((result) => {
+        if (cancelled || checkId !== cacheCheckRef.current) return;
+
+        setIsBattleCached(result.cached);
+        setCachedBattleRunId(result.battleRunId);
+      })
+      .catch(() => {
+        if (cancelled || checkId !== cacheCheckRef.current) return;
+
+        setIsBattleCached(false);
+        setCachedBattleRunId(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Cache check is triggered by combatant changes; synchronous guards prevent stale UI.
+  }, [leftCard?.name, rightCard?.name]);
+
   function openReport() {
     setIsReportOpen(true);
   }
@@ -245,6 +293,74 @@ export default function HomeArenaStage({
     setIsBattleLoadingConsoleVisible(false);
     resetBattleTimeline();
     clearLatestBattleReport();
+  }
+
+  async function handleViewCachedResult() {
+    if (!leftCard?.name || !rightCard?.name || isArenaLocked) {
+      return;
+    }
+
+    setIsReportOpen(false);
+    setIsReportReady(false);
+    setBattleReport(null);
+    setBattleError("");
+    setIsBattleRequestActive(true);
+    setIsBattleLoadingConsoleVisible(false);
+    setIsLoadoutConsoleOpen(false);
+    setBettingStatus("VIEWING_CACHED");
+    resetBattleTimeline();
+    clearLatestBattleReport();
+
+    let requestSettled = false;
+    let loadingConsoleTimeoutId: number | null = window.setTimeout(() => {
+      if (!requestSettled) {
+        setIsBattleLoadingConsoleVisible(true);
+      }
+    }, BATTLE_LOADING_CONSOLE_DELAY_MS);
+
+    function clearLoadingConsoleDelay() {
+      if (loadingConsoleTimeoutId === null) return;
+
+      window.clearTimeout(loadingConsoleTimeoutId);
+      loadingConsoleTimeoutId = null;
+    }
+
+    try {
+      const report = isDevMode
+        ? await requestBattleReportDev({
+            fighterA: leftCard.name,
+            fighterB: rightCard.name,
+          })
+        : await requestBattleReport({
+            fighterA: leftCard.name,
+            fighterB: rightCard.name,
+          });
+      requestSettled = true;
+      clearLoadingConsoleDelay();
+      setIsBattleRequestActive(false);
+      setIsBattleLoadingConsoleVisible(!isDevMode && report.cached !== true);
+
+      const timelineFinished = startBattleTimeline(report);
+
+      setBattleReport(report);
+      await timelineFinished;
+      setBettingStatus(isDevMode ? "DEV_MODE_BATTLE" : "CACHED_RESULT_VIEWED");
+      setIsReportReady(true);
+      setReportSerial((current) => (current ?? reportSerial) + 1);
+    } catch (error) {
+      setBattleReport(null);
+      setIsReportReady(false);
+      setBattleError(readBattleErrorMessage(error));
+      setIsBattleLoadingConsoleVisible(false);
+      resetBattleTimeline();
+      clearLatestBattleReport();
+      throw error;
+    } finally {
+      requestSettled = true;
+      clearLoadingConsoleDelay();
+      setIsBattleRequestActive(false);
+      setIsBattleLoadingConsoleVisible(false);
+    }
   }
 
   async function handleBattleStart() {
@@ -288,20 +404,27 @@ export default function HomeArenaStage({
     }
 
     try {
-      const report = await requestBattleReport({
-        fighterA: leftCard.name,
-        fighterB: rightCard.name,
-      });
+      const report = isDevMode
+        ? await requestBattleReportDev({
+            fighterA: leftCard.name,
+            fighterB: rightCard.name,
+          })
+        : await requestBattleReport({
+            fighterA: leftCard.name,
+            fighterB: rightCard.name,
+          });
       requestSettled = true;
       clearLoadingConsoleDelay();
       setIsBattleRequestActive(false);
-      setIsBattleLoadingConsoleVisible(report.cached !== true);
+      setIsBattleLoadingConsoleVisible(!isDevMode && report.cached !== true);
 
       const timelineFinished = startBattleTimeline(report);
 
       setBattleReport(report);
       await timelineFinished;
-      const settlement = settleArenaBet(report, lockedBet);
+      const settlement = isDevMode
+        ? { status: "DEV_MODE_BATTLE", payout: 0, wallet: arenaWallet }
+        : settleArenaBet(report, lockedBet);
 
       if (settlement.payout > 0 && settlement.status.startsWith("BET_WON")) {
         const walletEl = document.querySelector(".wallet-widget");
@@ -377,6 +500,7 @@ export default function HomeArenaStage({
         className="home-arena-stage h-[100dvh] min-h-[100svh] overflow-hidden px-5 py-[3.5vh] sm:px-8 sm:py-[4vh]"
         data-battle-loading={isBattleSequenceActive ? "true" : undefined}
         data-battle-opener={isBattleOpenerActive ? "true" : undefined}
+        data-tab-hidden={!isPageVisible ? "true" : undefined}
         data-view={isReportOpen ? "report" : "setup"}
       >
         {isBattleOpenerActive ? (
@@ -525,7 +649,7 @@ export default function HomeArenaStage({
             {leftCard && rightCard ? (
               <ArenaBetSelector
                 bet={arenaBet}
-                disabled={isArenaLocked}
+                disabled={isArenaLocked || isBattleCached}
                 leftCard={leftCard}
                 maxReputation={arenaWallet.reputation}
                 onBetChange={setArenaBet}
@@ -536,13 +660,46 @@ export default function HomeArenaStage({
                 LOAD_TWO_COMBATANTS_TO_ENABLE_BATTLE
               </p>
             )}
-            <BattleControls
-              canStart={canExecuteBattle}
-              disabledLabel={battleDisabledLabel}
-              fighterA={leftCard?.name ?? null}
-              fighterB={rightCard?.name ?? null}
-              onBattleStart={handleBattleStart}
-            />
+            {isAdmin && (
+              <label
+                className="mb-2 flex cursor-pointer items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#68b768] select-none"
+                data-dev-mode={isDevMode ? "on" : "off"}
+              >
+                <span className="relative inline-flex h-5 w-9 items-center rounded-full border border-[#1a3a1a] bg-black/70 transition-colors">
+                  <span
+                    className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full transition-transform ${isDevMode ? "translate-x-[1.1rem] bg-[#68b768]" : "bg-[#444]"}`}
+                  />
+                </span>
+                DEV MODE
+              </label>
+            )}
+            {isBattleCached && hasSelectedCombatants && !isDevMode ? (
+              <button
+                type="button"
+                disabled={isArenaLocked}
+                onClick={handleViewCachedResult}
+                className="home-battle-button relative grid h-[3.3rem] max-h-[3.3rem] min-h-[3.3rem] w-[min(82vw,16rem)] flex-none basis-[3.3rem] place-items-center overflow-hidden border border-[#3a3a1a] bg-black/84 px-6 py-0 text-center text-[0.8rem] font-bold uppercase leading-none tracking-[0.12em] text-[#b7a868] outline-none transition-colors duration-150 disabled:cursor-not-allowed sm:h-[3.6rem] sm:max-h-[3.6rem] sm:min-h-[3.6rem] sm:basis-[3.6rem] sm:w-72 sm:text-[0.86rem]"
+              >
+                <span className="relative z-10">VIEW_RESULT</span>
+              </button>
+            ) : (
+              <BattleControls
+                canStart={canExecuteBattle || isDevMode}
+                disabledLabel={
+                  isDevMode && hasSelectedCombatants
+                    ? "DEV_BATTLE"
+                    : battleDisabledLabel
+                }
+                fighterA={leftCard?.name ?? null}
+                fighterB={rightCard?.name ?? null}
+                onBattleStart={handleBattleStart}
+              />
+            )}
+            {isReportReady && battleReport && isDevMode && (
+              <span className="mt-1 rounded border border-[#68b768]/40 bg-[#68b768]/10 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[#68b768]">
+                DEV BUILD
+              </span>
+            )}
           </div>
         </div>
       </section>
