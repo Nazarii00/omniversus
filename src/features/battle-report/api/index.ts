@@ -1,7 +1,10 @@
 export {
   BattleReportRequestError,
+  checkBattleCache,
   requestBattleReport,
+  requestBattleReportDev,
   requestBattleReportFromApi,
+  type BattleCacheCheckResult,
   type BattleReportRequest,
 } from "./battleReportClient";
 export {
