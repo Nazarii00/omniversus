@@ -36,6 +36,7 @@
     "google-auth-library": "^10.6.2",
     "next": "^16.2.4",
     "openai": "^6.35.0",
+    "p-limit": "^7.3.0",
     "pg": "^8.20.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
