@@ -159,6 +159,52 @@ export default function HomeArenaStage({
     startBattleTimeline,
   } = useBattleTimeline();
   const { isAdmin, isDevMode, toggleDevMode } = useDevMode();
+
+  // Sync arena wallet from server profile on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/profile/wallet")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load profile wallet");
+        return res.json();
+      })
+      .then((data: { credits: number; reputation: number }) => {
+        if (cancelled) return;
+        setArenaWallet((current) => {
+          // Only update if server values differ from current
+          if (
+            data.credits === current.credits &&
+            data.reputation === current.reputation
+          )
+            return current;
+          return { credits: data.credits, reputation: data.reputation };
+        });
+      })
+      .catch(() => {
+        // Fall back to localStorage wallet silently
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time profile wallet sync on mount.
+  }, []);
+
+  // Sync wallet to server after settlement changes
+  const syncArenaWalletToServer = useCallback((wallet: ArenaWallet) => {
+    fetch("/api/profile/wallet", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        credits: wallet.credits,
+        reputation: wallet.reputation,
+      }),
+    }).catch(() => {
+      // Silent fail — localStorage is the source of truth
+    });
+  }, []);
+
   const leftCard =
     leftCardState === undefined ? restoredLeftCard : leftCardState;
   const rightCard =
@@ -441,12 +487,16 @@ export default function HomeArenaStage({
         });
       }
 
-      setArenaWallet((current) => applyArenaBetSettlement(current, settlement));
+      const settledWallet = applyArenaBetSettlement(arenaWallet, settlement);
+      setArenaWallet(settledWallet);
+      syncArenaWalletToServer(settledWallet);
       setBettingStatus(settlement.status);
       setIsReportReady(true);
       setReportSerial((current) => (current ?? reportSerial) + 1);
     } catch (error) {
-      setArenaWallet((current) => refundArenaLockedBet(current, lockedBet));
+      const refundedWallet = refundArenaLockedBet(arenaWallet, lockedBet);
+      setArenaWallet(refundedWallet);
+      syncArenaWalletToServer(refundedWallet);
       setBettingStatus("STAKE_REFUNDED");
       setBattleReport(null);
       setIsReportReady(false);
@@ -660,19 +710,6 @@ export default function HomeArenaStage({
                 LOAD_TWO_COMBATANTS_TO_ENABLE_BATTLE
               </p>
             )}
-            {isAdmin && (
-              <label
-                className="mb-2 flex cursor-pointer items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#68b768] select-none"
-                data-dev-mode={isDevMode ? "on" : "off"}
-              >
-                <span className="relative inline-flex h-5 w-9 items-center rounded-full border border-[#1a3a1a] bg-black/70 transition-colors">
-                  <span
-                    className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full transition-transform ${isDevMode ? "translate-x-[1.1rem] bg-[#68b768]" : "bg-[#444]"}`}
-                  />
-                </span>
-                DEV MODE
-              </label>
-            )}
             {isBattleCached && hasSelectedCombatants && !isDevMode ? (
               <button
                 type="button"
@@ -703,6 +740,21 @@ export default function HomeArenaStage({
           </div>
         </div>
       </section>
+
+      {isAdmin && (
+        <label
+          className="fixed bottom-4 right-4 z-50 flex cursor-pointer items-center gap-2 rounded border border-[#1a3a1a] bg-black/84 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#68b768] select-none shadow-lg backdrop-blur-sm transition-colors hover:bg-black/94"
+          data-dev-mode={isDevMode ? "on" : "off"}
+          onClick={toggleDevMode}
+        >
+          <span className="relative inline-flex h-4 w-7 items-center rounded-full border border-[#1a3a1a] bg-black/70 transition-colors">
+            <span
+              className={`inline-block h-3 w-3 translate-x-0.5 rounded-full transition-transform ${isDevMode ? "translate-x-[0.8rem] bg-[#68b768]" : "bg-[#444]"}`}
+            />
+          </span>
+          DEV
+        </label>
+      )}
 
       {coinFlight && (
         <CoinFlightAnimation
